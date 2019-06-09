@@ -1,2 +1,2 @@
-# smart_thermostat
-Smart Thermostat based on Arduino SDK
+# Smart Thermostat
+Smart Thermostat based on Arduino SDK and NodeMCU SDK for ESP8266 compatible devices.
