@@ -11,3 +11,5 @@ Components:
 - 1000uf capacitor for 5V power stabilization
 - 5V 220V relè
 - Google Home Mini for Voice Recognition
+
+![alt text](https://github.com/sblantipodi/smart_thermostat/blob/master/smartostat_bb.png)
