@@ -13,3 +13,14 @@ Components:
 - Google Home Mini for Voice Recognition
 
 ![alt text](https://github.com/sblantipodi/smart_thermostat/blob/master/smartostat_bb.png)
+
+Smartstat
+
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Hdy5gpQMbEk/0.jpg)](https://www.youtube.com/watch?v=Hdy5gpQMbEk)
+
+Smartoled desk controller
+
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/_rEGXzI-NMo/0.jpg)](https://www.youtube.com/watch?v=_rEGXzI-NMo)
+
+
+
