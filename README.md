@@ -1,4 +1,4 @@
-# Smart Thermostat
+# Smart Thermostat by Davide Perini
 Smart thermostat for furnace and air conditioner + alarm system.
 
 Components:
