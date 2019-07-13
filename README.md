@@ -1,8 +1,9 @@
 # Smart Thermostat by Davide Perini
-Smart thermostat for furnace and air conditioner + alarm system.
+Smart thermostat for furnace and air conditioner management,
+home alarm system, light management and ambient statistics (Temperature, Humidity, Pressure, Indoor Air Quality)
 
 Components:
-- Arduino C++ sketch running on an ESP8266EX D1 Mini from Lolin running at 160MHz
+- Arduino C++ sketch running on an ESP8266EX D1 Mini from Lolin running @ 160MHz
 - Raspberry + Home Assistant for Web GUI, automations and MQTT server
 - Bosch BME680 environmental sensor (temp, humidity, air quality, air pressure)
 - SR501 PIR sensor for motion detection
