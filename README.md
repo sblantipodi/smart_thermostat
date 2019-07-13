@@ -28,5 +28,8 @@ Smartoled desk controller YouTube video
 ![PHOTO2](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/2.jpg)
 ![PHOTO3](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/3.jpg)
 ![PHOTO4](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/4.jpg)
+
+BOSCH Sensortec BME680 with permanent Jumper for I2C 0x76 channel
+
 ![PHOTO5](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/5.jpg)
 
