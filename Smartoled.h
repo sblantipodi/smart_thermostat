@@ -23,27 +23,27 @@ const String SMARTOSTAT_VERSION = "5.1.3";
 /************ WIFI and MQTT Info ******************/
 const char* ssid = "XXXXXX";
 const char* password = "XXXXXX";
-const char* mqtt_server = "192.168.1.XX;
+const char* mqtt_server = "192.168.1.XX";
 const char* mqtt_username = "XXXXXX";
 const char* mqtt_password = "XXXXXX";
 const int mqtt_port = 12345;
 // DNS address for the shield:
 IPAddress mydns(192, 168, 1, 1);
 // GATEWAY address for the shield:
-IPAddress mygateway(192, 168, 1, XX;
+IPAddress mygateway(192, 168, 1, XX);
 
 /**************************** OTA **************************************************/
 #ifdef TARGET_SMARTOSTAT_OLED
   #define SENSORNAME "smartostat_oled"
   int OTAport = 12345;
   // IP address for the shield:
-  IPAddress arduinoip_smartostat(192, 168, 1, XX;
+  IPAddress arduinoip_smartostat(192, 168, 1, XX);
 #endif 
 #ifdef TARGET_SMARTOLED
   #define SENSORNAME "smartoled"
   int OTAport = 12345;
   // IP address for the shield:
-  IPAddress arduinoip(192, 168, 1, XX; 
+  IPAddress arduinoip(192, 168, 1, XX); 
 #endif 
 #define OTApassword "XXXXXX"
 
