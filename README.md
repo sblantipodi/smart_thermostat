@@ -12,7 +12,8 @@ Components:
 - 5V 220V relè
 - Google Home Mini for Voice Recognition
 
-![alt text](https://github.com/sblantipodi/smart_thermostat/blob/master/smartostat_bb.png)
+![CIRCUITS](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/smartostat_bb.png)
+
 
 Smartostat YouTube video
 
@@ -22,5 +23,9 @@ Smartoled desk controller YouTube video
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/_rEGXzI-NMo/0.jpg)](https://www.youtube.com/watch?v=_rEGXzI-NMo)
 
-
+![PHOTO1](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/1.jpg)
+![PHOTO2](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/2.jpg)
+![PHOTO3](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/3.jpg)
+![PHOTO4](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/4.jpg)
+![PHOTO5](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/5.jpg)
 
