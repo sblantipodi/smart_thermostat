@@ -10,7 +10,8 @@ Components:
 - TTP223 capacitive touch buttons
 - SD1306 OLED 128x64 pixel 0.96"
 - 1000uf capacitor for 5V power stabilization
-- 5V 220V relè
+- 5V 220V relè used to turn ON/OFF furnance
+- IR emitter/receiver to manage Air Conditioner (you can use a simple IR LED, with no transistor/capacitor IR range is reduced)
 - Google Home Mini for Voice Recognition
 
 ![CIRCUITS](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/smartostat_bb.png)
