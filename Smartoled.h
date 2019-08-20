@@ -18,7 +18,7 @@
 #endif
 
 /************ SMARTOSTAT VERSION ******************/
-const String SMARTOSTAT_VERSION = "5.1.3";
+const String SMARTOSTAT_VERSION = "5.6.2";
 
 /************ WIFI and MQTT Info ******************/
 const char* ssid = "XXXXXX";
@@ -26,22 +26,22 @@ const char* password = "XXXXXX";
 const char* mqtt_server = "192.168.1.XX";
 const char* mqtt_username = "XXXXXX";
 const char* mqtt_password = "XXXXXX";
-const int mqtt_port = 12345;
+const int mqtt_port = XX;
 // DNS address for the shield:
-IPAddress mydns(192, 168, 1, 1);
+IPAddress mydns(192, 168, 1, XX);
 // GATEWAY address for the shield:
 IPAddress mygateway(192, 168, 1, XX);
 
 /**************************** OTA **************************************************/
 #ifdef TARGET_SMARTOSTAT_OLED
   #define SENSORNAME "smartostat_oled"
-  int OTAport = 12345;
+  int OTAport = XX;
   // IP address for the shield:
   IPAddress arduinoip_smartostat(192, 168, 1, XX);
 #endif 
 #ifdef TARGET_SMARTOLED
   #define SENSORNAME "smartoled"
-  int OTAport = 12345;
+  int OTAport = XX;
   // IP address for the shield:
   IPAddress arduinoip(192, 168, 1, XX); 
 #endif 
@@ -82,19 +82,23 @@ const char* smartostat_pir_state_topic = "stat/smartostat/POWER2";
 const char* spotify_state_topic = "stat/spotify/info";
 const char* smartostat_furnance_cmnd_topic = "cmnd/smartostat/POWER1";
 const char* smartostatac_stat_irsend = "stat/smartostatac/IRsend";
+const char* smartostatac_cmnd_irsend = "cmnd/smartostatac/IRsendCmnd";
+const char* smartostat_cmnd_climate_heat_state = "cmnd/smartostat/climateHeatState";
+const char* smartostat_cmnd_climate_cool_state = "cmnd/smartostat/climateCoolState";
 #ifdef TARGET_SMARTOSTAT_OLED
   const char* smartoled_cmnd_topic = "cmnd/smartostat_oled/POWER3";
   const char* smartoled_state_topic = "stat/smartostat_oled/POWER3";
   const char* smartoled_info_topic = "stat/smartostat_oled/INFO";
   const char* smartostatac_cmnd_irsendState = "cmnd/smartostatac/IRsend";
-  const char* smartostatac_cmnd_irsend = "cmnd/smartostatac/IRsendCmnd";
-  const char* smartostat_cmnd_climate_heat_state = "cmnd/smartostat/climateHeatState";
-  const char* smartostat_cmnd_climate_cool_state = "cmnd/smartostat/climateCoolState";
+  const char* smartostat_stat_reboot = "stat/smartostat/reboot";
+  const char* smartostat_cmnd_reboot = "cmnd/smartostat/reboot";
 #endif
 #ifdef TARGET_SMARTOLED
   const char* smartoled_cmnd_topic = "cmnd/smartoled/POWER3";
   const char* smartoled_state_topic = "stat/smartoled/POWER3";
   const char* smartoled_info_topic = "stat/smartoled/INFO";
+  const char* smartoled_stat_reboot = "stat/smartoled/reboot";
+  const char* smartoled_cmnd_reboot = "cmnd/smartoled/reboot";
 #endif 
 
 // Display state
@@ -112,9 +116,10 @@ byte buttonState = 0;
 byte  lastReading = 0;
 unsigned long onTime = 0;
 bool longPress = false;
+bool veryLongPress = false;
 
 // Humidity Threshold
-int humidityThreshold = 65;
+const int HUMIDITYTHRESHOLD = 65;
 
 const char* on_cmd = "ON";
 const char* off_cmd = "OFF";
@@ -143,9 +148,12 @@ String furnance = "OFF";
 String ac = "OFF";
 String pir = "OFF";
 String target_temperature = "OFF";
-String operation_mode = "OFF";
-const String COOL = "cool";
-const String HEAT = "heat";
+String hvac_action = "OFF";
+String fan = "OFF";
+const String COOL = "cooling";
+const String HEAT = "heating";
+const String IDLE = "idle";
+const int HEAT_COOL_THRESHOLD = 25;
 String away_mode = "OFF";
 String timedate = "OFF";
 String date = "OFF";
@@ -165,6 +173,8 @@ String minutes = "";
 bool pressed = false;
 String spotifySource = "";
 String volumeLevel = "";
+String mediaPosition = "";
+String mediaDuration = "";
 String mediaArtist = "";
 String mediaTitle = "";
 String spotifyActivity = "";
@@ -172,6 +182,7 @@ int offset = 160;
 int offsetAuthor = 130;
 int yoffset = 150;
 bool lastPageScrollTriggered = false;
+bool screenSaverTriggered = false;
 // variable used for faster delay instead of arduino delay(), this custom delay prevent a lot of problem and memory leak
 const int tenSecondsPeriod = 10000;
 unsigned long timeNowStatus = 0;
@@ -180,13 +191,12 @@ const int fiveMinutesPeriod = 300000;
 unsigned long timeNowGoHomeAfterFiveMinutes = 0;
 unsigned int lastButtonPressed = 0;
 #define MAX_RECONNECT 500
+unsigned int delayTime = 20;
 
 #ifdef TARGET_SMARTOSTAT_OLED
   // PIR variables
   long unsigned int highIn;
-  // only button can force furnance state to ON even when wifi/mqtt is disconnected, the force state is resetted to OFF even by MQTT topic
-  boolean forceFurnanceOn = false;
-  boolean forceACOn = false;
+ 
   unsigned int readOnceEveryNTimess = 0;
   const char* lastPirState = off_cmd;
   float hum_weighting = 0.25; // so hum effect is 25% of the total air quality score
@@ -198,6 +208,9 @@ unsigned int lastButtonPressed = 0;
   int   gas_lower_limit = 10000;  // Bad air quality limit
   int   gas_upper_limit = 300000; // Good air quality limit
 #endif
+// only button can force furnance state to ON even when wifi/mqtt is disconnected, the force state is resetted to OFF even by MQTT topic
+boolean forceFurnanceOn = false;
+boolean forceACOn = false;
 
 /****************************************FOR JSON***************************************/
 const int BUFFER_SIZE = JSON_OBJECT_SIZE(20);
@@ -491,9 +504,12 @@ void drawRoundRect();
 void drawRoundRect();
 void drawFooter();
 void drawCenterScreenLogo(bool &triggerBool, const unsigned char *logo, const int logoW, const int logoH, const int delayInt);
+void drawScreenSaver();
 void sendPowerState();
 void quickPress();
 void longPressRelease();
+void veryLongPressRelease();
+void commandButtonRelease();
 void quickPressRelease();
 void readConfigFromSPIFFS();
 void writeConfigToSPIFFS();
@@ -502,26 +518,32 @@ int getQuality();
 void nonBlokingBlink();
 void setDateTime(const char* timeConst);
 void touchButtonManagement(int pinvalue);
+void sendACCommandState();
+void sendClimateState(String mode);  
+void sendFurnanceCommandState();
 #ifdef TARGET_SMARTOSTAT_OLED
+  void sendSmartostatRebootState(const char* onOff);
+  void sendSmartostatRebootCmnd();
   void sendPirState();
   void sendSensorState();
   void pirManagement();
   void releManagement();
   void acManagement();
   void sendFurnanceState();
-  void sendFurnanceCommandState();
-  void sendACState();
-  void sendACCommandState();
-  void sendClimateState(String mode);  
+  void sendACState();  
   void manageSmartostatButton();
   bool processIrOnOffCmnd(char *message);
   bool processIrSendCmnd(char *message);
+  bool processSmartostatRebootCmnd(char *message);
   void getGasReference();
   String calculateIAQ(int score); 
   int getHumidityScore();
   int getGasScore();
 #endif
 #ifdef TARGET_SMARTOLED
+  void sendSmartoledRebootState(const char* onOff);
+  void sendSmartoledRebootCmnd();
   bool processSmartostatFurnanceState(char *message);
   bool processACState(char *message);
+  bool processSmartoledRebootCmnd(char *message);
 #endif
