@@ -52,6 +52,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
         return;
       }
     }
+    if(strcmp(topic, smartoled_cmnd_reboot) == 0) {
+      if (!processSmartoledRebootCmnd(message)) {
+        return;
+      }
+    }
   #endif  
   if(strcmp(topic, smartostat_climate_state_topic) == 0) {
     if (!processSmartostatClimateJson(message)) {
@@ -94,6 +99,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
         return;
       }
     }
+    if(strcmp(topic, smartostat_cmnd_reboot) == 0) {
+      if (!processSmartostatRebootCmnd(message)) {
+        return;
+      }
+    }
   #endif
 }
 
@@ -120,11 +130,11 @@ void draw() {
   // Draw Images
   if (alarm == "armed_away" || alarm == "pending" || alarm == "triggered") {
     display.drawBitmap(0, 10, shieldLogo, shieldLogoW, shieldLogoH, 1);
-  } else if (away_mode == "off" && currentPage != numPages) {
+  } else if (away_mode == off_cmd && currentPage != numPages) {
     display.drawBitmap(0, 10, haSmallLogo, haSmallLogoW, haSmallLogoH, 1);
   }
 
-  if (humidity != "OFF" && humidity.toFloat() >= humidityThreshold) {
+  if (humidity != "OFF" && humidity.toFloat() >= HUMIDITYTHRESHOLD) {
     currentPage = 0;
     display.drawBitmap(14, 18, humidityLogo, humidityLogoW, humidityLogoH, 1);
   } else if (furnance == on_cmd && currentPage == 0) {
@@ -132,10 +142,23 @@ void draw() {
     display.drawBitmap(14, 18, fireLogo, fireLogoW, fireLogoH, 1);
   } else if (ac == on_cmd && currentPage == 0) {
     drawRoundRect();
-    display.drawBitmap(14, 18, snowLogo, snowLogoW, snowLogoH, 1);
-  } else if (operation_mode == HEAT && currentPage == 0) {
+    display.drawBitmap(16, 19, snowLogo, snowLogoW, snowLogoH, 1);
+    display.setCursor(3,30);
+    if (fan == "Low") {
+      display.print(F("L"));
+    } else if (fan == "High") {
+      display.print(F("H"));
+    } else if (fan == "Auto") {
+      display.print(F("A"));
+    } else if (fan == "Power") {
+      display.print(F("P"));
+    } else if (fan == "Quiet") {
+      display.print(F("Q"));
+    }    
+    display.drawCircle(5, 33, 5, WHITE);
+  } else if (hvac_action == HEAT && currentPage == 0) {
     display.drawBitmap(9, 18, tempLogo, tempLogoW, tempLogoH, 1);
-  } else if (operation_mode == COOL && currentPage == 0) {
+  } else if (hvac_action == COOL && currentPage == 0) {
     display.drawBitmap(9, 18, coolLogo, coolLogoW, coolLogoH, 1);
   } else if (currentPage == 1) {
     display.drawBitmap(15, 18, humidityBigLogo, humidityBigLogoW, humidityBigLogoH, 1);
@@ -150,9 +173,9 @@ void draw() {
     else if (IAQ.toInt() >=  51 && IAQ.toInt() <= 150 ) display.drawBitmap(5, 18, leafLogo, leafLogoW, leafLogoH, 1);
     else if (IAQ.toInt() >=  00 && IAQ.toInt() <=  50 ) display.drawBitmap(5, 18, butterflyLogo, butterflyLogoW, butterflyLogoH, 1);    
   } else if (currentPage == 5) {
-    if (operation_mode == HEAT) {
+    if (hvac_action == HEAT) {
       display.drawBitmap(((display.width()/3)/2)-(tempLogoW/2), 15, tempLogo, tempLogoW, tempLogoH, 1);
-    } else if (operation_mode == COOL) {
+    } else if (hvac_action == COOL) {
       display.drawBitmap(((display.width()/3)/2)-(coolLogoW/2), 15, coolLogo, coolLogoW, coolLogoH, 1);
     } else {
       display.drawBitmap(((display.width()/3)/2)-(offLogoW/2), 15, offLogo, offLogoW, offLogoH, 1);
@@ -183,7 +206,7 @@ void draw() {
   // Draw Text
   display.setTextSize(2);
 
-  if (humidity != "OFF" && humidity.toFloat() >= humidityThreshold) {
+  if (humidity != "OFF" && humidity.toFloat() >= HUMIDITYTHRESHOLD) {
     currentPage = 0;
     display.setCursor(55,14);
     display.print(humidity); display.println(F("%"));
@@ -295,11 +318,15 @@ void draw() {
     }
   }
 
-  if (furnanceTriggered == true) {
+  if (screenSaverTriggered) {
+    drawScreenSaver();
+  }
+
+  if (furnanceTriggered) {
     drawCenterScreenLogo(furnanceTriggered, fireLogo, fireLogoW, fireLogoH, delay_4000);
   }
 
-  if (acTriggered == true) {
+  if (acTriggered) {
     drawCenterScreenLogo(acTriggered, snowLogo, snowLogoW, snowLogoH, delay_4000);
   }
 
@@ -320,7 +347,7 @@ void draw() {
   Serial.print(F("PIR: "); Serial.println(pir);
 
   Serial.print(F("target_temperature: "); Serial.println(target_temperature);
-  Serial.print(F("operation_mode: "); Serial.println(operation_mode);
+  Serial.print(F("hvac_action: "); Serial.println(hvac_action);
   Serial.print(F("away_mode: "); Serial.println(away_mode);
   Serial.print(F("alarm: "); Serial.println(alarm);*/
 
@@ -390,6 +417,22 @@ void drawFooter() {
   display.print(humidity); display.print(F("%"));
   display.print(F(" "));
   display.print(pressure); display.print(F("hPa"));
+}
+
+void drawScreenSaver() {
+  display.clearDisplay();
+  for (int i = 0; i < 50; i++) {
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setCursor(5,17);
+    display.fillRect(0, 0, display.width(), display.height(), i%2 != 0 ? WHITE : BLACK);
+    display.setTextColor(i%2 == 0 ? WHITE : BLACK);
+    display.drawRoundRect(0, 0, display.width()-1, display.height()-1, display.height()/4, i%2 == 0 ? WHITE : BLACK);
+    display.println(F("DPsoftware domotics"));
+    display.display();
+  }
+  display.setTextColor(WHITE);
+  screenSaverTriggered = false;
 }
 
 void drawCenterScreenLogo(bool &triggerBool, const unsigned char* logo, const int logoW, const int logoH, const int delayInt) {
@@ -480,27 +523,37 @@ bool processSmartostatClimateJson(char* message) {
     // }
     const char* haVersionConst = doc["haVersion"];
     haVersion = haVersionConst;
-    const char* operationModeHeatConst = doc["smartostat"]["operation_mode"];
+    const char* operationModeHeatConst = doc["smartostat"]["hvac_action"];
     String operation_mode_heat = operationModeHeatConst;
-    const char* operationModeCoolConst = doc["smartostatac"]["operation_mode"];
+    operation_mode_heat = operation_mode_heat == IDLE ? HEAT : operation_mode_heat;
+    const char* operationModeCoolConst = doc["smartostatac"]["hvac_action"];
     String operation_mode_cool = operationModeCoolConst;
+    operation_mode_cool = operation_mode_cool == IDLE ? COOL : operation_mode_cool;
     const char* alarmConst = doc["smartostat"]["alarm"];
     alarm = alarmConst;
+    const char* fanConst = doc["smartostatac"]["fan"];
+    fan = fanConst;
     if (operation_mode_heat == HEAT) {
       float target_temperatureFloat = doc["smartostat"]["temperature"];
-      target_temperature = serialized(String(target_temperatureFloat,1));  ;
-      operation_mode = operation_mode_heat;
-      const char* awayModeConst = doc["smartostat"]["away_mode"];
-      away_mode = awayModeConst;
+      target_temperature = serialized(String(target_temperatureFloat,1));  
+      hvac_action = operation_mode_heat;
+      const char* awayModeConst = doc["smartostat"]["preset_mode"];
+      away_mode = awayModeConst == "away" ? on_cmd : off_cmd;
     } else if (operation_mode_cool == COOL) {
       float target_temperatureFloat = doc["smartostatac"]["temperature"];
-      target_temperature = serialized(String(target_temperatureFloat,1));  ;
-      operation_mode = operation_mode_cool;
-      const char* awayModeConst = doc["smartostatac"]["away_mode"];
-      away_mode = awayModeConst;
+      target_temperature = serialized(String(target_temperatureFloat,1));  
+      hvac_action = operation_mode_cool;
+      const char* awayModeConst = doc["smartostatac"]["preset_mode"];
+      away_mode = awayModeConst == "away" ? on_cmd : off_cmd;
     } else {
-      target_temperature = off_cmd;
-      operation_mode = off_cmd;
+      if (temperature.toFloat() > HEAT_COOL_THRESHOLD) {
+        float target_temperatureFloat = doc["smartostatac"]["temperature"];
+        target_temperature = serialized(String(target_temperatureFloat,1));  
+      } else {
+        float target_temperatureFloat = doc["smartostat"]["temperature"];
+        target_temperature = serialized(String(target_temperatureFloat,1));  
+      }
+      hvac_action = off_cmd;
       away_mode = off_cmd;
     }
   }
@@ -562,6 +615,7 @@ bool processSmartoledCmnd(char* message) {
   } else if(strcmp(message, off_cmd) == 0) {
     stateOn = false;
   }
+  screenSaverTriggered = false;
   sendPowerState();
   return true;
 }
@@ -590,6 +644,25 @@ bool processFurnancedCmnd(char* message) {
 
 // IRSEND MQTT message ON OFF only for Smartostat
 #ifdef TARGET_SMARTOSTAT_OLED
+
+  bool processSmartostatRebootCmnd(char* message) {
+    String rebootState = message;
+    sendSmartostatRebootState(off_cmd);
+    if (rebootState == off_cmd) {      
+      forceFurnanceOn = false;
+      furnance = off_cmd;
+      sendFurnanceState();
+      forceACOn = false;
+      ac = off_cmd;
+      sendACState();
+      client.publish(smartostat_pir_state_topic, off_cmd, true);  
+      releManagement();
+      acManagement();
+      sendSmartostatRebootCmnd();
+    }
+    return true;
+  }
+  
   bool processIrOnOffCmnd(char *message) {
     String acState = message;
     if (acState == on_cmd && ac == off_cmd) {
@@ -661,6 +734,16 @@ bool processFurnancedCmnd(char* message) {
 #endif
 
 #ifdef TARGET_SMARTOLED
+
+  bool processSmartoledRebootCmnd(char* message) {
+    String rebootState = message;
+    sendSmartoledRebootState(off_cmd);
+    if (rebootState == off_cmd) {      
+      sendSmartoledRebootCmnd();
+    }
+    return true;
+  }
+
   bool processSmartostatFurnanceState(char* message) {
     furnance = message;
     return true;
@@ -715,6 +798,15 @@ void sendInfoState() {
 
 // Send PIR state via MQTT
 #ifdef TARGET_SMARTOSTAT_OLED
+  
+  void sendSmartostatRebootState(const char* onOff) {   
+    client.publish(smartostat_stat_reboot, onOff, true);
+  }
+
+  void sendSmartostatRebootCmnd() {   
+    delay(delay_1500);
+    ESP.restart();
+  }
 
   void sendPirState() {   
       client.publish(smartostat_pir_state_topic, (pir == on_cmd) ? on_cmd : off_cmd, true);
@@ -772,35 +864,6 @@ void sendInfoState() {
     client.publish(smartostat_furnance_state_topic, (furnance == off_cmd) ? off_cmd : on_cmd, true);
   }
 
-  void sendFurnanceCommandState() {
-    if (furnance == off_cmd) {
-      forceFurnanceOn = false;
-    } 
-    client.publish(smartostat_furnance_cmnd_topic, (furnance == off_cmd) ? off_cmd : on_cmd, true);
-  }
-
-  void sendACState() {    
-    if (ac == off_cmd) {
-      forceACOn = false;
-    }     
-    client.publish(smartostatac_stat_irsend, (ac == off_cmd) ? off_cmd : on_cmd, true);
-  }
-
-  void sendACCommandState() {    
-    if (ac == off_cmd) {
-      forceACOn = false;
-    }     
-    client.publish(smartostatac_cmnd_irsend, (ac == off_cmd) ? off_cmd : on_cmd, true);
-  }
-  
-  void sendClimateState(String mode) {
-    if (mode == COOL) {
-      client.publish(smartostat_cmnd_climate_cool_state, (ac == off_cmd) ? off_cmd : on_cmd, true);
-    } else {
-      client.publish(smartostat_cmnd_climate_heat_state, (furnance == off_cmd) ? off_cmd : on_cmd, true);
-    }      
-  }
-
   void manageSmartostatButton() {
     // Touch button management features
     if (digitalRead(OLED_BUTTON_PIN) == HIGH) {
@@ -822,6 +885,48 @@ void sendInfoState() {
   }
 
 #endif
+
+#ifdef TARGET_SMARTOLED
+
+  void sendSmartoledRebootState(const char* onOff) {   
+    client.publish(smartoled_stat_reboot, onOff, true);
+  }
+
+  void sendSmartoledRebootCmnd() {   
+    delay(delay_1500);
+    ESP.restart();
+  }
+
+#endif
+
+void sendACCommandState() {    
+  if (ac == off_cmd) {
+    forceACOn = false;
+  }     
+  client.publish(smartostatac_cmnd_irsend, (ac == off_cmd) ? off_cmd : on_cmd, true);
+}
+
+void sendClimateState(String mode) {
+  if (mode == COOL) {
+    client.publish(smartostat_cmnd_climate_cool_state, (ac == off_cmd) ? off_cmd : on_cmd, true);
+  } else {
+    client.publish(smartostat_cmnd_climate_heat_state, (furnance == off_cmd) ? off_cmd : on_cmd, true);
+  }      
+}
+
+void sendFurnanceCommandState() {
+  if (furnance == off_cmd) {
+    forceFurnanceOn = false;
+  } 
+  client.publish(smartostat_furnance_cmnd_topic, (furnance == off_cmd) ? off_cmd : on_cmd, true);
+}
+
+void sendACState() {    
+  if (ac == off_cmd) {
+    forceACOn = false;
+  }     
+  client.publish(smartostatac_stat_irsend, (ac == off_cmd) ? off_cmd : on_cmd, true);
+}
 
 /********************************** START MQTT RECONNECT*****************************************/
 void mqttReconnect() {
@@ -862,12 +967,14 @@ void mqttReconnect() {
         client.subscribe(smartostat_furnance_state_topic);     
         client.subscribe(smartostat_pir_state_topic);
         client.subscribe(smartostatac_cmd_topic);
-        client.subscribe(smartostatac_stat_irsend);        
+        client.subscribe(smartostatac_stat_irsend);
+        client.subscribe(smartoled_cmnd_reboot);            
       #endif
       client.subscribe(spotify_state_topic);
       client.subscribe(smartoled_cmnd_topic);
       client.subscribe(smartostat_furnance_cmnd_topic);     
       #ifdef TARGET_SMARTOSTAT_OLED       
+        client.subscribe(smartostat_cmnd_reboot);    
         client.subscribe(smartostatac_cmnd_irsendState);    
         client.subscribe(smartostatac_cmnd_irsend);           
       #endif
@@ -921,7 +1028,8 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
     timeNowGoHomeAfterFiveMinutes = millis();
     // Write data to file system
     writeConfigToSPIFFS();
-    if ((humidity != "OFF" && humidity.toFloat() < humidityThreshold) && ((spotifyActivity == "playing" && currentPage != 7) || spotifyActivity != "playing")) {
+    screenSaverTriggered = true;
+    if ((humidity != "OFF" && humidity.toFloat() < HUMIDITYTHRESHOLD) && ((spotifyActivity == "playing" && currentPage != 7) || spotifyActivity != "playing")) {
       currentPage = 0;
     }
   }
@@ -1043,21 +1151,41 @@ void touchButtonManagement(int digitalReadButtonPin) {
     if (longPress) { // button release long pressed
       longPress = false;
       longPressRelease();
+    } else if (veryLongPress) {
+      veryLongPress = false;
+      veryLongPressRelease();
     } else { // button release no long press
       quickPressRelease();
     }
   }
   // Long press for a second
   if (buttonState == HIGH && lastReading == HIGH) {
-    if ((millis() - onTime) > 1000 ) { // a second hold time
-      lastReading = LOW;
-      longPress = true;
-    }
+    #ifdef TARGET_SMARTOSTAT_OLED
+      if ((millis() - onTime) > 4000 ) { // a second hold time
+        lastReading = LOW;
+        veryLongPress = true;
+      }
+    #endif
+    #ifdef TARGET_SMARTOLED
+      if (((millis() - onTime) > 4000)) { // a second hold time
+        lastReading = LOW;
+        longPress = false;
+        veryLongPress = true;
+      } else if (((millis() - onTime) > 1000)) { // a second hold time
+        lastReading = LOW;
+        longPress = true;
+        veryLongPress = false;
+      }
+    #endif
   }
   lastReading = buttonState;
 }
 
 void longPressRelease() {
+  commandButtonRelease();  
+}
+
+void veryLongPressRelease() {
   // turn off the display on long pressed
   stateOn = false;
   resetMinMaxValues();
@@ -1069,41 +1197,53 @@ void quickPress() {
   timeNowGoHomeAfterFiveMinutes = millis();
 }
 
+void commandButtonRelease() {
+  if (temperature.toFloat() > HEAT_COOL_THRESHOLD) {
+    if (ac == on_cmd) {
+      ac = off_cmd;
+      // stop ac on long press if wifi or mqtt is disconnected
+      forceACOn = false;
+    } else {
+      #ifdef TARGET_SMARTOSTAT_OLED
+        acTriggered = true;
+      #endif
+      ac = on_cmd;
+      // start ac on long press if wifi or mqtt is disconnected
+      forceACOn = true;
+    }      
+    sendACCommandState();
+    sendClimateState(COOL);
+    #ifdef TARGET_SMARTOSTAT_OLED
+      acManagement();
+    #endif
+    lastButtonPressed = OLED_BUTTON_PIN;
+  } else {
+    if (furnance == on_cmd) {
+      furnance = off_cmd;
+      // stop furnance on long press if wifi or mqtt is disconnected
+      forceFurnanceOn = false;
+    } else {
+      #ifdef TARGET_SMARTOSTAT_OLED
+        furnanceTriggered = true;
+      #endif
+      furnance = on_cmd;
+      // start furnance on long press if wifi or mqtt is disconnected
+      forceFurnanceOn = true;
+    }      
+    sendFurnanceCommandState();
+    sendClimateState(HEAT);
+    #ifdef TARGET_SMARTOSTAT_OLED
+      releManagement();
+    #endif
+    lastButtonPressed = OLED_BUTTON_PIN;
+  }      
+}
+
 void quickPressRelease() {
   // turn on the furnance
   if (lastButtonPressed == SMARTOSTAT_BUTTON_PIN) {
     #ifdef TARGET_SMARTOSTAT_OLED
-      if (temperature.toFloat() > 25) {
-        if (ac == on_cmd) {
-          ac = off_cmd;
-          // stop ac on long press if wifi or mqtt is disconnected
-          forceACOn = false;
-        } else {
-          acTriggered = true;
-          ac = on_cmd;
-          // start ac on long press if wifi or mqtt is disconnected
-          forceACOn = true;
-        }      
-        sendACCommandState();
-        sendClimateState(COOL);
-        acManagement();
-        lastButtonPressed = OLED_BUTTON_PIN;
-      } else {
-        if (furnance == on_cmd) {
-          furnance = off_cmd;
-          // stop furnance on long press if wifi or mqtt is disconnected
-          forceFurnanceOn = false;
-        } else {
-          furnanceTriggered = true;
-          furnance = on_cmd;
-          // start furnance on long press if wifi or mqtt is disconnected
-          forceFurnanceOn = true;
-        }      
-        sendFurnanceCommandState();
-        sendClimateState(HEAT);
-        releManagement();
-        lastButtonPressed = OLED_BUTTON_PIN;
-      }      
+      commandButtonRelease();
     #endif
   } else {
     // go to the next page if display is on, skip next page if the display was off
@@ -1394,7 +1534,7 @@ void setup() {
     acir.off();
     acir.setFan(kSamsungAcFanLow);
     acir.setMode(kSamsungAcCool);
-    acir.setTemp(25);
+    acir.setTemp(26);
     acir.setSwing(false);
     //Serial.printf("  %s\n", acir.toString().c_str());
 
@@ -1484,7 +1624,7 @@ void loop() {
   #endif
 
   // // Draw Speed, it influences how long the button should be pressed before switching to the next currentPage
-  delay(20);
+  delay(delayTime);
 
   // // Send status on MQTT Broker every n seconds
   delayAndSendStatus();
