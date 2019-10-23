@@ -34,3 +34,7 @@ BOSCH Sensortec BME680 with permanent Jumper for I2C 0x76 channel
 
 ![PHOTO5](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/5.jpg)
 
+Home Assistant Mobile Client Screenshots
+
+![PHOTO5](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/ha_smartostat_screenshot.jpg)
+![PHOTO6](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/ha_smartostat_screenshot_2.jpg)
