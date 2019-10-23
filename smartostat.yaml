@@ -1,0 +1,323 @@
+sensor:
+  - platform: mqtt
+    state_topic: 'tele/smartostat/SENSOR'
+    name: 'Room Temp' #BME680
+    unit_of_measurement: '°C'
+    value_template: '{{ value_json.BME680.Temperature }}'
+  - platform: mqtt
+    state_topic: 'tele/smartostat/SENSOR'
+    name: 'Room Humidity'
+    unit_of_measurement: '%'
+    value_template: '{{ value_json.BME680.Humidity }}'
+  - platform: mqtt
+    state_topic: 'tele/smartostat/SENSOR'
+    name: 'Room Pressure'
+    unit_of_measurement: 'hPa'
+    value_template: '{{ value_json.BME680.Pressure }}'
+  - platform: mqtt
+    state_topic: 'tele/smartostat/SENSOR'
+    name: 'Room GasResistance'
+    unit_of_measurement: 'KOhms'
+    value_template: '{{ value_json.BME680.GasResistance }}'
+  - platform: mqtt
+    state_topic: 'tele/smartostat/SENSOR'
+    name: 'Room IAQ'
+    unit_of_measurement: 'Score'
+    value_template: '{{ value_json.BME680.IAQ }}'
+  # - platform: mqtt
+  #   state_topic: 'stat/bme/info'
+  #   name: 'Various BME'
+  #   unit_of_measurement: '°C'
+  #   value_template: '{{ value_json.bme }}'
+  # - platform: mqtt
+  #   state_topic: 'stat/bme2/info'
+  #   name: 'Various BME2'
+  #   unit_of_measurement: '°C'
+  #   value_template: '{{ value_json.bme }}'
+  - platform: min_max
+    name: "Average Room Temp"
+    type: "mean"
+    round_digits: 1
+    entity_ids:
+      - sensor.room_temp
+  - platform: template
+    sensors:
+      smartostat_status:
+        value_template: "{{ states.climate.room_heat.attributes.hvac_action }}"
+  - platform: mqtt
+    state_topic: 'tele/smartostat/SENSOR'
+    name: 'Last Seen Smartostat'
+    value_template: '{{ value_json.Time }}'
+  - platform: mqtt
+    state_topic: 'stat/smartoled/INFO'
+    name: 'Last Seen Smartoled'
+    value_template: '{{ value_json.Time }}'
+
+climate:
+  - platform: generic_thermostat
+    name: Room Heat
+    heater: switch.room_furnace
+    target_sensor: sensor.average_room_temp
+    min_temp: 7
+    max_temp: 40 #24
+    min_cycle_duration:
+      minutes: 10
+    initial_hvac_mode: "off"
+    target_temp: 21
+    away_temp: 17
+    cold_tolerance: 0.5
+    hot_tolerance: 0.5
+
+binary_sensor:
+  - platform: mqtt
+    state_topic: "stat/smartostat/POWER2"
+    name: "SR501PIR"
+    payload_on: "ON"
+    payload_off: "OFF"
+    device_class: moving
+
+input_number:
+  humidity_threshold:
+    name: Soglia umidità
+    initial: 70
+    min: 50
+    max: 90
+    step: 5
+    
+switch:
+  - platform: mqtt
+    name: "Room Furnace"
+    command_topic: "cmnd/smartostat/POWER1"
+    state_topic: "stat/smartostat/POWER1"
+    qos: 1
+    retain: true
+    payload_on: "ON"
+    payload_off: "OFF"
+  - platform: mqtt
+    name: "Smartoled"
+    command_topic: "cmnd/smartoled/POWER3"
+    state_topic: "stat/smartoled/POWER3"
+    qos: 1
+    retain: true
+    payload_on: "ON"
+    payload_off: "OFF"
+  - platform: mqtt
+    name: "Smartostat Oled"
+    command_topic: "cmnd/smartostat_oled/POWER3"
+    state_topic: "stat/smartostat_oled/POWER3"
+    qos: 1
+    retain: true
+    payload_on: "ON"
+    payload_off: "OFF"
+  - platform: mqtt
+    name: "rebootsmartostat"
+    command_topic: "cmnd/smartostat/reboot"
+    state_topic: "stat/smartostat/reboot"
+    qos: 1
+    retain: false
+    payload_on: "ON"
+    payload_off: "OFF"  
+  - platform: mqtt
+    name: "rebootsmartoled"
+    command_topic: "cmnd/smartoled/reboot"
+    state_topic: "stat/smartoled/reboot"
+    qos: 1
+    retain: false
+    payload_on: "ON"
+    payload_off: "OFF"  
+  # - platform: mqtt
+  #   name: "mqttled"
+  #   command_topic: "cmnd/smartohumidifier/POWER1"
+  #   state_topic: "stat/smartohumidifier"
+  #   qos: 1
+  #   payload_on: "ON"
+  #   payload_off: "OFF"
+
+automation:
+  - id: '1544483297492'
+    alias: Umidità elevata
+    trigger:
+      platform: template
+      value_template: "{{ states('sensor.room_humidity')|float >= ((states('input_number.humidity_threshold')|float) + 5) }}"
+    condition: []
+    action:
+    - data:
+        message: Rilevata umidità elevata! ({{ states.sensor.room_humidity.state }}%)
+      service: notify.telegram_notifier
+    - data:
+        language: it
+        message: Rilevata umidità elevata!
+      entity_id: all
+      service: tts.google_say
+  - id: '1519463297492'
+    alias: Qualità aria
+    trigger:
+    - above: '100'
+      entity_id: sensor.room_iaq
+      platform: numeric_state
+    condition: []
+    action:
+    - data:
+        message: La qualità dell'aria non è ottimale! (IAQ {{ states.sensor.room_iaq.state }})
+      service: notify.telegram_notifier
+    - data:
+        language: it
+        message: La qualità dell'aria non è ottimale
+      entity_id: all
+      service: tts.google_say      
+  # - id: '1544483297583'      
+  #   alias: smartostatmqtt_publisher
+  #   trigger:
+  #     platform: state
+  #     entity_id: climate.room_heat
+  #   action:
+  #   - service: mqtt.publish
+  #     data_template:
+  #       topic: "stat/smartostat/CLIMATE"
+  #       retain: "false"
+  #       payload: '{{states.climate.room_heat.attributes}}'
+  - id: '1544483297584'      
+    alias: smartostatmqtt_publisher_auto
+    trigger:
+      platform: time_pattern
+      seconds: '/10'
+    action:
+    - service: mqtt.publish
+      data_template:
+        topic: "stat/smartostat/CLIMATE"
+        retain: "false"
+        payload: '{"Time":"{{now()}}","haVersion":"{{states.sensor.home_assistant_version.state}}","humidity_threshold":"{{states.input_number.humidity_threshold.state}}","smartostat":{"alarm":"{{states("alarm_control_panel.home_alarm")}}","temperature":{{states.climate.room_heat.attributes.temperature}},"hvac_action":"{{states.climate.room_heat.attributes.hvac_action}}","preset_mode":"{{states.climate.room_heat.attributes.preset_mode}}"},"smartostatac":{"POWER":"{{states("switch.room_ac")}}","temperature":{{states.climate.room_cool.attributes.temperature}},"hvac_action":"{{states.climate.room_cool.attributes.hvac_action}}","preset_mode":"{{states.climate.room_cool.attributes.preset_mode}}","fan":"{{states.input_select.ac_mode_select.state}}"}}'
+  - id: '1556993698865'
+    alias: SwitchSmartostat
+    trigger:
+    - entity_id: sensor.smartostat_status
+      from: 'off'
+      platform: state
+      to: 'heating'
+    - entity_id: sensor.smartostat_status
+      from: 'off'
+      platform: state
+      to: 'idle'
+    condition: []
+    action:
+    - data:
+        entity_id: climate.room_cool
+      service: climate.turn_off
+  - id: '1598633297584'      
+    alias: Smartoled Alive
+    trigger:
+      platform: time_pattern
+      seconds: '/60'
+    condition:
+      condition: template
+      value_template: "{{ not (as_timestamp(now()) < (as_timestamp(states('sensor.last_seen_smartoled')) + 60)) }}"
+    action:
+    - data:
+        message: "Smart OLED ha smesso di rispondere!"
+      service: notify.telegram_notifier
+  - id: '1598633297585'      
+    alias: Smartostat Alive
+    trigger:
+      platform: time_pattern
+      seconds: '/60'
+    condition:
+      condition: template
+      value_template: "{{ not (as_timestamp(now()) < (as_timestamp(states('sensor.last_seen_smartostat')) + 60)) }}"
+    action:
+    - data:
+        message: "Smartostat ha smesso di rispondere!"
+      service: notify.telegram_notifier
+  - id: '1562009234190'
+    alias: Climate Heat ON
+    trigger:
+    - payload: 'ON'
+      platform: mqtt
+      topic: cmnd/smartostat/climateHeatState
+    condition: 
+    - condition: template
+      value_template: "{{ (states('sensor.room_temp') | float <= 25) }}"
+    action:
+    - data:
+        entity_id: climate.room_heat
+      service: climate.turn_on
+  - id: '1562009234191'
+    alias: Climate Heat OFF
+    trigger:
+    - payload: 'OFF'
+      platform: mqtt
+      topic: cmnd/smartostat/climateHeatState
+    condition: 
+    - condition: template
+      value_template: "{{ (states('sensor.room_temp') | float <= 25) }}"
+    action:
+    - data:
+        entity_id: climate.room_heat
+      service: climate.turn_off
+  - id: '1561846206669'
+    alias: SmartoledMotionOn
+    trigger:
+    - entity_id: binary_sensor.sr501pir
+      from: 'off'
+      platform: state
+      to: 'on'
+    condition:
+    - condition: state
+      entity_id: switch.smartoled
+      state: 'off'
+    action:
+    - data:
+        entity_id: switch.smartoled
+      service: switch.turn_on
+  - id: '15651219318993'
+    alias: SmartoledMotionOff
+    trigger:
+    - entity_id: binary_sensor.sr501pir
+      for: 
+        minutes: 3
+      platform: state
+      to: 'off'
+    condition:
+    - condition: state
+      entity_id: switch.smartoled
+      state: 'on'
+    - condition: state
+      entity_id: switch.wake_on_lan
+      state: 'off'      
+    action:
+    - data:
+        entity_id: switch.smartoled
+      service: switch.turn_off
+  - id: '15651419136670'
+    alias: SmartostatMotionOn
+    trigger:
+    - entity_id: binary_sensor.sr501pir
+      from: 'off'
+      platform: state
+      to: 'on'
+    condition:
+    - condition: state
+      entity_id: switch.smartostat_oled
+      state: 'off'
+    action:
+    - data:
+        entity_id: switch.smartostat_oled
+      service: switch.turn_on
+  - id: '15651195318971'
+    alias: SmartostatMotionOff
+    trigger:
+    - entity_id: binary_sensor.sr501pir
+      for: 
+        minutes: 3
+      platform: state
+      to: 'off'
+    condition:
+    - condition: state
+      entity_id: switch.smartostat_oled
+      state: 'on'
+    - condition: state
+      entity_id: switch.wake_on_lan
+      state: 'off'      
+    action:
+    - data:
+        entity_id: switch.smartostat_oled
+      service: switch.turn_off      
