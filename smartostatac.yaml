@@ -1,0 +1,160 @@
+input_select:
+  ac_mode_select:
+    name: Modalità A/C
+    options:
+      - Low
+      - High
+      - Auto
+      - Power
+      - Quiet
+    initial: Auto
+    icon: mdi:airplane-takeoff
+    
+switch:
+  - platform: mqtt
+    name: "Room AC"
+    command_topic: "cmnd/smartostatac/IRsend"
+    state_topic: "stat/smartostatac/IRsend"
+    qos: 1
+    retain: true
+    payload_on: "ON"
+    payload_off: "OFF"
+    
+input_boolean:
+  alette_ac:
+    name: Alette AC
+
+sensor:
+  - platform: template
+    sensors:
+      smartostatac_status:
+        value_template: "{{ states.climate.room_cool.attributes.hvac_action }}"
+  - platform: template
+    sensors:
+      climate_temp:
+        friendly_name: "Climate Temperature"
+        unit_of_measurement: '°C'
+        value_template: "{{ states.climate.room_cool.attributes.temperature }}"
+    
+climate:
+  - platform: generic_thermostat
+    name: Room Cool
+    heater: switch.room_ac
+    target_sensor: sensor.average_room_temp
+    ac_mode: true
+    min_temp: 16
+    max_temp: 50
+    min_cycle_duration:
+      minutes: 1
+    initial_hvac_mode: "off"
+    target_temp: 28
+    away_temp: 50
+    cold_tolerance: 0.5
+    hot_tolerance: 0.5
+    # precision: 1.0
+    
+automation:
+  - id: '1548597212057'
+    alias: AC Mode 
+    trigger:
+    - entity_id: switch.room_ac
+      for: 00:00:15
+      from: 'off'
+      platform: state
+      to: 'on'
+    - entity_id: input_select.ac_mode_select
+      platform: state
+    condition:
+    - condition: state
+      entity_id: switch.room_ac
+      state: 'on'
+    action:
+    - service: mqtt.publish
+      data_template:
+        topic: "cmnd/smartostatac/IRsendCmnd"
+        retain: "false"
+        payload: '{"temp":"{{states.climate.room_cool.attributes.temperature}}","alette_ac":"{{states.input_boolean.alette_ac.state}}","mode":"{{states.input_select.ac_mode_select.state}}"}'
+  - id: '1548598855518'
+    alias: Alette AC 
+    trigger:
+    - entity_id: input_boolean.alette_ac
+      platform: state
+    condition:
+    - condition: state
+      entity_id: switch.room_ac
+      state: 'on'
+    action:
+    - service: mqtt.publish
+      data_template:
+        topic: "cmnd/smartostatac/IRsendCmnd"
+        retain: "false"
+        payload: '{"temp":"{{states.climate.room_cool.attributes.temperature}}","alette_ac":"{{states.input_boolean.alette_ac.state}}","mode":"{{states.input_select.ac_mode_select.state}}"}'
+  - id: '1552046698865'
+    alias: SwitchSmartostatAC
+    trigger:
+    - entity_id: sensor.smartostatac_status
+      from: 'off'
+      platform: state
+      to: 'cooling'
+    - entity_id: sensor.smartostatac_status
+      from: 'off'
+      platform: state
+      to: 'idle'
+    condition: []
+    action:
+    - data:
+        entity_id: climate.room_heat
+      service: climate.turn_off
+  - id: '15444289468583'      
+    alias: smartostatacmqtt_publisher
+    trigger:
+      platform: state
+      entity_id: switch.room_ac
+    action:
+    - service: mqtt.publish
+      data_template:
+        topic: "cmnd/smartostatac/CLIMATE"
+        retain: "false"
+        payload: "{{states('switch.room_ac')}}"
+  - id: '1541836455518'
+    alias: AC trigger temp change
+    trigger:
+    - entity_id: sensor.climate_temp
+      platform: state
+    condition:
+    - condition: state
+      entity_id: switch.room_ac
+      state: 'on'
+    action:
+    - service: mqtt.publish
+      data_template:
+        topic: "cmnd/smartostatac/IRsendCmnd"
+        retain: "false"
+        payload: '{"temp":"{{states.climate.room_cool.attributes.temperature}}","alette_ac":"{{states.input_boolean.alette_ac.state}}","mode":"{{states.input_select.ac_mode_select.state}}"}'
+  - id: '1562009234192'
+    alias: Climate Cool ON
+    trigger:
+    - payload: 'ON'
+      platform: mqtt
+      topic: cmnd/smartostat/climateCoolState
+    condition: 
+    - condition: template
+      value_template: "{{ (states('sensor.room_temp') | float > 25) }}"
+    action:
+    - data:
+        entity_id: climate.room_cool
+      service: climate.turn_on
+  - id: '1562009234193'
+    alias: Climate Cool OFF
+    trigger:
+    - payload: 'OFF'
+      platform: mqtt
+      topic: cmnd/smartostat/climateCoolState
+    condition: 
+    - condition: template
+      value_template: "{{ (states('sensor.room_temp') | float > 25) }}"
+    action:
+    - data:
+        entity_id: climate.room_cool
+      service: climate.turn_off
+      
