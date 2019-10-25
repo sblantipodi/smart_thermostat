@@ -17,11 +17,11 @@ Components:
 ![CIRCUITS](https://github.com/sblantipodi/smart_thermostat/blob/master/photos/smartostat_bb.png)
 
 
-Smartostat YouTube video
+Smartostat YouTube video (Click to watch it on YouTube)
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Hdy5gpQMbEk/0.jpg)](https://www.youtube.com/watch?v=Hdy5gpQMbEk)
 
-Smartoled desk controller YouTube video
+Smartoled desk controller YouTube video (Click to watch it on YouTube)
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/_rEGXzI-NMo/0.jpg)](https://www.youtube.com/watch?v=_rEGXzI-NMo)
 
