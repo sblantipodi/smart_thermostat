@@ -1,5 +1,5 @@
 FILENAME_BUILDNO = 'versioning'
-FILENAME_VERSION_H = 'src/Version.h'
+FILENAME_VERSION_H = 'include/Version.h'
 ## EDIT THIS FILE FOR MAJOR AND MINOR VERSION, HOTFIX NUMBER IS IN THE versioning file
 version = '5.9.'
 
