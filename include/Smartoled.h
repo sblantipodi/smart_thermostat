@@ -16,36 +16,30 @@
   #include <IRsend.h>
   #include <ir_Samsung.h>
 #endif
+#include <Secrets.h>
+#include <Version.h>
 
-/************ SMARTOSTAT VERSION ******************/
-const String SMARTOSTAT_VERSION = "5.6.2";
 
 /************ WIFI and MQTT Info ******************/
-const char* ssid = "XXXXXX";
-const char* password = "XXXXXX";
-const char* mqtt_server = "192.168.1.XX";
-const char* mqtt_username = "XXXXXX";
-const char* mqtt_password = "XXXXXX";
-const int mqtt_port = XX;
+const int mqtt_port = 1883;
 // DNS address for the shield:
-IPAddress mydns(192, 168, 1, XX);
+IPAddress mydns(192, 168, 1, 1);
 // GATEWAY address for the shield:
-IPAddress mygateway(192, 168, 1, XX);
+IPAddress mygateway(192, 168, 1, 1);
 
 /**************************** OTA **************************************************/
 #ifdef TARGET_SMARTOSTAT_OLED
   #define SENSORNAME "smartostat_oled"
-  int OTAport = XX;
+  int OTAport = 8268;
   // IP address for the shield:
-  IPAddress arduinoip_smartostat(192, 168, 1, XX);
+  IPAddress arduinoip_smartostat(192, 168, 1, 50);
 #endif 
 #ifdef TARGET_SMARTOLED
   #define SENSORNAME "smartoled"
-  int OTAport = XX;
+  int OTAport = 8278;
   // IP address for the shield:
-  IPAddress arduinoip(192, 168, 1, XX); 
+  IPAddress arduinoip(192, 168, 1, 51); 
 #endif 
-#define OTApassword "XXXXXX"
 
 /**************************** PIN DEFINITIONS **************************************************/
 #define OLED_RESET LED_BUILTIN // Pin used for integrated D1 Mini blue LED
@@ -85,6 +79,8 @@ const char* smartostatac_stat_irsend = "stat/smartostatac/IRsend";
 const char* smartostatac_cmnd_irsend = "cmnd/smartostatac/IRsendCmnd";
 const char* smartostat_cmnd_climate_heat_state = "cmnd/smartostat/climateHeatState";
 const char* smartostat_cmnd_climate_cool_state = "cmnd/smartostat/climateCoolState";
+const char* ups_state = "stat/ups/INFO";
+
 #ifdef TARGET_SMARTOSTAT_OLED
   const char* smartoled_cmnd_topic = "cmnd/smartostat_oled/POWER3";
   const char* smartoled_state_topic = "stat/smartostat_oled/POWER3";
@@ -119,13 +115,22 @@ bool longPress = false;
 bool veryLongPress = false;
 
 // Humidity Threshold
-const int HUMIDITYTHRESHOLD = 65;
+float humidityThreshold = 75;
+float tempSensorOffset = 0;
 
 const char* on_cmd = "ON";
 const char* off_cmd = "OFF";
 
 // Total Number of pages
-const int numPages = 8;
+const int numPages = 9;
+const float LOW_WATT = 250;
+const float HIGH_WATT = 350;
+String loadwatt = "OFF";
+float loadwattMax = 0;
+float loadFloatPrevious = 0;
+String runtime = "OFF";
+String inputVoltage = "OFF";
+String outputVoltage = "OFF";
 String temperature = "OFF";
 float minTemperature = 99;
 float maxTemperature = 0.0;
@@ -177,7 +182,9 @@ String mediaPosition = "";
 String mediaDuration = "";
 String mediaArtist = "";
 String mediaTitle = "";
+String appName = "";
 String spotifyActivity = "";
+const String BT_AUDIO = "Bluetooth Audio";
 int offset = 160;
 int offsetAuthor = 130;
 int yoffset = 150;
@@ -236,6 +243,23 @@ static const unsigned char tempLogo [] PROGMEM = {
 };
 #define tempLogoW  33
 #define tempLogoH  29
+
+// 'power-socket', 33x33px
+static const unsigned char upsLogo [] PROGMEM = {
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 0x3f, 0xfe, 0x00, 0x00, 0x00, 0x7f, 0xff, 0x00, 0x00, 0x00, 0xff, 0xff, 
+  0x80, 0x00, 0x01, 0xe0, 0x03, 0xc0, 0x00, 0x03, 0xc0, 0x01, 0xe0, 0x00, 0x07, 0x81, 0xc0, 0xf0, 
+  0x00, 0x0f, 0x01, 0xc0, 0x78, 0x00, 0x0e, 0x01, 0xc0, 0x38, 0x00, 0x0e, 0x31, 0xc6, 0x38, 0x00, 
+  0x0e, 0x31, 0xc6, 0x38, 0x00, 0x0e, 0x31, 0xc6, 0x38, 0x00, 0x0e, 0x30, 0x06, 0x38, 0x00, 0x0e, 
+  0x30, 0x06, 0x38, 0x00, 0x0e, 0x30, 0x06, 0x38, 0x00, 0x0e, 0x00, 0x00, 0x38, 0x00, 0x0e, 0x00, 
+  0x00, 0x38, 0x00, 0x0f, 0xff, 0xff, 0xf8, 0x00, 0x0f, 0xff, 0xff, 0xf8, 0x00, 0x0f, 0xff, 0xff, 
+  0xf8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 0x00
+};
+#define upsLogoW  33
+#define upsLogoH  33
 
 // 'fire', 23x28px
 static const unsigned char fireLogo [] PROGMEM = {
@@ -387,6 +411,17 @@ static const unsigned char spotifyLogo [] PROGMEM = {
 #define spotifyLogoW  22
 #define spotifyLogoH  22
 
+// 'youtube', 22x22px
+const unsigned char youtubeLogo [] PROGMEM = {
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1f, 
+	0xff, 0xe0, 0x1f, 0xff, 0xe0, 0x3f, 0xff, 0xf0, 0x3f, 0xbf, 0xf0, 0x3f, 0x8f, 0xf0, 0x3f, 0x83, 
+	0xf0, 0x3f, 0x83, 0xf0, 0x3f, 0x8f, 0xf0, 0x3f, 0xbf, 0xf0, 0x3f, 0xff, 0xf0, 0x1f, 0xff, 0xe0, 
+	0x1f, 0xff, 0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x00, 0x00
+};
+#define youtubeLogoW  22
+#define youtubeLogoH  22
+
 // 'arduino', 45x31px
 const unsigned char arduinoLogo [] PROGMEM = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3c, 0x00, 0x01, 0xe0, 0x00, 0x01, 0xff, 0x80, 0x0f, 
@@ -492,6 +527,7 @@ const unsigned char omegaLogo [] PROGMEM = {
 
 /********************************** FUNCTION DECLARATION (NEEDED BY VSCODE WHILE COMPILING CPP FILES) *****************************************/
 bool processSmartostatSensorJson(char *message);
+bool processUpsStateJson(char *message);
 bool processSmartostatAcJson(char *message);
 bool processSmartostatClimateJson(char *message);
 bool processSpotifyStateJson(char *message);
@@ -503,6 +539,7 @@ void drawHeader();
 void drawRoundRect();
 void drawRoundRect();
 void drawFooter();
+void drawUpsFooter();
 void drawCenterScreenLogo(bool &triggerBool, const unsigned char *logo, const int logoW, const int logoH, const int delayInt);
 void drawScreenSaver();
 void sendPowerState();

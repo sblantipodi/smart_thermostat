@@ -1,0 +1,6 @@
+{
+    "programmer": "AVRISP mkII",
+    "board": "esp8266:esp8266:d1_mini_lite",
+    "configuration": "xtal=80,vt=flash,exception=disabled,ssl=all,eesz=1M,ip=lm2f,dbg=Disabled,lvl=None____,wipe=none,baud=921600",
+    "port": "COM7"
+}
