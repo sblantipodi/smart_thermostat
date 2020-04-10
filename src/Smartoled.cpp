@@ -382,10 +382,10 @@ void printLastPage() {
   display.setTextSize(1);
   #ifdef TARGET_SMARTOSTAT_OLED
     display.print(F("SMARTOSTAT "));
-    display.println(VERSION_SHORT);
+    display.println(VERSION);
   #else
     display.print(F("SMARTOSTAT "));
-    display.println(VERSION_SHORT);
+    display.println(VERSION);
   #endif
   display.println(F("by DPsoftware"));
   display.println(F(""));
@@ -856,7 +856,7 @@ void sendInfoState() {
   #endif
   root["IP"] = WiFi.localIP().toString();
   root["MAC"] = WiFi.macAddress();
-  root["ver"] = VERSION_SHORT;
+  root["ver"] = VERSION;
   root["State"] = (stateOn) ? on_cmd : off_cmd;
   root["Time"] = timedate;
   
