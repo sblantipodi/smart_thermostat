@@ -139,7 +139,7 @@ automation:
       topic: cmnd/smartostat/climateCoolState
     condition: 
     - condition: template
-      value_template: "{{ (states('sensor.room_temp') | float > 25) }}"
+      value_template: "{{ (states('sensor.room_temp') | float > 28) }}"
     action:
     - data:
         entity_id: climate.room_cool
@@ -152,7 +152,7 @@ automation:
       topic: cmnd/smartostat/climateCoolState
     condition: 
     - condition: template
-      value_template: "{{ (states('sensor.room_temp') | float > 25) }}"
+      value_template: "{{ (states('sensor.room_temp') | float > 28) }}"
     action:
     - data:
         entity_id: climate.room_cool

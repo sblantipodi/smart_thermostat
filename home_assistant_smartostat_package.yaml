@@ -52,6 +52,14 @@ sensor:
     state_topic: 'stat/smartoled/INFO'
     name: 'Last Seen Smartoled'
     value_template: '{{ value_json.Time }}'
+  - platform: mqtt
+    state_topic: 'stat/smartoled/INFO'
+    name: 'Smartoled Version'
+    value_template: '{{ value_json.ver }}'
+  - platform: mqtt
+    state_topic: 'stat/smartostat_oled/INFO'
+    name: 'Smartostat Version'
+    value_template: '{{ value_json.ver }}'    
 
 climate:
   - platform: generic_thermostat
@@ -63,7 +71,7 @@ climate:
     min_cycle_duration:
       minutes: 10
     initial_hvac_mode: "off"
-    target_temp: 21
+    target_temp: 21.5
     away_temp: 17
     cold_tolerance: 0.5
     hot_tolerance: 0.5
@@ -79,10 +87,16 @@ binary_sensor:
 input_number:
   humidity_threshold:
     name: Soglia umidità
-    initial: 70
+    initial: 75
     min: 50
     max: 90
     step: 5
+  temp_sensor_offset:
+    name: Offset sensore temperatura
+    initial: 0
+    min: -3
+    max: 3
+    step: 0.1
     
 switch:
   - platform: mqtt
@@ -147,7 +161,7 @@ automation:
     - data:
         language: it
         message: Rilevata umidità elevata!
-      entity_id: all
+      entity_id: media_player.coppia_camera
       service: tts.google_say
   - id: '1519463297492'
     alias: Qualità aria
@@ -163,7 +177,7 @@ automation:
     - data:
         language: it
         message: La qualità dell'aria non è ottimale
-      entity_id: all
+      entity_id: media_player.coppia_camera
       service: tts.google_say      
   # - id: '1544483297583'      
   #   alias: smartostatmqtt_publisher
@@ -186,7 +200,7 @@ automation:
       data_template:
         topic: "stat/smartostat/CLIMATE"
         retain: "false"
-        payload: '{"Time":"{{now()}}","haVersion":"{{states.sensor.home_assistant_version.state}}","humidity_threshold":"{{states.input_number.humidity_threshold.state}}","smartostat":{"alarm":"{{states("alarm_control_panel.home_alarm")}}","temperature":{{states.climate.room_heat.attributes.temperature}},"hvac_action":"{{states.climate.room_heat.attributes.hvac_action}}","preset_mode":"{{states.climate.room_heat.attributes.preset_mode}}"},"smartostatac":{"POWER":"{{states("switch.room_ac")}}","temperature":{{states.climate.room_cool.attributes.temperature}},"hvac_action":"{{states.climate.room_cool.attributes.hvac_action}}","preset_mode":"{{states.climate.room_cool.attributes.preset_mode}}","fan":"{{states.input_select.ac_mode_select.state}}"}}'
+        payload: '{"Time":"{{now()}}","haVersion":"{{states.sensor.home_assistant_version.state}}","temp_sensor_offset":"{{states.input_number.temp_sensor_offset.state}}","humidity_threshold":"{{states.input_number.humidity_threshold.state}}","smartostat":{"alarm":"{{states("alarm_control_panel.home_alarm")}}","temperature":{{states.climate.room_heat.attributes.temperature}},"hvac_action":"{{states.climate.room_heat.attributes.hvac_action}}","preset_mode":"{{states.climate.room_heat.attributes.preset_mode}}"},"smartostatac":{"POWER":"{{states("switch.room_ac")}}","temperature":{{states.climate.room_cool.attributes.temperature}},"hvac_action":"{{states.climate.room_cool.attributes.hvac_action}}","preset_mode":"{{states.climate.room_cool.attributes.preset_mode}}","fan":"{{states.input_select.ac_mode_select.state}}"}}'
   - id: '1556993698865'
     alias: SwitchSmartostat
     trigger:
@@ -235,7 +249,7 @@ automation:
       topic: cmnd/smartostat/climateHeatState
     condition: 
     - condition: template
-      value_template: "{{ (states('sensor.room_temp') | float <= 25) }}"
+      value_template: "{{ (states('sensor.room_temp') | float <= 28) }}"
     action:
     - data:
         entity_id: climate.room_heat
@@ -248,7 +262,7 @@ automation:
       topic: cmnd/smartostat/climateHeatState
     condition: 
     - condition: template
-      value_template: "{{ (states('sensor.room_temp') | float <= 25) }}"
+      value_template: "{{ (states('sensor.room_temp') | float <= 28) }}"
     action:
     - data:
         entity_id: climate.room_heat
