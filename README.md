@@ -1,6 +1,7 @@
-# Smart Thermostat by Davide Perini
+# Smart Thermostat 
 Smart thermostat for furnace and air conditioner management,
-home alarm system, light management and ambient statistics (Temperature, Humidity, Pressure, Indoor Air Quality)
+home alarm system, light management and ambient statistics (Temperature, Humidity, Pressure, Indoor Air Quality)  
+DPsoftware (Davide Perini)  
 
 Components:
 - Arduino C++ sketch running on an ESP8266EX D1 Mini from Lolin running @ 160MHz
