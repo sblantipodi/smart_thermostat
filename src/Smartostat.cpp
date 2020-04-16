@@ -15,8 +15,7 @@
  *   - Google Home Mini for Voice Recognition
  * MIT license
  */
-#include <FS.h> //this needs to be first, or it all crashes and burns...
-#include <Smartoled.h>
+#include <Smartostat.h>
 
 /********************************** START CALLBACK*****************************************/
 void callback(char* topic, byte* payload, unsigned int length) {

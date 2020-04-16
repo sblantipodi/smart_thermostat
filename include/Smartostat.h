@@ -1,3 +1,4 @@
+#include <FS.h> //this needs to be first, or it all crashes and burns...
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
@@ -523,7 +524,7 @@ const unsigned char omegaLogo [] PROGMEM = {
 #define omegaLogoH  29
 
 
-/********************************** FUNCTION DECLARATION (NEEDED BY VSCODE WHILE COMPILING CPP FILES) *****************************************/
+/********************************** FUNCTION DECLARATION (NEEDED BY PLATFORMIO WHILE COMPILING CPP FILES) *****************************************/
 bool processSmartostatSensorJson(char *message);
 bool processUpsStateJson(char *message);
 bool processSmartostatAcJson(char *message);
