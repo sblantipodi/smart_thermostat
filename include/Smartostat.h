@@ -1,11 +1,3 @@
-#include <FS.h> //this needs to be first, or it all crashes and burns...
-#include <Arduino.h>
-#include <ArduinoJson.h>
-#include <ESP8266WiFi.h>
-#include <PubSubClient.h>
-#include <ESP8266mDNS.h>
-#include <WiFiUdp.h>
-#include <ArduinoOTA.h>
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -17,30 +9,11 @@
   #include <IRsend.h>
   #include <ir_Samsung.h>
 #endif
-#include <Secrets.h>
 #include <Version.h>
+#include "../arduino_bootstrapper/core/BootstrapManager.h"
 
-
-/************ WIFI and MQTT Info ******************/
-const int mqtt_port = 1883;
-// DNS address for the shield:
-IPAddress mydns(192, 168, 1, 1);
-// GATEWAY address for the shield:
-IPAddress mygateway(192, 168, 1, 1);
-
-/**************************** OTA **************************************************/
-#ifdef TARGET_SMARTOSTAT_OLED
-  #define SENSORNAME "smartostat_oled"
-  int OTAport = 8268;
-  // IP address for the shield:
-  IPAddress arduinoip_smartostat(192, 168, 1, 50);
-#endif 
-#ifdef TARGET_SMARTOLED
-  #define SENSORNAME "smartoled"
-  int OTAport = 8278;
-  // IP address for the shield:
-  IPAddress arduinoip(192, 168, 1, 51); 
-#endif 
+/****************** BOOTSTRAP MANAGER ******************/
+BootstrapManager bootstrapManager;
 
 /**************************** PIN DEFINITIONS **************************************************/
 #define OLED_RESET LED_BUILTIN // Pin used for integrated D1 Mini blue LED
@@ -63,9 +36,6 @@ IPAddress mygateway(192, 168, 1, 1);
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins) // Address 0x3C for 128x64pixel
 // D2 pin SDA, D1 pin SCL, 5V power 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); 
-
-// Serial rate for debug
-#define serialRate 115200
 
 /************* MQTT TOPICS **************************/
 const char* smartostat_sensor_state_topic = "tele/smartostat/SENSOR";
@@ -119,9 +89,6 @@ bool veryLongPress = false;
 float humidityThreshold = 75;
 float tempSensorOffset = 0;
 
-const char* on_cmd = "ON";
-const char* off_cmd = "OFF";
-
 // Total Number of pages
 const int numPages = 9;
 const float LOW_WATT = 250;
@@ -144,7 +111,7 @@ float maxPressure = 0.0;
 String gasResistance = "OFF";
 float minGasResistance = 2000;
 float maxGasResistance = 0.0;
-String IAQ = off_cmd; // indoor air quality
+String IAQ = OFF_CMD; // indoor air quality
 float minIAQ = 2000;
 float maxIAQ = 0.0;
 String lastBoot = " ";
@@ -198,7 +165,6 @@ unsigned long timeNowStatus = 0;
 const int fiveMinutesPeriod = 300000;
 unsigned long timeNowGoHomeAfterFiveMinutes = 0;
 unsigned int lastButtonPressed = 0;
-#define MAX_RECONNECT 500
 unsigned int delayTime = 20;
 
 #ifdef TARGET_SMARTOSTAT_OLED
@@ -206,7 +172,7 @@ unsigned int delayTime = 20;
   long unsigned int highIn;
  
   unsigned int readOnceEveryNTimess = 0;
-  const char* lastPirState = off_cmd;
+  const char* lastPirState = OFF_CMD;
   float hum_weighting = 0.25; // so hum effect is 25% of the total air quality score
   float gas_weighting = 0.75; // so gas effect is 75% of the total air quality score
   int   humidity_score, gas_score;
@@ -219,13 +185,6 @@ unsigned int delayTime = 20;
 // only button can force furnance state to ON even when wifi/mqtt is disconnected, the force state is resetted to OFF even by MQTT topic
 boolean forceFurnanceOn = false;
 boolean forceACOn = false;
-
-/****************************************FOR JSON***************************************/
-const int BUFFER_SIZE = JSON_OBJECT_SIZE(20);
-
-
-WiFiClient espClient;
-PubSubClient client(espClient);
 
 // 'heat', 33x29px
 static const unsigned char tempLogo [] PROGMEM = {
@@ -525,6 +484,11 @@ const unsigned char omegaLogo [] PROGMEM = {
 
 
 /********************************** FUNCTION DECLARATION (NEEDED BY PLATFORMIO WHILE COMPILING CPP FILES) *****************************************/
+void callback(char* topic, byte* payload, unsigned int length);
+void manageDisconnections();
+void manageQueueSubscription();
+void manageHardwareButton();
+
 bool processSmartostatSensorJson(char *message);
 bool processUpsStateJson(char *message);
 bool processSmartostatAcJson(char *message);
@@ -557,6 +521,7 @@ void touchButtonManagement(int pinvalue);
 void sendACCommandState();
 void sendClimateState(String mode);  
 void sendFurnanceCommandState();
+void manageQueueSubscription();
 #ifdef TARGET_SMARTOSTAT_OLED
   void sendSmartostatRebootState(const char* onOff);
   void sendSmartostatRebootCmnd();
@@ -567,7 +532,6 @@ void sendFurnanceCommandState();
   void acManagement();
   void sendFurnanceState();
   void sendACState();  
-  void manageSmartostatButton();
   bool processIrOnOffCmnd(char *message);
   bool processIrSendCmnd(char *message);
   bool processSmartostatRebootCmnd(char *message);

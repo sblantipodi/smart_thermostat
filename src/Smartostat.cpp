@@ -17,7 +17,132 @@
  */
 #include <Smartostat.h>
 
-/********************************** START CALLBACK*****************************************/
+/********************************** START SETUP *****************************************/
+void setup() {
+  
+  #ifdef TARGET_SMARTOSTAT_OLED
+    // IRSender Begin
+    acir.begin();
+    Serial.begin(SERIAL_RATE);
+
+    // SR501 PIR sensor
+    pinMode(SR501_PIR_PIN, INPUT);
+    digitalWrite(SR501_PIR_PIN, LOW);
+
+    // Touch button used to start/stop the furnance
+    pinMode(SMARTOSTAT_BUTTON_PIN, INPUT);
+
+    // Relè PIN
+    pinMode(RELE_PIN, OUTPUT);
+
+    // BME680 initialization
+    if (!boschBME680.begin(0x76)) {
+      Serial.println("Could not find a valid BME680 sensor, check wiring!");
+      while (1);
+    }
+    boschBME680.setTemperatureOversampling(BME680_OS_1X);
+    boschBME680.setHumidityOversampling(BME680_OS_1X);
+    boschBME680.setPressureOversampling(BME680_OS_1X);
+    boschBME680.setIIRFilterSize(BME680_FILTER_SIZE_0);
+    boschBME680.setGasHeater(320, 150); // 320*C for 150 ms   
+    // Now run the sensor to normalise the readings, then use combination of relative humidity and gas resistance to estimate indoor air quality as a percentage.
+    // The sensor takes ~30-mins to fully stabilise
+    getGasReference(); 
+    delay(30);
+
+    acir.off();
+    acir.setFan(kSamsungAcFanLow);
+    acir.setMode(kSamsungAcCool);
+    acir.setTemp(26);
+    acir.setSwing(false);
+    //Serial.printf("  %s\n", acir.toString().c_str());
+
+    // Display Rotation 180°
+    display.setRotation(2);
+
+  #else 
+    Serial.begin(SERIAL_RATE);
+  #endif
+
+  // OLED TouchButton
+  pinMode(OLED_BUTTON_PIN, INPUT);
+  
+  // LED_BUILTIN
+  pinMode(LED_BUILTIN, OUTPUT);
+
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+
+  display.setTextColor(WHITE);
+
+  // Bootsrap setup() with Wifi and MQTT functions
+  bootstrapManager.bootstrapSetup(manageDisconnections, callback, display);
+
+}
+
+/********************************** MANAGE WIFI AND MQTT DISCONNECTION *****************************************/
+void manageDisconnections() {
+  // shut down if wifi disconnects
+  #ifdef TARGET_SMARTOSTAT_OLED
+    furnance = forceFurnanceOn ? ON_CMD : OFF_CMD;
+    releManagement();
+    ac = forceACOn ? ON_CMD : OFF_CMD;
+    acManagement();
+  #endif
+}
+
+/********************************** MQTT SUBSCRIPTIONS *****************************************/
+void manageQueueSubscription() {
+  
+  mqttClient.subscribe(smartostat_climate_state_topic);
+  mqttClient.subscribe(smartostat_sensor_state_topic);
+  mqttClient.subscribe(smartostat_state_topic);
+  mqttClient.subscribe(ups_state);
+  #ifdef TARGET_SMARTOLED
+    mqttClient.subscribe(smartostat_furnance_state_topic);     
+    mqttClient.subscribe(smartostat_pir_state_topic);
+    mqttClient.subscribe(smartostatac_cmd_topic);
+    mqttClient.subscribe(smartostatac_stat_irsend);
+    mqttClient.subscribe(smartoled_cmnd_reboot);            
+  #endif
+  mqttClient.subscribe(spotify_state_topic);
+  mqttClient.subscribe(smartoled_cmnd_topic);
+  mqttClient.subscribe(smartostat_furnance_cmnd_topic);     
+  #ifdef TARGET_SMARTOSTAT_OLED       
+    mqttClient.subscribe(smartostat_cmnd_reboot);    
+    mqttClient.subscribe(smartostatac_cmnd_irsendState);    
+    mqttClient.subscribe(smartostatac_cmnd_irsend);           
+  #endif
+  
+}
+
+/********************************** MANAGE HARDWARE BUTTON *****************************************/
+void manageHardwareButton() {
+  #ifdef TARGET_SMARTOSTAT_OLED    
+    // Touch button management features
+    if (digitalRead(OLED_BUTTON_PIN) == HIGH) {
+      lastButtonPressed = OLED_BUTTON_PIN;
+      touchButtonManagement(HIGH);
+    } else if (digitalRead(SMARTOSTAT_BUTTON_PIN) == HIGH) {
+      lastButtonPressed = SMARTOSTAT_BUTTON_PIN;
+      touchButtonManagement(HIGH);
+    } else {
+      touchButtonManagement(LOW);
+    }    
+    // useful when no Wifi or MQTT answer
+    if (lastButtonPressed == SMARTOSTAT_BUTTON_PIN && forceACOn) {
+      acManagement();
+    }    
+    if (lastButtonPressed == SMARTOSTAT_BUTTON_PIN && forceFurnanceOn) {
+      releManagement();
+    }    
+  #endif
+}
+
+/********************************** START CALLBACK *****************************************/
 void callback(char* topic, byte* payload, unsigned int length) {
   // Serial.print(F("Message arrived from [");
   // Serial.print(topic);
@@ -134,17 +259,17 @@ void draw() {
   // Draw Images
   if (alarm == "armed_away" || alarm == "pending" || alarm == "triggered") {
     display.drawBitmap(0, 10, shieldLogo, shieldLogoW, shieldLogoH, 1);
-  } else if (away_mode == off_cmd && currentPage != numPages) {
+  } else if (away_mode == OFF_CMD && currentPage != numPages) {
     display.drawBitmap(0, 10, haSmallLogo, haSmallLogoW, haSmallLogoH, 1);
   }
 
   if (humidity != "OFF" && humidity.toFloat() >= humidityThreshold) {
     currentPage = 0;
     display.drawBitmap(14, 18, humidityLogo, humidityLogoW, humidityLogoH, 1);
-  } else if (furnance == on_cmd && currentPage == 0) {
+  } else if (furnance == ON_CMD && currentPage == 0) {
     drawRoundRect();
     display.drawBitmap(14, 18, fireLogo, fireLogoW, fireLogoH, 1);
-  } else if (ac == on_cmd && currentPage == 0) {
+  } else if (ac == ON_CMD && currentPage == 0) {
     drawRoundRect();
     display.drawBitmap(16, 19, snowLogo, snowLogoW, snowLogoH, 1);
     display.setCursor(3,30);
@@ -323,7 +448,7 @@ void draw() {
   }
   display.setTextWrap(true);
 
-  if (pir == on_cmd && currentPage != numPages) {
+  if (pir == ON_CMD && currentPage != numPages) {
     // display.fillCircle(124, 13, 2, WHITE);
     if (currentPage == 8) {
       display.drawBitmap(117, 0, runLogo, runLogoW, runLogoH, 1);
@@ -348,7 +473,7 @@ void draw() {
     drawCenterScreenLogo(showHaSplashScreen, habigLogo, habigLogoW, habigLogoH, delay_4000);
   }
 
-  if (temperature != off_cmd) {
+  if (temperature != OFF_CMD) {
     display.display();
   }
 
@@ -426,7 +551,7 @@ void drawHeader() {
 void drawFooter() {
   display.setTextSize(1);
   display.setCursor(0,57);
-  display.print(target_temperature); (target_temperature != off_cmd) ? display.print(F("C")) : display.print(F(""));
+  display.print(target_temperature); (target_temperature != OFF_CMD) ? display.print(F("C")) : display.print(F(""));
   display.print(F(" "));
   display.print(humidity); display.print(F("%"));
   display.print(F(" "));
@@ -564,17 +689,17 @@ bool processSmartostatClimateJson(char* message) {
   if (doc.containsKey("smartostat")) {
     const char* timeConst = doc["Time"];
     // On first boot the timedate variable is OFF
-    if (timedate == off_cmd) {
+    if (timedate == OFF_CMD) {
       setDateTime(timeConst);
       lastBoot = date + " " + currentime;
     } else {
       setDateTime(timeConst);
     }
     // lastMQTTConnection and lastWIFiConnection are resetted on every disconnection
-    if (lastMQTTConnection == off_cmd) {
+    if (lastMQTTConnection == OFF_CMD) {
       lastMQTTConnection = date + " " + currentime;
     }
-    if (lastWIFiConnection == off_cmd) {
+    if (lastWIFiConnection == OFF_CMD) {
       lastWIFiConnection = date + " " + currentime;
     }
     // reset min max
@@ -600,13 +725,13 @@ bool processSmartostatClimateJson(char* message) {
       target_temperature = serialized(String(target_temperatureFloat,1));  
       hvac_action = operation_mode_heat;
       const char* awayModeConst = doc["smartostat"]["preset_mode"];
-      away_mode = awayModeConst == "away" ? on_cmd : off_cmd;
+      away_mode = awayModeConst == "away" ? ON_CMD : OFF_CMD;
     } else if (operation_mode_cool == COOL) {
       float target_temperatureFloat = doc["smartostatac"]["temperature"];
       target_temperature = serialized(String(target_temperatureFloat,1));  
       hvac_action = operation_mode_cool;
       const char* awayModeConst = doc["smartostatac"]["preset_mode"];
-      away_mode = awayModeConst == "away" ? on_cmd : off_cmd;
+      away_mode = awayModeConst == "away" ? ON_CMD : OFF_CMD;
     } else {
       if (temperature.toFloat() > HEAT_COOL_THRESHOLD) {
         float target_temperatureFloat = doc["smartostatac"]["temperature"];
@@ -615,8 +740,8 @@ bool processSmartostatClimateJson(char* message) {
         float target_temperatureFloat = doc["smartostat"]["temperature"];
         target_temperature = serialized(String(target_temperatureFloat,1));  
       }
-      hvac_action = off_cmd;
-      away_mode = off_cmd;
+      hvac_action = OFF_CMD;
+      away_mode = OFF_CMD;
     }
   }
 
@@ -674,9 +799,9 @@ bool processSmartostatPirState(char* message) {
 }
 
 bool processSmartoledCmnd(char* message) {
-  if(strcmp(message, on_cmd) == 0) {
+  if(strcmp(message, ON_CMD) == 0) {
     stateOn = true;
-  } else if(strcmp(message, off_cmd) == 0) {
+  } else if(strcmp(message, OFF_CMD) == 0) {
     stateOn = false;
   }
   screenSaverTriggered = false;
@@ -686,8 +811,8 @@ bool processSmartoledCmnd(char* message) {
 
 bool processSmartostatAcJson(char* message) {
   String msg = message;
-  ac = (msg == "off") ? off_cmd : on_cmd;
-  if (ac == on_cmd) {
+  ac = (msg == "off") ? OFF_CMD : ON_CMD;
+  if (ac == ON_CMD) {
     acTriggered = true;
     //currentPage = 0;
   }
@@ -696,7 +821,7 @@ bool processSmartostatAcJson(char* message) {
 
 bool processFurnancedCmnd(char* message) {
   furnance = message;
-  if (furnance == on_cmd) {
+  if (furnance == ON_CMD) {
     furnanceTriggered = true;
   }
   #ifdef TARGET_SMARTOSTAT_OLED
@@ -711,15 +836,15 @@ bool processFurnancedCmnd(char* message) {
 
   bool processSmartostatRebootCmnd(char* message) {
     String rebootState = message;
-    sendSmartostatRebootState(off_cmd);
-    if (rebootState == off_cmd) {      
+    sendSmartostatRebootState(OFF_CMD);
+    if (rebootState == OFF_CMD) {      
       forceFurnanceOn = false;
-      furnance = off_cmd;
+      furnance = OFF_CMD;
       sendFurnanceState();
       forceACOn = false;
-      ac = off_cmd;
+      ac = OFF_CMD;
       sendACState();
-      client.publish(smartostat_pir_state_topic, off_cmd, true);  
+      mqttClient.publish(smartostat_pir_state_topic, OFF_CMD, true);  
       releManagement();
       acManagement();
       sendSmartostatRebootCmnd();
@@ -729,9 +854,9 @@ bool processFurnancedCmnd(char* message) {
   
   bool processIrOnOffCmnd(char *message) {
     String acState = message;
-    if (acState == on_cmd && ac == off_cmd) {
+    if (acState == ON_CMD && ac == OFF_CMD) {
       acTriggered = true;
-      ac = on_cmd;
+      ac = ON_CMD;
       acir.on();
       acir.setFan(kSamsungAcFanLow);
       acir.setMode(kSamsungAcCool);
@@ -739,8 +864,8 @@ bool processFurnancedCmnd(char* message) {
       acir.setSwing(false);
       acir.sendExtended();
       sendACState();
-    } else if (acState == off_cmd) {
-      ac = off_cmd;
+    } else if (acState == OFF_CMD) {
+      ac = OFF_CMD;
       acir.off();
       acir.sendOff();     
       sendACState(); 
@@ -801,8 +926,8 @@ bool processFurnancedCmnd(char* message) {
 
   bool processSmartoledRebootCmnd(char* message) {
     String rebootState = message;
-    sendSmartoledRebootState(off_cmd);
-    if (rebootState == off_cmd) {      
+    sendSmartoledRebootState(OFF_CMD);
+    if (rebootState == OFF_CMD) {      
       sendSmartoledRebootCmnd();
     }
     return true;
@@ -839,7 +964,7 @@ void setDateTime(const char* timeConst) {
 
 /********************************** SEND STATE *****************************************/
 void sendPowerState() {
-  client.publish(smartoled_state_topic, (stateOn) ? on_cmd : off_cmd, true);
+  mqttClient.publish(smartoled_state_topic, (stateOn) ? ON_CMD : OFF_CMD, true);
 }
 
 void sendInfoState() {
@@ -847,24 +972,19 @@ void sendInfoState() {
 
   JsonObject root = doc.to<JsonObject>();
 
-  #ifdef TARGET_SMARTOSTAT_OLED
-    root["Whoami"] = SENSORNAME;
-  #endif
-  #ifdef TARGET_SMARTOLED
-    root["Whoami"] = SENSORNAME;
-  #endif
+  root["Whoami"] = WIFI_DEVICE_NAME;  
   root["IP"] = WiFi.localIP().toString();
   root["MAC"] = WiFi.macAddress();
   root["ver"] = VERSION;
-  root["State"] = (stateOn) ? on_cmd : off_cmd;
+  root["State"] = (stateOn) ? ON_CMD : OFF_CMD;
   root["Time"] = timedate;
   
   char buffer[measureJson(root) + 1];
   serializeJson(root, buffer, sizeof(buffer));
 
   // publish state only if it has received time from HA
-  if (timedate != off_cmd) {
-    client.publish(smartoled_info_topic, buffer, true);
+  if (timedate != OFF_CMD) {
+    mqttClient.publish(smartoled_info_topic, buffer, true);
   }
 }
 
@@ -873,7 +993,7 @@ void sendInfoState() {
 #ifdef TARGET_SMARTOSTAT_OLED
   
   void sendSmartostatRebootState(const char* onOff) {   
-    client.publish(smartostat_stat_reboot, onOff, true);
+    mqttClient.publish(smartostat_stat_reboot, onOff, true);
   }
 
   void sendSmartostatRebootCmnd() {   
@@ -882,7 +1002,7 @@ void sendInfoState() {
   }
 
   void sendPirState() {   
-      client.publish(smartostat_pir_state_topic, (pir == on_cmd) ? on_cmd : off_cmd, true);
+      mqttClient.publish(smartostat_pir_state_topic, (pir == ON_CMD) ? ON_CMD : OFF_CMD, true);
   }
 
   void sendSensorState() {    
@@ -891,7 +1011,7 @@ void sendInfoState() {
     JsonObject root = doc.to<JsonObject>();
     
     root["Time"] = timedate;
-    root["state"] = (stateOn) ? on_cmd : off_cmd;
+    root["state"] = (stateOn) ? ON_CMD : OFF_CMD;
     root["POWER1"] = furnance;
     root["POWER2"] = pir;
     JsonObject BME680 = root.createNestedObject("BME680");
@@ -927,42 +1047,21 @@ void sendInfoState() {
     char buffer[measureJson(root) + 1];
     serializeJson(root, buffer, sizeof(buffer));
 
-    client.publish(smartostat_sensor_state_topic, buffer, true);
+    mqttClient.publish(smartostat_sensor_state_topic, buffer, true);
   }
 
   void sendFurnanceState() {
-    if (furnance == off_cmd) {
+    if (furnance == OFF_CMD) {
       forceFurnanceOn = false;
     } 
-    client.publish(smartostat_furnance_state_topic, (furnance == off_cmd) ? off_cmd : on_cmd, true);
+    mqttClient.publish(smartostat_furnance_state_topic, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
   }
-
-  void manageSmartostatButton() {
-    // Touch button management features
-    if (digitalRead(OLED_BUTTON_PIN) == HIGH) {
-      lastButtonPressed = OLED_BUTTON_PIN;
-      touchButtonManagement(HIGH);
-    } else if (digitalRead(SMARTOSTAT_BUTTON_PIN) == HIGH) {
-      lastButtonPressed = SMARTOSTAT_BUTTON_PIN;
-      touchButtonManagement(HIGH);
-    } else {
-      touchButtonManagement(LOW);
-    }    
-    // useful when no Wifi or MQTT answer
-    if (lastButtonPressed == SMARTOSTAT_BUTTON_PIN && forceACOn) {
-      acManagement();
-    }    
-    if (lastButtonPressed == SMARTOSTAT_BUTTON_PIN && forceFurnanceOn) {
-      releManagement();
-    }    
-  }
-
 #endif
 
 #ifdef TARGET_SMARTOLED
 
   void sendSmartoledRebootState(const char* onOff) {   
-    client.publish(smartoled_stat_reboot, onOff, true);
+    mqttClient.publish(smartoled_stat_reboot, onOff, true);
   }
 
   void sendSmartoledRebootCmnd() {   
@@ -973,112 +1072,32 @@ void sendInfoState() {
 #endif
 
 void sendACCommandState() {    
-  if (ac == off_cmd) {
+  if (ac == OFF_CMD) {
     forceACOn = false;
   }     
-  client.publish(smartostatac_cmnd_irsend, (ac == off_cmd) ? off_cmd : on_cmd, true);
+  mqttClient.publish(smartostatac_cmnd_irsend, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
 }
 
 void sendClimateState(String mode) {
   if (mode == COOL) {
-    client.publish(smartostat_cmnd_climate_cool_state, (ac == off_cmd) ? off_cmd : on_cmd, true);
+    mqttClient.publish(smartostat_cmnd_climate_cool_state, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
   } else {
-    client.publish(smartostat_cmnd_climate_heat_state, (furnance == off_cmd) ? off_cmd : on_cmd, true);
+    mqttClient.publish(smartostat_cmnd_climate_heat_state, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
   }      
 }
 
 void sendFurnanceCommandState() {
-  if (furnance == off_cmd) {
+  if (furnance == OFF_CMD) {
     forceFurnanceOn = false;
   } 
-  client.publish(smartostat_furnance_cmnd_topic, (furnance == off_cmd) ? off_cmd : on_cmd, true);
+  mqttClient.publish(smartostat_furnance_cmnd_topic, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
 }
 
 void sendACState() {    
-  if (ac == off_cmd) {
+  if (ac == OFF_CMD) {
     forceACOn = false;
   }     
-  client.publish(smartostatac_stat_irsend, (ac == off_cmd) ? off_cmd : on_cmd, true);
-}
-
-/********************************** START MQTT RECONNECT*****************************************/
-void mqttReconnect() {
-  // how many attemps to MQTT connection
-  int brokermqttcounter = 0;
-  // Loop until we're reconnected
-  while (!client.connected()) {
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setCursor(0,0);
-    if (brokermqttcounter <= 20) {
-      display.println(F("Connecting to"));
-      display.println(F("MQTT Broker..."));
-    } else {
-      display.println(F("Keep pressed for half\na second to toggle\nfurnance."));
-    }
-    // display.println(F("MQTT Broker...");
-    display.display();
-
-    // used to manage furnance state when MQTT is disconnected
-    #ifdef TARGET_SMARTOSTAT_OLED
-      manageSmartostatButton();
-    #endif
-
-    // Attempt to connect
-    if (client.connect(SENSORNAME, mqtt_username, mqtt_password)) {
-      Serial.println(F("connected"));
-      display.println(F(""));
-      display.println(F("CONNECTED"));
-      display.println(F(""));
-      display.println(F("Reading data from"));
-      display.println(F("the network..."));
-      display.display();
-      client.subscribe(smartostat_climate_state_topic);
-      client.subscribe(smartostat_sensor_state_topic);
-      client.subscribe(smartostat_state_topic);
-      client.subscribe(ups_state);
-      #ifdef TARGET_SMARTOLED
-        client.subscribe(smartostat_furnance_state_topic);     
-        client.subscribe(smartostat_pir_state_topic);
-        client.subscribe(smartostatac_cmd_topic);
-        client.subscribe(smartostatac_stat_irsend);
-        client.subscribe(smartoled_cmnd_reboot);            
-      #endif
-      client.subscribe(spotify_state_topic);
-      client.subscribe(smartoled_cmnd_topic);
-      client.subscribe(smartostat_furnance_cmnd_topic);     
-      #ifdef TARGET_SMARTOSTAT_OLED       
-        client.subscribe(smartostat_cmnd_reboot);    
-        client.subscribe(smartostatac_cmnd_irsendState);    
-        client.subscribe(smartostatac_cmnd_irsend);           
-      #endif
-      delay(delay_2000);
-      brokermqttcounter = 0;
-      // reset the lastMQTTConnection to off, will be initialized by next time update
-      lastMQTTConnection = off_cmd;
-    } else {
-      display.println(F("Number of attempts="));
-      display.println(brokermqttcounter);
-      display.display();
-      // after 10 attemps all peripherals are shut down
-      if (brokermqttcounter >= MAX_RECONNECT) {
-        display.println(F("Max retry reached, powering off peripherals."));
-        display.display();
-        // shut down if wifi disconnects
-        #ifdef TARGET_SMARTOSTAT_OLED
-          furnance = forceFurnanceOn ? on_cmd : off_cmd;
-          releManagement();
-          ac = forceACOn ? on_cmd : off_cmd;
-          acManagement();
-        #endif
-      } else if (brokermqttcounter > 10000) {
-        brokermqttcounter = 0;
-      }
-      brokermqttcounter++;
-      // Wait 5 seconds before retrying
-      delay(500);
-    }
-  }
+  mqttClient.publish(smartostatac_stat_irsend, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
 }
 
 // Send status to MQTT broker every ten seconds
@@ -1114,14 +1133,14 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
 
   void pirManagement() {
     if (digitalRead(SR501_PIR_PIN) == HIGH) {
-      if (pir == off_cmd) {
+      if (pir == OFF_CMD) {
         highIn = millis();
-        pir = on_cmd;
+        pir = ON_CMD;
       }
-      if (pir == on_cmd) {
+      if (pir == ON_CMD) {
         if ((millis() - highIn) > 500 ) { // 7000 four seconds on time
-          if (lastPirState != on_cmd) {
-            lastPirState = on_cmd;
+          if (lastPirState != ON_CMD) {
+            lastPirState = ON_CMD;
             sendPirState();
           }
           highIn = millis();
@@ -1130,10 +1149,10 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
     }
     if (digitalRead(SR501_PIR_PIN) == LOW) { 
       highIn = millis();     
-      if (pir == on_cmd) {
-        pir = off_cmd;
-        if (lastPirState != off_cmd) {
-          lastPirState = off_cmd;
+      if (pir == ON_CMD) {
+        pir = OFF_CMD;
+        if (lastPirState != OFF_CMD) {
+          lastPirState = OFF_CMD;
           sendPirState();
         }
       }      
@@ -1141,7 +1160,7 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
   }
 
   void releManagement() {
-    if (furnance == on_cmd || forceFurnanceOn) {
+    if (furnance == ON_CMD || forceFurnanceOn) {
       digitalWrite(RELE_PIN, HIGH);
     } else {
       digitalWrite(RELE_PIN, LOW);
@@ -1149,7 +1168,7 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
   }
 
   void acManagement() {
-    if (ac == on_cmd || forceACOn) {
+    if (ac == ON_CMD || forceACOn) {
       acir.on();
       acir.setFan(kSamsungAcFanLow);
       acir.setMode(kSamsungAcCool);
@@ -1273,15 +1292,15 @@ void quickPress() {
 
 void commandButtonRelease() {
   if (temperature.toFloat() > HEAT_COOL_THRESHOLD) {
-    if (ac == on_cmd) {
-      ac = off_cmd;
+    if (ac == ON_CMD) {
+      ac = OFF_CMD;
       // stop ac on long press if wifi or mqtt is disconnected
       forceACOn = false;
     } else {
       #ifdef TARGET_SMARTOSTAT_OLED
         acTriggered = true;
       #endif
-      ac = on_cmd;
+      ac = ON_CMD;
       // start ac on long press if wifi or mqtt is disconnected
       forceACOn = true;
     }      
@@ -1292,15 +1311,15 @@ void commandButtonRelease() {
     #endif
     lastButtonPressed = OLED_BUTTON_PIN;
   } else {
-    if (furnance == on_cmd) {
-      furnance = off_cmd;
+    if (furnance == ON_CMD) {
+      furnance = OFF_CMD;
       // stop furnance on long press if wifi or mqtt is disconnected
       forceFurnanceOn = false;
     } else {
       #ifdef TARGET_SMARTOSTAT_OLED
         furnanceTriggered = true;
       #endif
-      furnance = on_cmd;
+      furnance = ON_CMD;
       // start furnance on long press if wifi or mqtt is disconnected
       forceFurnanceOn = true;
     }      
@@ -1449,98 +1468,98 @@ String getValue(String data, char separator, int index)
 /********************************** START SETUP WIFI *****************************************/
 void setup_wifi() {
 
-  unsigned int reconnectAttemp = 0;
+  // unsigned int reconnectAttemp = 0;
 
-  // DPsoftware domotics
-  display.clearDisplay();
-  display.setTextSize(2);
-  display.setCursor(5,17);
-  display.drawRoundRect(0, 0, display.width()-1, display.height()-1, display.height()/4, WHITE);
-  display.println(F("DPsoftware domotics"));
-  display.display();
+  // // DPsoftware domotics
+  // display.clearDisplay();
+  // display.setTextSize(2);
+  // display.setCursor(5,17);
+  // display.drawRoundRect(0, 0, display.width()-1, display.height()-1, display.height()/4, WHITE);
+  // display.println(F("DPsoftware domotics"));
+  // display.display();
 
-  delay(delay_3000);
+  // delay(delay_3000);
 
-  // Read config.json from SPIFFS
-  readConfigFromSPIFFS();
+  // // Read config.json from SPIFFS
+  // readConfigFromSPIFFS();
 
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setCursor(0,0);
-  display.println(F("Connecting to: "));
-  display.print(ssid); display.println(F("..."));
-  display.println(F("\nKeep pressed for half\na second to toggle\nfurnance."));
-  display.display();
+  // display.clearDisplay();
+  // display.setTextSize(1);
+  // display.setCursor(0,0);
+  // display.println(F("Connecting to: "));
+  // display.print(ssid); display.println(F("..."));
+  // display.println(F("\nKeep pressed for half\na second to toggle\nfurnance."));
+  // display.display();
 
-  Serial.println();
-  Serial.print(F("Connecting to "));
-  Serial.print(ssid);  
+  // Serial.println();
+  // Serial.print(F("Connecting to "));
+  // Serial.print(ssid);  
 
-  delay(delay_2000);
+  // delay(delay_2000);
 
-  WiFi.persistent(false);   // Solve possible wifi init errors (re-add at 6.2.1.16 #4044, #4083)
-  WiFi.disconnect(true);    // Delete SDK wifi config
-  delay(200);
-  WiFi.mode(WIFI_STA);      // Disable AP mode
-  //WiFi.setSleepMode(WIFI_NONE_SLEEP);
-  WiFi.setAutoConnect(true);
-  // IP of the arduino, dns, gateway
-  #ifdef TARGET_SMARTOSTAT_OLED
-    WiFi.config(arduinoip_smartostat, mydns, mygateway);
-  #endif 
-  #ifdef TARGET_SMARTOLED
-    WiFi.config(arduinoip, mydns, mygateway);
-  #endif  
+  // WiFi.persistent(false);   // Solve possible wifi init errors (re-add at 6.2.1.16 #4044, #4083)
+  // WiFi.disconnect(true);    // Delete SDK wifi config
+  // delay(200);
+  // WiFi.mode(WIFI_STA);      // Disable AP mode
+  // //WiFi.setSleepMode(WIFI_NONE_SLEEP);
+  // WiFi.setAutoConnect(true);
+  // // IP of the arduino, dns, gateway
+  // #ifdef TARGET_SMARTOSTAT_OLED
+  //   WiFi.config(arduinoip_smartostat, mydns, mygateway);
+  // #endif 
+  // #ifdef TARGET_SMARTOLED
+  //   WiFi.config(arduinoip, mydns, mygateway);
+  // #endif  
 
-  WiFi.hostname(SENSORNAME);
+  // WiFi.hostname(WIFI_DEVICE_NAME);
 
-  // Set wifi power in dbm range 0/0.25, set to 0 to reduce PIR false positive due to wifi power, 0 low, 20.5 max.
-  #ifdef TARGET_SMARTOSTAT_OLED
-    WiFi.setOutputPower(10);
-  #endif
-  #ifdef TARGET_SMARTOLED
-    WiFi.setOutputPower(0);
-  #endif
+  // // Set wifi power in dbm range 0/0.25, set to 0 to reduce PIR false positive due to wifi power, 0 low, 20.5 max.
+  // #ifdef TARGET_SMARTOSTAT_OLED
+  //   WiFi.setOutputPower(10);
+  // #endif
+  // #ifdef TARGET_SMARTOLED
+  //   WiFi.setOutputPower(0);
+  // #endif
 
-  WiFi.begin(ssid, password);
+  // WiFi.begin(ssid, password);
 
-  // loop here until connection
-  while (WiFi.status() != WL_CONNECTED) {
-    #ifdef TARGET_SMARTOSTAT_OLED
-      manageSmartostatButton();  
-      if (reconnectAttemp >= MAX_RECONNECT) {
-        // Start with furnance off, shut down if wifi disconnects
-        furnance = forceFurnanceOn ? on_cmd : off_cmd;
-        releManagement();
-        ac = forceACOn ? on_cmd : off_cmd;
-        acManagement();    
-      }       
-    #endif
-    delay(500);
-    Serial.print(F("."));
-    reconnectAttemp++;
-    if (reconnectAttemp > 10) {
-      display.setCursor(0,0);
-      display.clearDisplay();
-      display.print(F("Reconnect attemp= "));
-      display.print(reconnectAttemp);
-      if (reconnectAttemp >= MAX_RECONNECT) {
-        display.println(F("Max retry reached, powering off peripherals."));
-      }
-      display.display();
-    } else if (reconnectAttemp > 10000) {
-      reconnectAttemp = 0;
-    }
-  }
+  // // loop here until connection
+  // while (WiFi.status() != WL_CONNECTED) {
+  //   #ifdef TARGET_SMARTOSTAT_OLED
+  //     manageSmartostatButton();  
+  //     if (reconnectAttemp >= MAX_RECONNECT) {
+  //       // Start with furnance off, shut down if wifi disconnects
+  //       furnance = forceFurnanceOn ? ON_CMD : OFF_CMD;
+  //       releManagement();
+  //       ac = forceACOn ? ON_CMD : OFF_CMD;
+  //       acManagement();    
+  //     }       
+  //   #endif
+  //   delay(500);
+  //   Serial.print(F("."));
+  //   reconnectAttemp++;
+  //   if (reconnectAttemp > 10) {
+  //     display.setCursor(0,0);
+  //     display.clearDisplay();
+  //     display.print(F("Reconnect attemp= "));
+  //     display.print(reconnectAttemp);
+  //     if (reconnectAttemp >= MAX_RECONNECT) {
+  //       display.println(F("Max retry reached, powering off peripherals."));
+  //     }
+  //     display.display();
+  //   } else if (reconnectAttemp > 10000) {
+  //     reconnectAttemp = 0;
+  //   }
+  // }
 
-  display.println(F("WIFI CONNECTED"));
-  display.println(WiFi.localIP());
-  display.display();
+  // display.println(F("WIFI CONNECTED"));
+  // display.println(WiFi.localIP());
+  // display.display();
 
-  // reset the lastWIFiConnection to off, will be initialized by next time update
-  lastWIFiConnection = off_cmd;
+  // // reset the lastWIFiConnection to off, will be initialized by next time update
+  // lastWIFiConnection = OFF_CMD;
 
-  delay(delay_1500);
+  // delay(delay_1500);
 
 }
 
@@ -1577,125 +1596,15 @@ void nonBlokingBlink() {
   }  
 }
 
-/********************************** START SETUP*****************************************/
-void setup() {
-  
-  #ifdef TARGET_SMARTOSTAT_OLED
-    // IRSender Begin
-    acir.begin();
-    Serial.begin(115200);
-
-    // SR501 PIR sensor
-    pinMode(SR501_PIR_PIN, INPUT);
-    digitalWrite(SR501_PIR_PIN, LOW);
-
-    // Touch button used to start/stop the furnance
-    pinMode(SMARTOSTAT_BUTTON_PIN, INPUT);
-
-    // Relè PIN
-    pinMode(RELE_PIN, OUTPUT);
-
-    // BME680 initialization
-    if (!boschBME680.begin(0x76)) {
-      Serial.println("Could not find a valid BME680 sensor, check wiring!");
-      while (1);
-    }
-    boschBME680.setTemperatureOversampling(BME680_OS_1X);
-    boschBME680.setHumidityOversampling(BME680_OS_1X);
-    boschBME680.setPressureOversampling(BME680_OS_1X);
-    boschBME680.setIIRFilterSize(BME680_FILTER_SIZE_0);
-    boschBME680.setGasHeater(320, 150); // 320*C for 150 ms   
-    // Now run the sensor to normalise the readings, then use combination of relative humidity and gas resistance to estimate indoor air quality as a percentage.
-    // The sensor takes ~30-mins to fully stabilise
-    getGasReference(); 
-    delay(30);
-
-    acir.off();
-    acir.setFan(kSamsungAcFanLow);
-    acir.setMode(kSamsungAcCool);
-    acir.setTemp(26);
-    acir.setSwing(false);
-    //Serial.printf("  %s\n", acir.toString().c_str());
-
-    // Display Rotation 180°
-    display.setRotation(2);
-
-  #else 
-    Serial.begin(serialRate);
-  #endif
-
-  // OLED TouchButton
-  pinMode(OLED_BUTTON_PIN, INPUT);
-  
-  // LED_BUILTIN
-  pinMode(LED_BUILTIN, OUTPUT);
-
-  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
-    Serial.println(F("SSD1306 allocation failed"));
-    for(;;); // Don't proceed, loop forever
-  }
-
-  display.setTextColor(WHITE);
-
-  setup_wifi();
-  client.setServer(mqtt_server, mqtt_port);
-  client.setCallback(callback);
-
-  //OTA SETUP
-  ArduinoOTA.setPort(OTAport);
-  // Hostname defaults to esp8266-[ChipID]
-  ArduinoOTA.setHostname(SENSORNAME);
-
-  // No authentication by default
-  ArduinoOTA.setPassword((const char *)OTApassword);
-
-  ArduinoOTA.onStart([]() {
-    Serial.println(F("Starting"));
-  });
-  ArduinoOTA.onEnd([]() {
-    Serial.println(F("\nEnd"));
-  });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) Serial.println(F("Auth Failed"));
-    else if (error == OTA_BEGIN_ERROR) Serial.println(F("Begin Failed"));
-    else if (error == OTA_CONNECT_ERROR) Serial.println(F("Connect Failed"));
-    else if (error == OTA_RECEIVE_ERROR) Serial.println(F("Receive Failed"));
-    else if (error == OTA_END_ERROR) Serial.println(F("End Failed"));
-  });
-  ArduinoOTA.begin();
-
-  Serial.println(F("Ready"));
-  Serial.print(F("IP Address: "));
-  Serial.println(WiFi.localIP());
-
-}
-
 /********************************** START MAIN LOOP *****************************************/
 void loop() {  
   
-  // Wifi management
-  if (WiFi.status() != WL_CONNECTED) {
-    delay(1);
-    Serial.print(F("WIFI Disconnected. Attempting reconnection."));
-    setup_wifi();
-    return;
-  }
-
-  ArduinoOTA.handle();
-
-  if (!client.connected()) {
-    mqttReconnect();
-  }
-  client.loop();
+  // Bootsrap loop() with Wifi, MQTT and OTA functions
+  bootstrapManager.bootstrapLoop(manageDisconnections, manageQueueSubscription, manageHardwareButton, display);
 
   // PIR and RELE' MANAGEMENT 
   #ifdef TARGET_SMARTOSTAT_OLED    
-    manageSmartostatButton();    
+    manageHardwareButton();    
     pirManagement();
   #else
     lastButtonPressed = OLED_BUTTON_PIN;
