@@ -4,7 +4,7 @@
 #include <ESP8266WiFi.h>
 
 // Serial rate for debug
-#define SERIAL_RATE 500000
+#define SERIAL_RATE 115200
 // Specify if you want to use a display or only Serial
 const bool PRINT_TO_DISPLAY = true;
 
