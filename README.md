@@ -31,10 +31,11 @@ This program is licensed under MIT License
 - IR emitter/receiver to manage Air Conditioner (you can use a simple IR LED, with no transistor/capacitor IR range is reduced)
 - Google Home Mini for Voice Recognition
 
+## Schematic
 ![CIRCUITS](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/smartostat_bb.png)
 
 
-Smartostat YouTube video (Click to watch it on YouTube)
+## Smartostat YouTube video (Click to watch it on YouTube)
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Hdy5gpQMbEk/0.jpg)](https://www.youtube.com/watch?v=Hdy5gpQMbEk)
 
