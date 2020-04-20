@@ -17,6 +17,11 @@
  */
 #include <Smartostat.h>
 
+// // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins) // Address 0x3C for 128x64pixel
+// // D2 pin SDA, D1 pin SCL, 5V power 
+// static Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); 
+// Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); 
+
 /********************************** START SETUP *****************************************/
 void setup() {
   
@@ -79,7 +84,7 @@ void setup() {
   display.setTextColor(WHITE);
 
   // Bootsrap setup() with Wifi and MQTT functions
-  bootstrapManager.bootstrapSetup(manageDisconnections, callback, display);
+  bootstrapManager.bootstrapSetup(manageDisconnections, manageHardwareButton, callback);
 
 }
 
@@ -1464,105 +1469,6 @@ String getValue(String data, char separator, int index)
   return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
-
-/********************************** START SETUP WIFI *****************************************/
-void setup_wifi() {
-
-  // unsigned int reconnectAttemp = 0;
-
-  // // DPsoftware domotics
-  // display.clearDisplay();
-  // display.setTextSize(2);
-  // display.setCursor(5,17);
-  // display.drawRoundRect(0, 0, display.width()-1, display.height()-1, display.height()/4, WHITE);
-  // display.println(F("DPsoftware domotics"));
-  // display.display();
-
-  // delay(delay_3000);
-
-  // // Read config.json from SPIFFS
-  // readConfigFromSPIFFS();
-
-  // display.clearDisplay();
-  // display.setTextSize(1);
-  // display.setCursor(0,0);
-  // display.println(F("Connecting to: "));
-  // display.print(ssid); display.println(F("..."));
-  // display.println(F("\nKeep pressed for half\na second to toggle\nfurnance."));
-  // display.display();
-
-  // Serial.println();
-  // Serial.print(F("Connecting to "));
-  // Serial.print(ssid);  
-
-  // delay(delay_2000);
-
-  // WiFi.persistent(false);   // Solve possible wifi init errors (re-add at 6.2.1.16 #4044, #4083)
-  // WiFi.disconnect(true);    // Delete SDK wifi config
-  // delay(200);
-  // WiFi.mode(WIFI_STA);      // Disable AP mode
-  // //WiFi.setSleepMode(WIFI_NONE_SLEEP);
-  // WiFi.setAutoConnect(true);
-  // // IP of the arduino, dns, gateway
-  // #ifdef TARGET_SMARTOSTAT_OLED
-  //   WiFi.config(arduinoip_smartostat, mydns, mygateway);
-  // #endif 
-  // #ifdef TARGET_SMARTOLED
-  //   WiFi.config(arduinoip, mydns, mygateway);
-  // #endif  
-
-  // WiFi.hostname(WIFI_DEVICE_NAME);
-
-  // // Set wifi power in dbm range 0/0.25, set to 0 to reduce PIR false positive due to wifi power, 0 low, 20.5 max.
-  // #ifdef TARGET_SMARTOSTAT_OLED
-  //   WiFi.setOutputPower(10);
-  // #endif
-  // #ifdef TARGET_SMARTOLED
-  //   WiFi.setOutputPower(0);
-  // #endif
-
-  // WiFi.begin(ssid, password);
-
-  // // loop here until connection
-  // while (WiFi.status() != WL_CONNECTED) {
-  //   #ifdef TARGET_SMARTOSTAT_OLED
-  //     manageSmartostatButton();  
-  //     if (reconnectAttemp >= MAX_RECONNECT) {
-  //       // Start with furnance off, shut down if wifi disconnects
-  //       furnance = forceFurnanceOn ? ON_CMD : OFF_CMD;
-  //       releManagement();
-  //       ac = forceACOn ? ON_CMD : OFF_CMD;
-  //       acManagement();    
-  //     }       
-  //   #endif
-  //   delay(500);
-  //   Serial.print(F("."));
-  //   reconnectAttemp++;
-  //   if (reconnectAttemp > 10) {
-  //     display.setCursor(0,0);
-  //     display.clearDisplay();
-  //     display.print(F("Reconnect attemp= "));
-  //     display.print(reconnectAttemp);
-  //     if (reconnectAttemp >= MAX_RECONNECT) {
-  //       display.println(F("Max retry reached, powering off peripherals."));
-  //     }
-  //     display.display();
-  //   } else if (reconnectAttemp > 10000) {
-  //     reconnectAttemp = 0;
-  //   }
-  // }
-
-  // display.println(F("WIFI CONNECTED"));
-  // display.println(WiFi.localIP());
-  // display.display();
-
-  // // reset the lastWIFiConnection to off, will be initialized by next time update
-  // lastWIFiConnection = OFF_CMD;
-
-  // delay(delay_1500);
-
-}
-
 /*
    Return the quality (Received Signal Strength Indicator) of the WiFi network.
    Returns a number between 0 and 100 if WiFi is connected.
@@ -1600,7 +1506,7 @@ void nonBlokingBlink() {
 void loop() {  
   
   // Bootsrap loop() with Wifi, MQTT and OTA functions
-  bootstrapManager.bootstrapLoop(manageDisconnections, manageQueueSubscription, manageHardwareButton, display);
+  bootstrapManager.bootstrapLoop(manageDisconnections, manageQueueSubscription, manageHardwareButton);
 
   // PIR and RELE' MANAGEMENT 
   #ifdef TARGET_SMARTOSTAT_OLED    
@@ -1629,5 +1535,8 @@ void loop() {
   goToHomePageAndWriteSPIFFSAfterFiveMinutes();
 
   nonBlokingBlink();
+
+  // delay(1000);
+  // Serial.println(":");
 
 }

@@ -10,6 +10,7 @@
   #include <ir_Samsung.h>
 #endif
 #include <Version.h>
+#include "Configuration.h"
 #include "../arduino_bootstrapper/core/BootstrapManager.h"
 
 /****************** BOOTSTRAP MANAGER ******************/
@@ -33,9 +34,9 @@ BootstrapManager bootstrapManager;
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
-// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins) // Address 0x3C for 128x64pixel
-// D2 pin SDA, D1 pin SCL, 5V power 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); 
+// // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins) // Address 0x3C for 128x64pixel
+// // D2 pin SDA, D1 pin SCL, 5V power 
+// Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); 
 
 /************* MQTT TOPICS **************************/
 const char* smartostat_sensor_state_topic = "tele/smartostat/SENSOR";
