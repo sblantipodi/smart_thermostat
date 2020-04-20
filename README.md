@@ -16,9 +16,6 @@ If you like **Smart Thermostat**, give it a star, or fork it and contribute!
 ## Credits
 - Davide Perini
 
-## License
-This program is licensed under MIT License
-
 ## Components:
 - Arduino C++ sketch running on an ESP8266EX D1 Mini from Lolin running @ 160MHz
 - Raspberry + Home Assistant for Web GUI, automations and MQTT server
@@ -56,4 +53,7 @@ This program is licensed under MIT License
 
 ![PHOTO5](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/ha_smartostat_screenshot.jpg)
 ![PHOTO6](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/ha_smartostat_screenshot_2.jpg)
+
+## License
+This program is licensed under MIT License
 
