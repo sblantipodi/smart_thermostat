@@ -72,13 +72,6 @@ const char* ups_state = "stat/ups/INFO";
 // Display state
 bool stateOn = true;
 
-// LED_BUILTIN vars
-unsigned long previousMillis = 0;    // will store last time LED was updated
-const long interval = 200;           // interval at which to blink (milliseconds)
-bool ledTriggered = false;
-const int blinkTimes = 6;            // 6 equals to 3 blink on and 3 off
-int blinkCounter = 0;
-
 // Button state variables
 byte buttonState = 0;
 byte  lastReading = 0;
@@ -515,7 +508,6 @@ void readConfigFromSPIFFS();
 void writeConfigToSPIFFS();
 void resetMinMaxValues();
 int getQuality();
-void nonBlokingBlink();
 void setDateTime(const char* timeConst);
 void touchButtonManagement(int pinvalue);
 void sendACCommandState();

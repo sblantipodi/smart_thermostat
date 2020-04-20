@@ -1484,23 +1484,6 @@ int getQuality() {
   return 2 * (dBm + 100);
 }
 
-// Blink LED_BUILTIN without bloking delay
-void nonBlokingBlink() {
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= interval && ledTriggered) {
-    // save the last time you blinked the LED
-    previousMillis = currentMillis;
-    // blink led
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    blinkCounter++;
-    if (blinkCounter >= blinkTimes) {
-      blinkCounter = 0;
-      ledTriggered = false;
-      digitalWrite(LED_BUILTIN, HIGH);
-    }
-  }  
-}
-
 /********************************** START MAIN LOOP *****************************************/
 void loop() {  
   
@@ -1533,9 +1516,6 @@ void loop() {
   // Go To Home Page timer after 5 minutes of inactivity and write data to File System (SPIFFS)
   goToHomePageAndWriteSPIFFSAfterFiveMinutes();
 
-  nonBlokingBlink();
-
-  // delay(1000);
-  // Serial.println(":");
+  bootstrapManager.nonBlokingBlink();
 
 }
