@@ -1,7 +1,24 @@
 # Smart Thermostat 
+
 Smart thermostat for furnace and air conditioner management,
 home alarm system, light management and ambient statistics (Temperature, Humidity, Pressure, Indoor Air Quality)  
-DPsoftware (Davide Perini)  
+_Written for Arduino IDE and PlatformIO._
+
+[![GitHub version](https://img.shields.io/github/v/release/sblantipodi/smart_thermostat.svg)](https://img.shields.io/github/v/release/sblantipodi/smart_thermostat.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
+
+If you like **Smart Thermostat**, give it a star, or fork it and contribute!
+
+[![GitHub stars](https://img.shields.io/github/stars/sblantipodi/smart_thermostat.svg?style=social&label=Star)](https://github.com/sblantipodi/smart_thermostat/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/sblantipodi/smart_thermostat.svg?style=social&label=Fork)](https://github.com/sblantipodi/smart_thermostat/network)
+
+## Credits
+- Davide Perini
+
+## License
+
+This program is licensed under MIT License
 
 Components:
 - Arduino C++ sketch running on an ESP8266EX D1 Mini from Lolin running @ 160MHz
@@ -39,3 +56,4 @@ Home Assistant Mobile Client Screenshots
 
 ![PHOTO5](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/ha_smartostat_screenshot.jpg)
 ![PHOTO6](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/ha_smartostat_screenshot_2.jpg)
+
