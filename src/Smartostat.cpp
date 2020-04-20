@@ -82,6 +82,8 @@ void setup() {
   // Bootsrap setup() with Wifi and MQTT functions
   bootstrapManager.bootstrapSetup(manageDisconnections, manageHardwareButton, callback);
 
+  readConfigFromSPIFFS();
+
 }
 
 /********************************** MANAGE WIFI AND MQTT DISCONNECTION *****************************************/
@@ -1400,6 +1402,7 @@ void readConfigFromSPIFFS() {
             maxGasResistance = doc["maxGasResistance"];
             minIAQ = doc["minIAQ"];
             maxIAQ = doc["maxIAQ"];
+            configFile.close();
           } else {
             error = true;
             display.println(F("JSON file is empty"));
