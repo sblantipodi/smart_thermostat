@@ -39,7 +39,7 @@ This program is licensed under MIT License
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Hdy5gpQMbEk/0.jpg)](https://www.youtube.com/watch?v=Hdy5gpQMbEk)
 
-Smartoled desk controller YouTube video (Click to watch it on YouTube)
+## Smartoled desk controller YouTube video (Click to watch it on YouTube)
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/_rEGXzI-NMo/0.jpg)](https://www.youtube.com/watch?v=_rEGXzI-NMo)
 
@@ -48,11 +48,11 @@ Smartoled desk controller YouTube video (Click to watch it on YouTube)
 ![PHOTO3](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/3.jpg)
 ![PHOTO4](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/4.jpg)
 
-BOSCH Sensortec BME680 with permanent Jumper for I2C 0x76 channel
+## BOSCH Sensortec BME680 with permanent Jumper for I2C 0x76 channel
 
 ![PHOTO5](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/5.jpg)
 
-Home Assistant Mobile Client Screenshots
+## Home Assistant Mobile Client Screenshots
 
 ![PHOTO5](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/ha_smartostat_screenshot.jpg)
 ![PHOTO6](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/ha_smartostat_screenshot_2.jpg)
