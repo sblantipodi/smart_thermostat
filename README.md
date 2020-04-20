@@ -6,7 +6,7 @@ _Written for Arduino IDE and PlatformIO._
 
 [![GitHub version](https://img.shields.io/github/v/release/sblantipodi/smart_thermostat.svg)](https://img.shields.io/github/v/release/sblantipodi/smart_thermostat.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/sblantipodi/smart_thermostat/graphs/commit-activity)
 
 If you like **Smart Thermostat**, give it a star, or fork it and contribute!
 
@@ -14,7 +14,7 @@ If you like **Smart Thermostat**, give it a star, or fork it and contribute!
 [![GitHub forks](https://img.shields.io/github/forks/sblantipodi/smart_thermostat.svg?style=social&label=Fork)](https://github.com/sblantipodi/smart_thermostat/network)
 
 ## Credits
-Davide Perini
+- Davide Perini
 
 ## License
 This program is licensed under MIT License
