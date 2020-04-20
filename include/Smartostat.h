@@ -1,3 +1,33 @@
+/*
+  Smartostat.h - Smart Thermostat based on Arduino SDK
+  
+  Copyright (C) 2020  Davide Perini
+  
+  Permission is hereby granted, free of charge, to any person obtaining a copy of 
+  this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+  copies of the Software, and to permit persons to whom the Software is 
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in 
+  all copies or substantial portions of the Software.
+  
+  You should have received a copy of the MIT License along with this program.  
+  If not, see <https://opensource.org/licenses/MIT/>.
+
+  * Components:
+  - Arduino C++ sketch running on an ESP8266EX D1 Mini from Lolin running at 160MHz
+  - Raspberry + Home Assistant for Web GUI, automations and MQTT server
+  - Bosch BME680 environmental sensor (temp, humidity, air quality, air pressure)
+  - SR501 PIR sensor for motion detection
+  - TTP223 capacitive touch buttons
+  - SD1306 OLED 128x64 pixel 0.96"
+  - 1000uf capacitor for 5V power stabilization
+  - 5V 220V relè
+  - Google Home Mini for Voice Recognition
+*/
+
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
