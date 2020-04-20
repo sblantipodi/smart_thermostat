@@ -17,10 +17,9 @@ If you like **Smart Thermostat**, give it a star, or fork it and contribute!
 - Davide Perini
 
 ## License
-
 This program is licensed under MIT License
 
-Components:
+## Components:
 - Arduino C++ sketch running on an ESP8266EX D1 Mini from Lolin running @ 160MHz
 - Raspberry + Home Assistant for Web GUI, automations and MQTT server
 - Bosch BME680 environmental sensor (temp, humidity, air quality, air pressure)
