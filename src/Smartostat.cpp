@@ -17,10 +17,6 @@
  */
 #include <Smartostat.h>
 
-// // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins) // Address 0x3C for 128x64pixel
-// // D2 pin SDA, D1 pin SCL, 5V power 
-// static Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); 
-// Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); 
 
 /********************************** START SETUP *****************************************/
 void setup() {

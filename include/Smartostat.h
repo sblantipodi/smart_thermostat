@@ -17,7 +17,7 @@
 BootstrapManager bootstrapManager;
 
 /**************************** PIN DEFINITIONS **************************************************/
-#define OLED_RESET LED_BUILTIN // Pin used for integrated D1 Mini blue LED
+// #define OLED_RESET LED_BUILTIN // Pin used for integrated D1 Mini blue LED
 #ifdef TARGET_SMARTOSTAT_OLED
   #define OLED_BUTTON_PIN 12 // D6 Pin, 5V power, for capactitive touch sensor. When Sig Output is high, touch sensor is being 
 #else
@@ -32,8 +32,8 @@ BootstrapManager bootstrapManager;
   IRSamsungAc acir(kIrLed);  
 #endif
 
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+// #define SCREEN_WIDTH 128 // OLED display width, in pixels
+// #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 // // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins) // Address 0x3C for 128x64pixel
 // // D2 pin SDA, D1 pin SCL, 5V power 
 // Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); 
@@ -489,7 +489,6 @@ void callback(char* topic, byte* payload, unsigned int length);
 void manageDisconnections();
 void manageQueueSubscription();
 void manageHardwareButton();
-
 bool processSmartostatSensorJson(char *message);
 bool processUpsStateJson(char *message);
 bool processSmartostatAcJson(char *message);
