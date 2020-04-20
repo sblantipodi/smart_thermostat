@@ -14,7 +14,7 @@ If you like **Smart Thermostat**, give it a star, or fork it and contribute!
 [![GitHub forks](https://img.shields.io/github/forks/sblantipodi/smart_thermostat.svg?style=social&label=Fork)](https://github.com/sblantipodi/smart_thermostat/network)
 
 ## Credits
-- Davide Perini
+Davide Perini
 
 ## License
 This program is licensed under MIT License
