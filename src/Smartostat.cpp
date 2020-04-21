@@ -263,7 +263,7 @@ void draw() {
     if (spotifyActivity != "playing") {
       display.clearDisplay();
       currentPage = numPages;
-      printLastPage();
+      bootstrapManager.drawInfoPage(VERSION, AUTHOR);
       return;
     }
   }
@@ -460,7 +460,7 @@ void draw() {
       display.fillRect(0,(display.height()-4),volume,4, WHITE);
     }
   } else if (currentPage == numPages) {
-    printLastPage();
+    bootstrapManager.drawInfoPage(VERSION, AUTHOR);
   }
   display.setTextWrap(true);
 
@@ -473,9 +473,9 @@ void draw() {
     }
   }
 
-  if (screenSaverTriggered) {
-    drawScreenSaver();
-  }
+  char bootString[20]; 
+  sprintf(bootString, "%d domotics", AUTHOR);
+  bootstrapManager.drawScreenSaver(bootString);
 
   if (furnanceTriggered) {
     drawCenterScreenLogo(furnanceTriggered, fireLogo, fireLogoW, fireLogoH, delay_4000);
@@ -486,7 +486,7 @@ void draw() {
   }
 
   if (showHaSplashScreen) {
-    drawCenterScreenLogo(showHaSplashScreen, habigLogo, habigLogoW, habigLogoH, delay_4000);
+    drawCenterScreenLogo(showHaSplashScreen, HABIGLOGO, HABIGLOGOW, HABIGLOGOH, delay_4000);
   }
 
   if (temperature != OFF_CMD) {
@@ -506,36 +506,6 @@ void draw() {
   Serial.print(F("away_mode: "); Serial.println(away_mode);
   Serial.print(F("alarm: "); Serial.println(alarm);*/
 
-}
-
-void printLastPage() {
-  yoffset -= 1;
-  // add/remove 8 pixel for every line yoffset <= -209, if you want to add a line yoffset <= -217
-  if (yoffset <= -209) {
-    yoffset = SCREEN_HEIGHT + 6;
-    lastPageScrollTriggered = true;
-  }
-  int effectiveOffset = (yoffset >= 0 && !lastPageScrollTriggered) ? 0 : yoffset;
-
-  display.drawBitmap((display.width()-habigLogoW)-1, effectiveOffset, habigLogo, habigLogoW, habigLogoH, 1);
-  display.setCursor(0, effectiveOffset);
-  display.setTextSize(1);
-  #ifdef TARGET_SMARTOSTAT
-    display.print(F("SMARTOSTAT "));
-    display.println(VERSION);
-  #else
-    display.print(F("SMARTOSTAT "));
-    display.println(VERSION);
-  #endif
-  display.println(F("by DPsoftware"));
-  display.println(F(""));
-  
-  display.print(F("HA: ")); display.print(F("(")); display.print(haVersion); display.println(F(")"));
-  
-  bootstrapManager.printInfo();
-
-  // add/remove 8 pixel for every line effectiveOffset+175, if you want to add a line effectiveOffset+183
-  display.drawBitmap((((display.width()/2)-(arduinoLogoW/2))), effectiveOffset+175, arduinoLogo, arduinoLogoW, arduinoLogoH, 1);
 }
 
 void drawHeader() {
@@ -573,22 +543,6 @@ void drawUpsFooter() {
   display.print(F(" "));
   display.print(outputVoltage); display.print(F("V"));
   display.print(F(" "));
-}
-
-void drawScreenSaver() {
-  display.clearDisplay();
-  for (int i = 0; i < 50; i++) {
-    display.clearDisplay();
-    display.setTextSize(2);
-    display.setCursor(5,17);
-    display.fillRect(0, 0, display.width(), display.height(), i%2 != 0 ? WHITE : BLACK);
-    display.setTextColor(i%2 == 0 ? WHITE : BLACK);
-    display.drawRoundRect(0, 0, display.width()-1, display.height()-1, display.height()/4, i%2 == 0 ? WHITE : BLACK);
-    display.println(F("DPsoftware domotics"));
-    display.display();
-  }
-  display.setTextColor(WHITE);
-  screenSaverTriggered = false;
 }
 
 void drawCenterScreenLogo(bool &triggerBool, const unsigned char* logo, const int logoW, const int logoH, const int delayInt) {

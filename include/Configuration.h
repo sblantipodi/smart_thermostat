@@ -23,6 +23,7 @@
 #include <ESP8266WiFi.h>
 #include <Adafruit_SSD1306.h>
 
+#define AUTHOR "DPsoftware"
 
 // Serial rate for debug
 #define SERIAL_RATE 115200
@@ -36,7 +37,7 @@ extern Adafruit_SSD1306 display;
 
 #ifdef TARGET_SMARTOSTAT
   // SENSORNAME will be used as device network name
-  #define WIFI_DEVICE_NAME "smartostat"
+  #define WIFI_DEVICE_NAME "SMARTOSTAT"
   // Port for the OTA firmware uplaod
   const int OTA_PORT = 8268;
   // STATIC IP FOR THE MICROCONTROLLER
@@ -46,7 +47,7 @@ extern Adafruit_SSD1306 display;
 #endif 
 #ifdef TARGET_SMARTOLED
   // SENSORNAME will be used as device network name
-  #define WIFI_DEVICE_NAME "smartoled"
+  #define WIFI_DEVICE_NAME "SMARTOLED"
   // Port for the OTA firmware uplaod
   const int OTA_PORT = 8278;
   // STATIC IP FOR THE MICROCONTROLLER
