@@ -43,8 +43,9 @@
 #include "Configuration.h"
 #include "../arduino_bootstrapper/core/BootstrapManager.h"
 
-/****************** BOOTSTRAP MANAGER ******************/
+/****************** BOOTSTRAP and WIFI MANAGER ******************/
 BootstrapManager bootstrapManager;
+// WifiManager wifiManager;
 
 /**************************** PIN DEFINITIONS **************************************************/
 // #define OLED_RESET LED_BUILTIN // Pin used for integrated D1 Mini blue LED
@@ -138,9 +139,6 @@ float maxGasResistance = 0.0;
 String IAQ = OFF_CMD; // indoor air quality
 float minIAQ = 2000;
 float maxIAQ = 0.0;
-String lastBoot = " ";
-// String lastMQTTConnection = "OFF";
-// String lastWIFiConnection = "OFF";
 String furnance = "OFF";
 String ac = "OFF";
 String pir = "OFF";
@@ -537,7 +535,6 @@ void quickPressRelease();
 void readConfigFromSPIFFS();
 void writeConfigToSPIFFS();
 void resetMinMaxValues();
-int getQuality();
 void setDateTime(const char* timeConst);
 void touchButtonManagement(int pinvalue);
 void sendACCommandState();

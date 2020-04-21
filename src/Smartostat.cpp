@@ -531,20 +531,8 @@ void printLastPage() {
   display.println(F(""));
   
   display.print(F("HA: ")); display.print(F("(")); display.print(haVersion); display.println(F(")"));
-  display.print(F("Wifi: ")); display.print(getQuality()); display.println(F("%")); 
-  display.print(F("Heap: ")); display.print(ESP.getFreeHeap()/1024); display.println(F(" KB")); 
-  display.print(F("Free Flash: ")); display.print(ESP.getFreeSketchSpace()/1024); display.println(F(" KB")); 
-  display.print(F("Frequency: ")); display.print(ESP.getCpuFreqMHz()); display.println(F("MHz")); 
-
-  display.print(F("Flash: ")); display.print(ESP.getFlashChipSize()/1024); display.println(F(" KB")); 
-  display.print(F("Sketch: ")); display.print(ESP.getSketchSize()/1024); display.println(F(" KB")); 
-  display.print(F("IP: ")); display.println(WiFi.localIP());
-  display.println(F("MAC: ")); display.println(WiFi.macAddress());
-  display.print(F("SDK: ")); display.println(ESP.getSdkVersion());
-  display.print(F("Arduino Core: ")); display.println(ESP.getCoreVersion());
-  display.println(F("Last Boot: ")); display.println(lastBoot);
-  display.println(F("Last WiFi connection:")); display.println(lastWIFiConnection);
-  display.println(F("Last MQTT connection:")); display.println(lastMQTTConnection);
+  
+  bootstrapManager.printInfo();
 
   // add/remove 8 pixel for every line effectiveOffset+175, if you want to add a line effectiveOffset+183
   display.drawBitmap((((display.width()/2)-(arduinoLogoW/2))), effectiveOffset+175, arduinoLogo, arduinoLogoW, arduinoLogoH, 1);
@@ -1479,22 +1467,6 @@ String getValue(String data, char separator, int index)
   }
 
   return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
-}
-
-/*
-   Return the quality (Received Signal Strength Indicator) of the WiFi network.
-   Returns a number between 0 and 100 if WiFi is connected.
-   Returns -1 if WiFi is disconnected.
-*/
-int getQuality() {
-  if (WiFi.status() != WL_CONNECTED)
-    return -1;
-  int dBm = WiFi.RSSI();
-  if (dBm <= -100)
-    return 0;
-  if (dBm >= -50)
-    return 100;
-  return 2 * (dBm + 100);
 }
 
 /********************************** START MAIN LOOP *****************************************/
