@@ -473,9 +473,7 @@ void draw() {
     }
   }
 
-  char bootString[20]; 
-  sprintf(bootString, "%d domotics", AUTHOR);
-  bootstrapManager.drawScreenSaver(bootString);
+  bootstrapManager.drawScreenSaver(AUTHOR + " domotics");
 
   if (furnanceTriggered) {
     drawCenterScreenLogo(furnanceTriggered, fireLogo, fireLogoW, fireLogoH, delay_4000);
@@ -683,13 +681,13 @@ bool processSmartostatClimateJson(char* message) {
       target_temperature = serialized(String(target_temperatureFloat,1));  
       hvac_action = operation_mode_heat;
       const char* awayModeConst = doc["smartostat"]["preset_mode"];
-      away_mode = awayModeConst == "away" ? ON_CMD : OFF_CMD;
+      away_mode = (strcmp(awayModeConst, "away") == 0) ? ON_CMD : OFF_CMD;
     } else if (operation_mode_cool == COOL) {
       float target_temperatureFloat = doc["smartostatac"]["temperature"];
       target_temperature = serialized(String(target_temperatureFloat,1));  
       hvac_action = operation_mode_cool;
       const char* awayModeConst = doc["smartostatac"]["preset_mode"];
-      away_mode = awayModeConst == "away" ? ON_CMD : OFF_CMD;
+      away_mode = (strcmp(awayModeConst, "away") == 0) ? ON_CMD : OFF_CMD;
     } else {
       if (temperature.toFloat() > HEAT_COOL_THRESHOLD) {
         float target_temperatureFloat = doc["smartostatac"]["temperature"];
