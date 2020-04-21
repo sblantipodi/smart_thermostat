@@ -46,6 +46,7 @@
 
 /****************** BOOTSTRAP and WIFI MANAGER ******************/
 BootstrapManager bootstrapManager;
+Helpers helper;
 
 /**************************** PIN DEFINITIONS **************************************************/
 // #define OLED_RESET LED_BUILTIN // Pin used for integrated D1 Mini blue LED
@@ -150,9 +151,7 @@ const String HEAT = "heating";
 const String IDLE = "idle";
 const int HEAT_COOL_THRESHOLD = 25;
 String away_mode = "OFF";
-String timedate = "OFF";
-String date = "OFF";
-String currentime = "OFF";
+
 String alarm = "OFF";
 bool furnanceTriggered = false;
 bool acTriggered = false;
@@ -475,7 +474,6 @@ bool processSpotifyStateJson(char *message);
 bool processSmartostatPirState(char *message);
 bool processSmartoledCmnd(char *message);
 bool processFurnancedCmnd(char *message);
-void printLastPage();
 void drawHeader();
 void drawRoundRect();
 void drawRoundRect();
@@ -491,7 +489,6 @@ void quickPressRelease();
 void readConfigFromSPIFFS();
 void writeConfigToSPIFFS();
 void resetMinMaxValues();
-void setDateTime(const char* timeConst);
 void touchButtonManagement(int pinvalue);
 void sendACCommandState();
 void sendClimateState(String mode);  

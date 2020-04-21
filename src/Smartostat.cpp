@@ -648,10 +648,10 @@ bool processSmartostatClimateJson(char* message) {
     const char* timeConst = doc["Time"];
     // On first boot the timedate variable is OFF
     if (timedate == OFF_CMD) {
-      setDateTime(timeConst);
+      helper.setDateTime(timeConst);
       lastBoot = date + " " + currentime;
     } else {
-      setDateTime(timeConst);
+      helper.setDateTime(timeConst);
     }
     // lastMQTTConnection and lastWIFiConnection are resetted on every disconnection
     if (lastMQTTConnection == OFF_CMD) {
@@ -912,12 +912,6 @@ void resetMinMaxValues() {
   maxGasResistance = 0.0;
   minIAQ = 2000;
   maxIAQ = 0.0;
-}
-
-void setDateTime(const char* timeConst) {
-  timedate = timeConst;
-  date = timedate.substring(8,10) + "/" + timedate.substring(5,7) + "/" + timedate.substring(0,4);
-  currentime = timedate.substring(11,16);
 }
 
 /********************************** SEND STATE *****************************************/
