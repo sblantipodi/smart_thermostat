@@ -71,34 +71,34 @@ Helpers helper;
 // Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); 
 
 /************* MQTT TOPICS **************************/
-const char* smartostat_sensor_state_topic = "tele/smartostat/SENSOR";
-const char* smartostat_state_topic = "tele/smartostat/STATE";
-const char* smartostat_climate_state_topic = "stat/smartostat/CLIMATE";
-const char* smartostatac_cmd_topic = "cmnd/smartostatac/CLIMATE";
-const char* smartostat_furnance_state_topic = "stat/smartostat/POWER1";
-const char* smartostat_pir_state_topic = "stat/smartostat/POWER2";
-const char* spotify_state_topic = "stat/spotify/info";
-const char* smartostat_furnance_cmnd_topic = "cmnd/smartostat/POWER1";
-const char* smartostatac_stat_irsend = "stat/smartostatac/IRsend";
-const char* smartostatac_cmnd_irsend = "cmnd/smartostatac/IRsendCmnd";
-const char* smartostat_cmnd_climate_heat_state = "cmnd/smartostat/climateHeatState";
-const char* smartostat_cmnd_climate_cool_state = "cmnd/smartostat/climateCoolState";
-const char* ups_state = "stat/ups/INFO";
+const char* SMARTOSTAT_SENSOR_STATE_TOPIC = "tele/smartostat/SENSOR";
+const char* SMARTOSTAT_STATE_TOPIC = "tele/smartostat/STATE";
+const char* SMARTOSTAT_CLIMATE_STATE_TOPIC = "stat/smartostat/CLIMATE";
+const char* SMARTOSTATAC_CMD_TOPIC = "cmnd/smartostatac/CLIMATE";
+const char* SMARTOSTAT_FURNANCE_STATE_TOPIC = "stat/smartostat/POWER1";
+const char* SMARTOSTAT_PIR_STATE_TOPIC = "stat/smartostat/POWER2";
+const char* SPOTIFY_STATE_TOPIC = "stat/spotify/info";
+const char* SMARTOSTAT_FURNANCE_CMND_TOPIC = "cmnd/smartostat/POWER1";
+const char* SMARTOSTATAC_STAT_IRSEND = "stat/smartostatac/IRsend";
+const char* SMARTOSTATAC_CMND_IRSEND = "cmnd/smartostatac/IRsendCmnd";
+const char* SMARTOSTAT_CMND_CLIMATE_HEAT_STATE = "cmnd/smartostat/climateHeatState";
+const char* SMARTOSTAT_CMND_CLIMATE_COOL_STATE = "cmnd/smartostat/climateCoolState";
+const char* UPS_STATE = "stat/ups/INFO";
 
 #ifdef TARGET_SMARTOSTAT
-  const char* smartoled_cmnd_topic = "cmnd/smartostat_oled/POWER3";
-  const char* smartoled_state_topic = "stat/smartostat_oled/POWER3";
-  const char* smartoled_info_topic = "stat/smartostat_oled/INFO";
-  const char* smartostatac_cmnd_irsendState = "cmnd/smartostatac/IRsend";
-  const char* smartostat_stat_reboot = "stat/smartostat/reboot";
-  const char* smartostat_cmnd_reboot = "cmnd/smartostat/reboot";
+  const char* SMARTOLED_CMND_TOPIC = "cmnd/smartostat_oled/POWER3";
+  const char* SMARTOLED_STATE_TOPIC = "stat/smartostat_oled/POWER3";
+  const char* SMARTOLED_INFO_TOPIC = "stat/smartostat_oled/INFO";
+  const char* SMARTOSTATAC_CMND_IRSENDSTATE = "cmnd/smartostatac/IRsend";
+  const char* SMARTOSTAT_STAT_REBOOT = "stat/smartostat/reboot";
+  const char* SMARTOSTAT_CMND_REBOOT = "cmnd/smartostat/reboot";
 #endif
 #ifdef TARGET_SMARTOLED
-  const char* smartoled_cmnd_topic = "cmnd/smartoled/POWER3";
-  const char* smartoled_state_topic = "stat/smartoled/POWER3";
-  const char* smartoled_info_topic = "stat/smartoled/INFO";
-  const char* smartoled_stat_reboot = "stat/smartoled/reboot";
-  const char* smartoled_cmnd_reboot = "cmnd/smartoled/reboot";
+  const char* SMARTOLED_CMND_TOPIC = "cmnd/smartoled/POWER3";
+  const char* SMARTOLED_STATE_TOPIC = "stat/smartoled/POWER3";
+  const char* SMARTOLED_INFO_TOPIC = "stat/smartoled/INFO";
+  const char* SMARTOLED_STAT_REBOOT = "stat/smartoled/reboot";
+  const char* SMARTOLED_CMND_REBOOT = "cmnd/smartoled/reboot";
 #endif 
 
 // Display state

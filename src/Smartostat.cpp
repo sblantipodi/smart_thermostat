@@ -115,24 +115,24 @@ void manageDisconnections() {
 /********************************** MQTT SUBSCRIPTIONS *****************************************/
 void manageQueueSubscription() {
   
-  mqttClient.subscribe(smartostat_climate_state_topic);
-  mqttClient.subscribe(smartostat_sensor_state_topic);
-  mqttClient.subscribe(smartostat_state_topic);
-  mqttClient.subscribe(ups_state);
+  mqttClient.subscribe(SMARTOSTAT_CLIMATE_STATE_TOPIC);
+  mqttClient.subscribe(SMARTOSTAT_SENSOR_STATE_TOPIC);
+  mqttClient.subscribe(SMARTOSTAT_STATE_TOPIC);
+  mqttClient.subscribe(UPS_STATE);
   #ifdef TARGET_SMARTOLED
-    mqttClient.subscribe(smartostat_furnance_state_topic);     
-    mqttClient.subscribe(smartostat_pir_state_topic);
-    mqttClient.subscribe(smartostatac_cmd_topic);
-    mqttClient.subscribe(smartostatac_stat_irsend);
-    mqttClient.subscribe(smartoled_cmnd_reboot);            
+    mqttClient.subscribe(SMARTOSTAT_FURNANCE_STATE_TOPIC);     
+    mqttClient.subscribe(SMARTOSTAT_PIR_STATE_TOPIC);
+    mqttClient.subscribe(SMARTOSTATAC_CMD_TOPIC);
+    mqttClient.subscribe(SMARTOSTATAC_STAT_IRSEND);
+    mqttClient.subscribe(SMARTOLED_CMND_REBOOT);            
   #endif
-  mqttClient.subscribe(spotify_state_topic);
-  mqttClient.subscribe(smartoled_cmnd_topic);
-  mqttClient.subscribe(smartostat_furnance_cmnd_topic);     
+  mqttClient.subscribe(SPOTIFY_STATE_TOPIC);
+  mqttClient.subscribe(SMARTOLED_CMND_TOPIC);
+  mqttClient.subscribe(SMARTOSTAT_FURNANCE_CMND_TOPIC);     
   #ifdef TARGET_SMARTOSTAT       
-    mqttClient.subscribe(smartostat_cmnd_reboot);    
-    mqttClient.subscribe(smartostatac_cmnd_irsendState);    
-    mqttClient.subscribe(smartostatac_cmnd_irsend);           
+    mqttClient.subscribe(SMARTOSTAT_CMND_REBOOT);    
+    mqttClient.subscribe(SMARTOSTATAC_CMND_IRSENDSTATE);    
+    mqttClient.subscribe(SMARTOSTATAC_CMND_IRSEND);           
   #endif
   
 }
@@ -176,80 +176,80 @@ void callback(char* topic, byte* payload, unsigned int length) {
   message[length] = '\0';
   //Serial.println(message);
 
-  if(strcmp(topic, smartostat_sensor_state_topic) == 0) {
+  if(strcmp(topic, SMARTOSTAT_SENSOR_STATE_TOPIC) == 0) {
     if (!processSmartostatSensorJson(message)) {
       return;
     }
   }
   #ifdef TARGET_SMARTOLED
-    if(strcmp(topic, smartostatac_cmd_topic) == 0) {
+    if(strcmp(topic, SMARTOSTATAC_CMD_TOPIC) == 0) {
       if (!processSmartostatAcJson(message)) {
         return;
       }
     }
-    if(strcmp(topic, smartostat_furnance_state_topic) == 0) {
+    if(strcmp(topic, SMARTOSTAT_FURNANCE_STATE_TOPIC) == 0) {
       if (!processSmartostatFurnanceState(message)) {
         return;
       }
     }
-    if(strcmp(topic, smartostatac_stat_irsend) == 0) {
+    if(strcmp(topic, SMARTOSTATAC_STAT_IRSEND) == 0) {
       if (!processACState(message)) {
         return;
       }
     }
-    if(strcmp(topic, smartoled_cmnd_reboot) == 0) {
+    if(strcmp(topic, SMARTOLED_CMND_REBOOT) == 0) {
       if (!processSmartoledRebootCmnd(message)) {
         return;
       }
     }
   #endif  
-  if(strcmp(topic, smartostat_climate_state_topic) == 0) {
+  if(strcmp(topic, SMARTOSTAT_CLIMATE_STATE_TOPIC) == 0) {
     if (!processSmartostatClimateJson(message)) {
       return;
     }
   }
-  if(strcmp(topic, smartostat_state_topic) == 0) {
+  if(strcmp(topic, SMARTOSTAT_STATE_TOPIC) == 0) {
     if (!processSmartostatSensorJson(message)) {
       return;
     }
   }
-  if(strcmp(topic, ups_state) == 0) {
+  if(strcmp(topic, UPS_STATE) == 0) {
     if (!processUpsStateJson(message)) {
       return;
     }
   }
-  if(strcmp(topic, spotify_state_topic) == 0) {
+  if(strcmp(topic, SPOTIFY_STATE_TOPIC) == 0) {
     if (!processSpotifyStateJson(message)) {
       return;
     }
   }  
-  if(strcmp(topic, smartostat_pir_state_topic) == 0) {
+  if(strcmp(topic, SMARTOSTAT_PIR_STATE_TOPIC) == 0) {
     if (!processSmartostatPirState(message)) {
       return;
     }
   }
-  if(strcmp(topic, smartoled_cmnd_topic) == 0) {
+  if(strcmp(topic, SMARTOLED_CMND_TOPIC) == 0) {
     if (!processSmartoledCmnd(message)) {
       return;
     }
   }
-  if(strcmp(topic, smartostat_furnance_cmnd_topic) == 0) {
+  if(strcmp(topic, SMARTOSTAT_FURNANCE_CMND_TOPIC) == 0) {
     if (!processFurnancedCmnd(message)) {
       return;
     }
   }
   #ifdef TARGET_SMARTOSTAT
-    if(strcmp(topic, smartostatac_cmnd_irsendState) == 0) {
+    if(strcmp(topic, SMARTOSTATAC_CMND_IRSENDSTATE) == 0) {
       if (!processIrOnOffCmnd(message)) {
         return;
       }
     }
-    if(strcmp(topic, smartostatac_cmnd_irsend) == 0) {
+    if(strcmp(topic, SMARTOSTATAC_CMND_IRSEND) == 0) {
       if (!processIrSendCmnd(message)) {
         return;
       }
     }
-    if(strcmp(topic, smartostat_cmnd_reboot) == 0) {
+    if(strcmp(topic, SMARTOSTAT_CMND_REBOOT) == 0) {
       if (!processSmartostatRebootCmnd(message)) {
         return;
       }
@@ -806,7 +806,7 @@ bool processFurnancedCmnd(char* message) {
       forceACOn = false;
       ac = OFF_CMD;
       sendACState();
-      mqttClient.publish(smartostat_pir_state_topic, OFF_CMD, true);  
+      mqttClient.publish(SMARTOSTAT_PIR_STATE_TOPIC, OFF_CMD, true);  
       releManagement();
       acManagement();
       sendSmartostatRebootCmnd();
@@ -920,7 +920,7 @@ void resetMinMaxValues() {
 
 /********************************** SEND STATE *****************************************/
 void sendPowerState() {
-  mqttClient.publish(smartoled_state_topic, (stateOn) ? ON_CMD : OFF_CMD, true);
+  mqttClient.publish(SMARTOLED_STATE_TOPIC, (stateOn) ? ON_CMD : OFF_CMD, true);
 }
 
 void sendInfoState() {
@@ -940,7 +940,7 @@ void sendInfoState() {
 
   // publish state only if it has received time from HA
   if (timedate != OFF_CMD) {
-    mqttClient.publish(smartoled_info_topic, buffer, true);
+    mqttClient.publish(SMARTOLED_INFO_TOPIC, buffer, true);
   }
 }
 
@@ -949,7 +949,7 @@ void sendInfoState() {
 #ifdef TARGET_SMARTOSTAT
   
   void sendSmartostatRebootState(const char* onOff) {   
-    mqttClient.publish(smartostat_stat_reboot, onOff, true);
+    mqttClient.publish(SMARTOSTAT_STAT_REBOOT, onOff, true);
   }
 
   void sendSmartostatRebootCmnd() {   
@@ -958,7 +958,7 @@ void sendInfoState() {
   }
 
   void sendPirState() {   
-      mqttClient.publish(smartostat_pir_state_topic, (pir == ON_CMD) ? ON_CMD : OFF_CMD, true);
+      mqttClient.publish(SMARTOSTAT_PIR_STATE_TOPIC, (pir == ON_CMD) ? ON_CMD : OFF_CMD, true);
   }
 
   void sendSensorState() {    
@@ -1003,21 +1003,21 @@ void sendInfoState() {
     char buffer[measureJson(root) + 1];
     serializeJson(root, buffer, sizeof(buffer));
 
-    mqttClient.publish(smartostat_sensor_state_topic, buffer, true);
+    mqttClient.publish(SMARTOSTAT_SENSOR_STATE_TOPIC, buffer, true);
   }
 
   void sendFurnanceState() {
     if (furnance == OFF_CMD) {
       forceFurnanceOn = false;
     } 
-    mqttClient.publish(smartostat_furnance_state_topic, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+    mqttClient.publish(SMARTOSTAT_FURNANCE_STATE_TOPIC, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
   }
 #endif
 
 #ifdef TARGET_SMARTOLED
 
   void sendSmartoledRebootState(const char* onOff) {   
-    mqttClient.publish(smartoled_stat_reboot, onOff, true);
+    mqttClient.publish(SMARTOLED_STAT_REBOOT, onOff, true);
   }
 
   void sendSmartoledRebootCmnd() {   
@@ -1031,14 +1031,14 @@ void sendACCommandState() {
   if (ac == OFF_CMD) {
     forceACOn = false;
   }     
-  mqttClient.publish(smartostatac_cmnd_irsend, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+  mqttClient.publish(SMARTOSTATAC_CMND_IRSEND, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
 }
 
 void sendClimateState(String mode) {
   if (mode == COOL) {
-    mqttClient.publish(smartostat_cmnd_climate_cool_state, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+    mqttClient.publish(SMARTOSTAT_CMND_CLIMATE_COOL_STATE, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
   } else {
-    mqttClient.publish(smartostat_cmnd_climate_heat_state, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+    mqttClient.publish(SMARTOSTAT_CMND_CLIMATE_HEAT_STATE, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
   }      
 }
 
@@ -1046,14 +1046,14 @@ void sendFurnanceCommandState() {
   if (furnance == OFF_CMD) {
     forceFurnanceOn = false;
   } 
-  mqttClient.publish(smartostat_furnance_cmnd_topic, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+  mqttClient.publish(SMARTOSTAT_FURNANCE_CMND_TOPIC, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
 }
 
 void sendACState() {    
   if (ac == OFF_CMD) {
     forceACOn = false;
   }     
-  mqttClient.publish(smartostatac_stat_irsend, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+  mqttClient.publish(SMARTOSTATAC_STAT_IRSEND, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
 }
 
 // Send status to MQTT broker every ten seconds

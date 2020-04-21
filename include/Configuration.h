@@ -61,7 +61,7 @@ extern Adafruit_SSD1306 display;
 // MQTT server port
 const int mqtt_port = 1883;
 // Maximum number of reconnection (WiFi/MQTT) attemp before powering off peripherals
-#define MAX_RECONNECT 50
+#define MAX_RECONNECT 500
 // Maximum JSON Object Size
 #define MAX_JSON_OBJECT_SIZE 20
 
