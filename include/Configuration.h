@@ -34,9 +34,9 @@ const bool PRINT_TO_DISPLAY = true;
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 extern Adafruit_SSD1306 display;
 
-#ifdef TARGET_SMARTOSTAT_OLED
+#ifdef TARGET_SMARTOSTAT
   // SENSORNAME will be used as device network name
-  #define WIFI_DEVICE_NAME "smartostat_oled"
+  #define WIFI_DEVICE_NAME "smartostat"
   // Port for the OTA firmware uplaod
   const int OTA_PORT = 8268;
   // STATIC IP FOR THE MICROCONTROLLER

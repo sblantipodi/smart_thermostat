@@ -32,7 +32,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#ifdef TARGET_SMARTOSTAT_OLED
+#ifdef TARGET_SMARTOSTAT
   #include <Adafruit_Sensor.h>
   #include <Adafruit_BME680.h>
   #include <IRremoteESP8266.h>
@@ -49,13 +49,13 @@ BootstrapManager bootstrapManager;
 
 /**************************** PIN DEFINITIONS **************************************************/
 // #define OLED_RESET LED_BUILTIN // Pin used for integrated D1 Mini blue LED
-#ifdef TARGET_SMARTOSTAT_OLED
+#ifdef TARGET_SMARTOSTAT
   #define OLED_BUTTON_PIN 12 // D6 Pin, 5V power, for capactitive touch sensor. When Sig Output is high, touch sensor is being 
 #else
   #define OLED_BUTTON_PIN 14 // D5 Pin, 5V power, for capactitive touch sensor. When Sig Output is high, touch sensor is being 
 #endif
 #define SMARTOSTAT_BUTTON_PIN 15 // D8 pin, 5V power, for touch button used to start stop the furnance 
-#ifdef TARGET_SMARTOSTAT_OLED
+#ifdef TARGET_SMARTOSTAT
   #define SR501_PIR_PIN 16 // D0 Pin, 5V power, for SR501 PIR sensor
   #define RELE_PIN 14 // D5 Pin, 5V power, for relè //TODO configurare releè pin
   Adafruit_BME680 boschBME680; // D2 pin SDA, D1 pin SCL, 3.3V power for BME680 sensor, sensor address I2C 0x76
@@ -84,7 +84,7 @@ const char* smartostat_cmnd_climate_heat_state = "cmnd/smartostat/climateHeatSta
 const char* smartostat_cmnd_climate_cool_state = "cmnd/smartostat/climateCoolState";
 const char* ups_state = "stat/ups/INFO";
 
-#ifdef TARGET_SMARTOSTAT_OLED
+#ifdef TARGET_SMARTOSTAT
   const char* smartoled_cmnd_topic = "cmnd/smartostat_oled/POWER3";
   const char* smartoled_state_topic = "stat/smartostat_oled/POWER3";
   const char* smartoled_info_topic = "stat/smartostat_oled/INFO";
@@ -189,7 +189,7 @@ unsigned long timeNowGoHomeAfterFiveMinutes = 0;
 unsigned int lastButtonPressed = 0;
 unsigned int delayTime = 20;
 
-#ifdef TARGET_SMARTOSTAT_OLED
+#ifdef TARGET_SMARTOSTAT
   // PIR variables
   long unsigned int highIn;
  
@@ -506,10 +506,12 @@ const unsigned char omegaLogo [] PROGMEM = {
 
 
 /********************************** FUNCTION DECLARATION (NEEDED BY PLATFORMIO WHILE COMPILING CPP FILES) *****************************************/
+// Bootstrap functions
 void callback(char* topic, byte* payload, unsigned int length);
 void manageDisconnections();
 void manageQueueSubscription();
 void manageHardwareButton();
+// Project specific functions
 bool processSmartostatSensorJson(char *message);
 bool processUpsStateJson(char *message);
 bool processSmartostatAcJson(char *message);
@@ -540,8 +542,7 @@ void touchButtonManagement(int pinvalue);
 void sendACCommandState();
 void sendClimateState(String mode);  
 void sendFurnanceCommandState();
-void manageQueueSubscription();
-#ifdef TARGET_SMARTOSTAT_OLED
+#ifdef TARGET_SMARTOSTAT
   void sendSmartostatRebootState(const char* onOff);
   void sendSmartostatRebootCmnd();
   void sendPirState();

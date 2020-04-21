@@ -34,7 +34,7 @@
 /********************************** START SETUP *****************************************/
 void setup() {
   
-  #ifdef TARGET_SMARTOSTAT_OLED
+  #ifdef TARGET_SMARTOSTAT
     // IRSender Begin
     acir.begin();
     Serial.begin(SERIAL_RATE);
@@ -102,7 +102,7 @@ void setup() {
 /********************************** MANAGE WIFI AND MQTT DISCONNECTION *****************************************/
 void manageDisconnections() {
   // shut down if wifi disconnects
-  #ifdef TARGET_SMARTOSTAT_OLED
+  #ifdef TARGET_SMARTOSTAT
     furnance = forceFurnanceOn ? ON_CMD : OFF_CMD;
     releManagement();
     ac = forceACOn ? ON_CMD : OFF_CMD;
@@ -127,7 +127,7 @@ void manageQueueSubscription() {
   mqttClient.subscribe(spotify_state_topic);
   mqttClient.subscribe(smartoled_cmnd_topic);
   mqttClient.subscribe(smartostat_furnance_cmnd_topic);     
-  #ifdef TARGET_SMARTOSTAT_OLED       
+  #ifdef TARGET_SMARTOSTAT       
     mqttClient.subscribe(smartostat_cmnd_reboot);    
     mqttClient.subscribe(smartostatac_cmnd_irsendState);    
     mqttClient.subscribe(smartostatac_cmnd_irsend);           
@@ -137,7 +137,7 @@ void manageQueueSubscription() {
 
 /********************************** MANAGE HARDWARE BUTTON *****************************************/
 void manageHardwareButton() {
-  #ifdef TARGET_SMARTOSTAT_OLED    
+  #ifdef TARGET_SMARTOSTAT    
     // Touch button management features
     if (digitalRead(OLED_BUTTON_PIN) == HIGH) {
       lastButtonPressed = OLED_BUTTON_PIN;
@@ -233,7 +233,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
       return;
     }
   }
-  #ifdef TARGET_SMARTOSTAT_OLED
+  #ifdef TARGET_SMARTOSTAT
     if(strcmp(topic, smartostatac_cmnd_irsendState) == 0) {
       if (!processIrOnOffCmnd(message)) {
         return;
@@ -520,7 +520,7 @@ void printLastPage() {
   display.drawBitmap((display.width()-habigLogoW)-1, effectiveOffset, habigLogo, habigLogoW, habigLogoH, 1);
   display.setCursor(0, effectiveOffset);
   display.setTextSize(1);
-  #ifdef TARGET_SMARTOSTAT_OLED
+  #ifdef TARGET_SMARTOSTAT
     display.print(F("SMARTOSTAT "));
     display.println(VERSION);
   #else
@@ -828,7 +828,7 @@ bool processFurnancedCmnd(char* message) {
   if (furnance == ON_CMD) {
     furnanceTriggered = true;
   }
-  #ifdef TARGET_SMARTOSTAT_OLED
+  #ifdef TARGET_SMARTOSTAT
     sendFurnanceState();
     releManagement();
   #endif
@@ -836,7 +836,7 @@ bool processFurnancedCmnd(char* message) {
 }
 
 // IRSEND MQTT message ON OFF only for Smartostat
-#ifdef TARGET_SMARTOSTAT_OLED
+#ifdef TARGET_SMARTOSTAT
 
   bool processSmartostatRebootCmnd(char* message) {
     String rebootState = message;
@@ -994,7 +994,7 @@ void sendInfoState() {
 
 
 // Send PIR state via MQTT
-#ifdef TARGET_SMARTOSTAT_OLED
+#ifdef TARGET_SMARTOSTAT
   
   void sendSmartostatRebootState(const char* onOff) {   
     mqttClient.publish(smartostat_stat_reboot, onOff, true);
@@ -1111,7 +1111,7 @@ void delayAndSendStatus() {
     ledTriggered = true;
     sendPowerState();
     sendInfoState();
-    #ifdef TARGET_SMARTOSTAT_OLED
+    #ifdef TARGET_SMARTOSTAT
       sendSensorState();
       sendFurnanceState();
       sendACState();
@@ -1133,7 +1133,7 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
 }
 
 /********************************** PIR AND RELE' MANAGEMENT *****************************************/
-#ifdef TARGET_SMARTOSTAT_OLED
+#ifdef TARGET_SMARTOSTAT
 
   void pirManagement() {
     if (digitalRead(SR501_PIR_PIN) == HIGH) {
@@ -1257,7 +1257,7 @@ void touchButtonManagement(int digitalReadButtonPin) {
   }
   // Long press for a second
   if (buttonState == HIGH && lastReading == HIGH) {
-    #ifdef TARGET_SMARTOSTAT_OLED
+    #ifdef TARGET_SMARTOSTAT
       if ((millis() - onTime) > 4000 ) { // a second hold time
         lastReading = LOW;
         veryLongPress = true;
@@ -1301,7 +1301,7 @@ void commandButtonRelease() {
       // stop ac on long press if wifi or mqtt is disconnected
       forceACOn = false;
     } else {
-      #ifdef TARGET_SMARTOSTAT_OLED
+      #ifdef TARGET_SMARTOSTAT
         acTriggered = true;
       #endif
       ac = ON_CMD;
@@ -1310,7 +1310,7 @@ void commandButtonRelease() {
     }      
     sendACCommandState();
     sendClimateState(COOL);
-    #ifdef TARGET_SMARTOSTAT_OLED
+    #ifdef TARGET_SMARTOSTAT
       acManagement();
     #endif
     lastButtonPressed = OLED_BUTTON_PIN;
@@ -1320,7 +1320,7 @@ void commandButtonRelease() {
       // stop furnance on long press if wifi or mqtt is disconnected
       forceFurnanceOn = false;
     } else {
-      #ifdef TARGET_SMARTOSTAT_OLED
+      #ifdef TARGET_SMARTOSTAT
         furnanceTriggered = true;
       #endif
       furnance = ON_CMD;
@@ -1329,7 +1329,7 @@ void commandButtonRelease() {
     }      
     sendFurnanceCommandState();
     sendClimateState(HEAT);
-    #ifdef TARGET_SMARTOSTAT_OLED
+    #ifdef TARGET_SMARTOSTAT
       releManagement();
     #endif
     lastButtonPressed = OLED_BUTTON_PIN;
@@ -1339,7 +1339,7 @@ void commandButtonRelease() {
 void quickPressRelease() {
   // turn on the furnance
   if (lastButtonPressed == SMARTOSTAT_BUTTON_PIN) {
-    #ifdef TARGET_SMARTOSTAT_OLED
+    #ifdef TARGET_SMARTOSTAT
       commandButtonRelease();
     #endif
   } else {
@@ -1361,7 +1361,6 @@ void quickPressRelease() {
     }
   }
 }
-
 
 /********************************** SPIFFS MANAGEMENT *****************************************/
 void readConfigFromSPIFFS() {
@@ -1451,24 +1450,6 @@ void writeConfigToSPIFFS() {
     }
 }
 
-// https://stackoverflow.com/questions/9072320/split-string-into-string-array
-String getValue(String data, char separator, int index)
-{
-  int found = 0;
-  int strIndex[] = {0, -1};
-  int maxIndex = data.length()-1;
-
-  for(int i=0; i<=maxIndex && found<=index; i++){
-    if(data.charAt(i)==separator || i==maxIndex){
-        found++;
-        strIndex[0] = strIndex[1]+1;
-        strIndex[1] = (i == maxIndex) ? i+1 : i;
-    }
-  }
-
-  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
-}
-
 /********************************** START MAIN LOOP *****************************************/
 void loop() {  
   
@@ -1476,7 +1457,7 @@ void loop() {
   bootstrapManager.bootstrapLoop(manageDisconnections, manageQueueSubscription, manageHardwareButton);
 
   // PIR and RELE' MANAGEMENT 
-  #ifdef TARGET_SMARTOSTAT_OLED    
+  #ifdef TARGET_SMARTOSTAT    
     manageHardwareButton();    
     pirManagement();
   #else
