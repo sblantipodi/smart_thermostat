@@ -39,7 +39,7 @@
   #include <IRsend.h>
   #include <ir_Samsung.h>
 #endif
-#include <Version.h>
+#include "Version.h"
 #include "Configuration.h"
 #include "../arduino_bootstrapper/core/BootstrapManager.h"
 

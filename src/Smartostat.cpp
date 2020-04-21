@@ -101,6 +101,7 @@ void setup() {
 
 /********************************** MANAGE WIFI AND MQTT DISCONNECTION *****************************************/
 void manageDisconnections() {
+
   // shut down if wifi disconnects
   #ifdef TARGET_SMARTOSTAT
     furnance = forceFurnanceOn ? ON_CMD : OFF_CMD;
@@ -108,6 +109,7 @@ void manageDisconnections() {
     ac = forceACOn ? ON_CMD : OFF_CMD;
     acManagement();
   #endif
+  
 }
 
 /********************************** MQTT SUBSCRIPTIONS *****************************************/
@@ -137,6 +139,7 @@ void manageQueueSubscription() {
 
 /********************************** MANAGE HARDWARE BUTTON *****************************************/
 void manageHardwareButton() {
+
   #ifdef TARGET_SMARTOSTAT    
     // Touch button management features
     if (digitalRead(OLED_BUTTON_PIN) == HIGH) {
@@ -156,10 +159,12 @@ void manageHardwareButton() {
       releManagement();
     }    
   #endif
+
 }
 
 /********************************** START CALLBACK *****************************************/
 void callback(char* topic, byte* payload, unsigned int length) {
+
   // Serial.print(F("Message arrived from [");
   // Serial.print(topic);
   // Serial.println(F("] ");
@@ -250,6 +255,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
       }
     }
   #endif
+
 }
 
 void draw() {
