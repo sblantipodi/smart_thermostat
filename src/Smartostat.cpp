@@ -115,24 +115,24 @@ void manageDisconnections() {
 /********************************** MQTT SUBSCRIPTIONS *****************************************/
 void manageQueueSubscription() {
   
-  mqttClient.subscribe(SMARTOSTAT_CLIMATE_STATE_TOPIC);
-  mqttClient.subscribe(SMARTOSTAT_SENSOR_STATE_TOPIC);
-  mqttClient.subscribe(SMARTOSTAT_STATE_TOPIC);
-  mqttClient.subscribe(UPS_STATE);
+  bootstrapManager.subscribe(SMARTOSTAT_CLIMATE_STATE_TOPIC);
+  bootstrapManager.subscribe(SMARTOSTAT_SENSOR_STATE_TOPIC);
+  bootstrapManager.subscribe(SMARTOSTAT_STATE_TOPIC);
+  bootstrapManager.subscribe(UPS_STATE);
   #ifdef TARGET_SMARTOLED
-    mqttClient.subscribe(SMARTOSTAT_FURNANCE_STATE_TOPIC);     
-    mqttClient.subscribe(SMARTOSTAT_PIR_STATE_TOPIC);
-    mqttClient.subscribe(SMARTOSTATAC_CMD_TOPIC);
-    mqttClient.subscribe(SMARTOSTATAC_STAT_IRSEND);
-    mqttClient.subscribe(SMARTOLED_CMND_REBOOT);            
+    bootstrapManager.subscribe(SMARTOSTAT_FURNANCE_STATE_TOPIC);     
+    bootstrapManager.subscribe(SMARTOSTAT_PIR_STATE_TOPIC);
+    bootstrapManager.subscribe(SMARTOSTATAC_CMD_TOPIC);
+    bootstrapManager.subscribe(SMARTOSTATAC_STAT_IRSEND);
+    bootstrapManager.subscribe(SMARTOLED_CMND_REBOOT);            
   #endif
-  mqttClient.subscribe(SPOTIFY_STATE_TOPIC);
-  mqttClient.subscribe(SMARTOLED_CMND_TOPIC);
-  mqttClient.subscribe(SMARTOSTAT_FURNANCE_CMND_TOPIC);     
+  bootstrapManager.subscribe(SPOTIFY_STATE_TOPIC);
+  bootstrapManager.subscribe(SMARTOLED_CMND_TOPIC);
+  bootstrapManager.subscribe(SMARTOSTAT_FURNANCE_CMND_TOPIC);     
   #ifdef TARGET_SMARTOSTAT       
-    mqttClient.subscribe(SMARTOSTAT_CMND_REBOOT);    
-    mqttClient.subscribe(SMARTOSTATAC_CMND_IRSENDSTATE);    
-    mqttClient.subscribe(SMARTOSTATAC_CMND_IRSEND);           
+    bootstrapManager.subscribe(SMARTOSTAT_CMND_REBOOT);    
+    bootstrapManager.subscribe(SMARTOSTATAC_CMND_IRSENDSTATE);    
+    bootstrapManager.subscribe(SMARTOSTATAC_CMND_IRSEND);           
   #endif
   
 }
@@ -513,6 +513,7 @@ void draw() {
 }
 
 void drawHeader() {
+
   display.setTextSize(1);
   display.setCursor(0,0);
 
@@ -524,9 +525,11 @@ void drawHeader() {
 
   hours = timedate.substring(11,13);
   minutes = timedate.substring(14,16);
+
 }
 
 void drawFooter() {
+
   display.setTextSize(1);
   display.setCursor(0,57);
   display.print(target_temperature); (target_temperature != OFF_CMD) ? display.print(F("C")) : display.print(F(""));
@@ -534,9 +537,11 @@ void drawFooter() {
   display.print(humidity); display.print(F("%"));
   display.print(F(" "));
   display.print(pressure); display.print(F("hPa"));
+
 }
 
 void drawUpsFooter() {
+
   display.setTextSize(1);
   display.setCursor(0,57);
   display.print(serialized(String(loadwattMax,0))); display.print(F("W"));
@@ -547,9 +552,11 @@ void drawUpsFooter() {
   display.print(F(" "));
   display.print(outputVoltage); display.print(F("V"));
   display.print(F(" "));
+
 }
 
 void drawCenterScreenLogo(bool &triggerBool, const unsigned char* logo, const int logoW, const int logoH, const int delayInt) {
+
   display.clearDisplay();
   display.setTextSize(1);
   display.setCursor(0,0);
@@ -560,14 +567,17 @@ void drawCenterScreenLogo(bool &triggerBool, const unsigned char* logo, const in
   display.display();
   delay(delayInt);
   triggerBool = false;
+
 }
 
 void drawRoundRect() {
+
   display.drawRoundRect(47, 19, 72, 27, 10, WHITE);
   display.drawRoundRect(47, 20, 71, 25, 9, WHITE);
   display.drawRoundRect(47, 20, 71, 25, 10, WHITE);
   display.drawRoundRect(47, 20, 71, 25, 8, WHITE);
   display.drawRoundRect(48, 20, 70, 25, 10, WHITE);
+
 }
 
 /********************************** START PROCESS JSON*****************************************/
@@ -602,6 +612,7 @@ bool processUpsStateJson(char* message) {
   }
 
   return true;
+
 }
 
 bool processSmartostatSensorJson(char* message) {
@@ -637,6 +648,7 @@ bool processSmartostatSensorJson(char* message) {
   }
 
   return true;
+
 }
 
 bool processSmartostatClimateJson(char* message) {
@@ -708,6 +720,7 @@ bool processSmartostatClimateJson(char* message) {
   }
 
   return true;
+
 }
 
 bool processSpotifyStateJson(char* message) {
@@ -753,14 +766,18 @@ bool processSpotifyStateJson(char* message) {
     }
   }
   return true;
+
 }
 
 bool processSmartostatPirState(char* message) {
+
   pir = message;
   return true;
+
 }
 
 bool processSmartoledCmnd(char* message) {
+
   if(strcmp(message, ON_CMD) == 0) {
     stateOn = true;
   } else if(strcmp(message, OFF_CMD) == 0) {
@@ -769,9 +786,11 @@ bool processSmartoledCmnd(char* message) {
   screenSaverTriggered = false;
   sendPowerState();
   return true;
+
 }
 
 bool processSmartostatAcJson(char* message) {
+
   String msg = message;
   ac = (msg == "off") ? OFF_CMD : ON_CMD;
   if (ac == ON_CMD) {
@@ -779,9 +798,11 @@ bool processSmartostatAcJson(char* message) {
     //currentPage = 0;
   }
   return true;
+
 }
 
 bool processFurnancedCmnd(char* message) {
+
   furnance = message;
   if (furnance == ON_CMD) {
     furnanceTriggered = true;
@@ -791,12 +812,14 @@ bool processFurnancedCmnd(char* message) {
     releManagement();
   #endif
   return true;
+
 }
 
 // IRSEND MQTT message ON OFF only for Smartostat
 #ifdef TARGET_SMARTOSTAT
 
   bool processSmartostatRebootCmnd(char* message) {
+
     String rebootState = message;
     sendSmartostatRebootState(OFF_CMD);
     if (rebootState == OFF_CMD) {      
@@ -806,15 +829,17 @@ bool processFurnancedCmnd(char* message) {
       forceACOn = false;
       ac = OFF_CMD;
       sendACState();
-      mqttClient.publish(SMARTOSTAT_PIR_STATE_TOPIC, OFF_CMD, true);  
+      bootstrapManager.publish(SMARTOSTAT_PIR_STATE_TOPIC, OFF_CMD, true);  
       releManagement();
       acManagement();
       sendSmartostatRebootCmnd();
     }
     return true;
+
   }
   
   bool processIrOnOffCmnd(char *message) {
+
     String acState = message;
     if (acState == ON_CMD && ac == OFF_CMD) {
       acTriggered = true;
@@ -834,6 +859,7 @@ bool processFurnancedCmnd(char* message) {
     }
     //Serial.printf("  %s\n", acir.toString().c_str());
     return true;
+
   }
 
   bool processIrSendCmnd(char* message) {
@@ -881,31 +907,39 @@ bool processFurnancedCmnd(char* message) {
       //Serial.printf("  %s\n", acir.toString().c_str()); 
     }
     return true;
+
   }
 #endif
 
 #ifdef TARGET_SMARTOLED
 
   bool processSmartoledRebootCmnd(char* message) {
+
     String rebootState = message;
     sendSmartoledRebootState(OFF_CMD);
     if (rebootState == OFF_CMD) {      
       sendSmartoledRebootCmnd();
     }
     return true;
+
   }
 
   bool processSmartostatFurnanceState(char* message) {
+
     furnance = message;
     return true;
+
   }
   bool processACState(char* message) {
+
     ac = message;
     return true;
+
   }  
 #endif
 
 void resetMinMaxValues() {
+
   minTemperature = 99;
   maxTemperature = 0.0;
   minHumidity = 99;
@@ -916,32 +950,22 @@ void resetMinMaxValues() {
   maxGasResistance = 0.0;
   minIAQ = 2000;
   maxIAQ = 0.0;
+
 }
 
 /********************************** SEND STATE *****************************************/
 void sendPowerState() {
-  mqttClient.publish(SMARTOLED_STATE_TOPIC, (stateOn) ? ON_CMD : OFF_CMD, true);
+
+  bootstrapManager.publish(SMARTOLED_STATE_TOPIC, (stateOn) ? ON_CMD : OFF_CMD, true);
+
 }
 
 void sendInfoState() {
-  StaticJsonDocument<BUFFER_SIZE> doc;
 
-  JsonObject root = doc.to<JsonObject>();
-
-  root["Whoami"] = WIFI_DEVICE_NAME;  
-  root["IP"] = WiFi.localIP().toString();
-  root["MAC"] = WiFi.macAddress();
-  root["ver"] = VERSION;
+  JsonObject root = bootstrapManager.getJsonObject();
   root["State"] = (stateOn) ? ON_CMD : OFF_CMD;
-  root["Time"] = timedate;
-  
-  char buffer[measureJson(root) + 1];
-  serializeJson(root, buffer, sizeof(buffer));
+  bootstrapManager.sendState(SMARTOLED_INFO_TOPIC, root, VERSION); 
 
-  // publish state only if it has received time from HA
-  if (timedate != OFF_CMD) {
-    mqttClient.publish(SMARTOLED_INFO_TOPIC, buffer, true);
-  }
 }
 
 
@@ -949,16 +973,22 @@ void sendInfoState() {
 #ifdef TARGET_SMARTOSTAT
   
   void sendSmartostatRebootState(const char* onOff) {   
-    mqttClient.publish(SMARTOSTAT_STAT_REBOOT, onOff, true);
+
+    bootstrapManager.publish(SMARTOSTAT_STAT_REBOOT, onOff, true);
+
   }
 
   void sendSmartostatRebootCmnd() {   
+
     delay(delay_1500);
     ESP.restart();
+
   }
 
   void sendPirState() {   
-      mqttClient.publish(SMARTOSTAT_PIR_STATE_TOPIC, (pir == ON_CMD) ? ON_CMD : OFF_CMD, true);
+
+      bootstrapManager.publish(SMARTOSTAT_PIR_STATE_TOPIC, (pir == ON_CMD) ? ON_CMD : OFF_CMD, true);
+
   }
 
   void sendSensorState() {    
@@ -1003,61 +1033,77 @@ void sendInfoState() {
     char buffer[measureJson(root) + 1];
     serializeJson(root, buffer, sizeof(buffer));
 
-    mqttClient.publish(SMARTOSTAT_SENSOR_STATE_TOPIC, buffer, true);
+    bootstrapManager.publish(SMARTOSTAT_SENSOR_STATE_TOPIC, buffer, true);
+
   }
 
   void sendFurnanceState() {
+
     if (furnance == OFF_CMD) {
       forceFurnanceOn = false;
     } 
-    mqttClient.publish(SMARTOSTAT_FURNANCE_STATE_TOPIC, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+    bootstrapManager.publish(SMARTOSTAT_FURNANCE_STATE_TOPIC, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+
   }
 #endif
 
 #ifdef TARGET_SMARTOLED
 
-  void sendSmartoledRebootState(const char* onOff) {   
-    mqttClient.publish(SMARTOLED_STAT_REBOOT, onOff, true);
+  void sendSmartoledRebootState(const char* onOff) {
+
+    bootstrapManager.publish(SMARTOLED_STAT_REBOOT, onOff, true);
+
   }
 
   void sendSmartoledRebootCmnd() {   
+
     delay(delay_1500);
     ESP.restart();
+
   }
 
 #endif
 
 void sendACCommandState() {    
+
   if (ac == OFF_CMD) {
     forceACOn = false;
   }     
-  mqttClient.publish(SMARTOSTATAC_CMND_IRSEND, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+  bootstrapManager.publish(SMARTOSTATAC_CMND_IRSEND, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+
 }
 
 void sendClimateState(String mode) {
+
   if (mode == COOL) {
-    mqttClient.publish(SMARTOSTAT_CMND_CLIMATE_COOL_STATE, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+    bootstrapManager.publish(SMARTOSTAT_CMND_CLIMATE_COOL_STATE, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
   } else {
-    mqttClient.publish(SMARTOSTAT_CMND_CLIMATE_HEAT_STATE, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
-  }      
+    bootstrapManager.publish(SMARTOSTAT_CMND_CLIMATE_HEAT_STATE, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+  } 
+
 }
 
 void sendFurnanceCommandState() {
+
   if (furnance == OFF_CMD) {
     forceFurnanceOn = false;
   } 
-  mqttClient.publish(SMARTOSTAT_FURNANCE_CMND_TOPIC, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+  bootstrapManager.publish(SMARTOSTAT_FURNANCE_CMND_TOPIC, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+
 }
 
 void sendACState() {    
+
   if (ac == OFF_CMD) {
     forceACOn = false;
   }     
-  mqttClient.publish(SMARTOSTATAC_STAT_IRSEND, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+  bootstrapManager.publish(SMARTOSTATAC_STAT_IRSEND, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+
 }
 
 // Send status to MQTT broker every ten seconds
 void delayAndSendStatus() {
+
   if(millis() > timeNowStatus + tenSecondsPeriod){
     timeNowStatus = millis();
     ledTriggered = true;
@@ -1069,10 +1115,12 @@ void delayAndSendStatus() {
       sendACState();
     #endif
   }
+
 }
 
 // Go to home page after five minutes of inactivity and write SPIFFS
 void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
+
   if(millis() > timeNowGoHomeAfterFiveMinutes + fiveMinutesPeriod){
     timeNowGoHomeAfterFiveMinutes = millis();
     // Write data to file system
@@ -1082,12 +1130,14 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
       currentPage = 0;
     }
   }
+  
 }
 
 /********************************** PIR AND RELE' MANAGEMENT *****************************************/
 #ifdef TARGET_SMARTOSTAT
 
   void pirManagement() {
+
     if (digitalRead(SR501_PIR_PIN) == HIGH) {
       if (pir == OFF_CMD) {
         highIn = millis();
@@ -1113,17 +1163,21 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
         }
       }      
     }
+
   }
 
   void releManagement() {
+
     if (furnance == ON_CMD || forceFurnanceOn) {
       digitalWrite(RELE_PIN, HIGH);
     } else {
       digitalWrite(RELE_PIN, LOW);
     }
+
   }
 
   void acManagement() {
+
     if (ac == ON_CMD || forceACOn) {
       acir.on();
       acir.setFan(kSamsungAcFanLow);
@@ -1135,9 +1189,11 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
       acir.off();
       acir.sendOff();     
     }
+
   }
 
   void getGasReference() {
+
     // Now run the sensor for a burn-in period, then use combination of relative humidity and gas resistance to estimate indoor air quality as a percentage.
     //Serial.println("Getting a new gas reference value");
     int readings = 10;
@@ -1147,9 +1203,11 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
     gas_reference = gas_reference / readings;
     //Serial.println("Gas Reference = "+String(gas_reference,3));
     getgasreference_count = 0;
+
   }
 
   String calculateIAQ(int score) {
+
     score = (100 - score) * 5;
     // if      (score >= 301)                  IAQ_text += "Hazardous";
     // else if (score >= 201 && score <= 300 ) IAQ_text += "Very Unhealthy";
@@ -1159,9 +1217,11 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
     // else if (score >=  00 && score <=  50 ) IAQ_text += "Good";
     // Serial.print("IAQ Score = " + String(score) + ", ");
     return String(score);
+
   }
 
   int getHumidityScore() {  //Calculate humidity contribution to IAQ index
+
     float current_humidity = boschBME680.humidity;
     if (current_humidity >= 38 && current_humidity <= 42) // Humidity +/-5% around optimum
       humidity_score = 0.25 * 100;
@@ -1175,20 +1235,24 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
       }
     }
     return humidity_score;
+
   }
 
   int getGasScore() {
+
     //Calculate gas contribution to IAQ index
     gas_score = (0.75 / (gas_upper_limit - gas_lower_limit) * gas_reference - (gas_lower_limit * (0.75 / (gas_upper_limit - gas_lower_limit)))) * 100.00;
     if (gas_score > 75) gas_score = 75; // Sometimes gas readings can go outside of expected scale maximum
     if (gas_score <  0) gas_score = 0;  // Sometimes gas readings can go outside of expected scale minimum
     return gas_score;
+
   }
 
 #endif
 
 /********************************** TOUCH BUTTON MANAGEMENT *****************************************/
 void touchButtonManagement(int digitalReadButtonPin) {
+
   buttonState = digitalReadButtonPin;
   // Quick presses
   if (buttonState == HIGH && lastReading == LOW) { // function triggered on the quick press of the button
@@ -1228,25 +1292,33 @@ void touchButtonManagement(int digitalReadButtonPin) {
     #endif
   }
   lastReading = buttonState;
+
 }
 
 void longPressRelease() {
+
   commandButtonRelease();  
+
 }
 
 void veryLongPressRelease() {
+
   // turn off the display on long pressed
   stateOn = false;
   resetMinMaxValues();
   writeConfigToSPIFFS();
+
 }
 
 void quickPress() {
+
   // reset the go to homepage timer on quick button press
   timeNowGoHomeAfterFiveMinutes = millis();
+
 }
 
 void commandButtonRelease() {
+
   if (temperature.toFloat() > HEAT_COOL_THRESHOLD) {
     if (ac == ON_CMD) {
       ac = OFF_CMD;
@@ -1285,10 +1357,12 @@ void commandButtonRelease() {
       releManagement();
     #endif
     lastButtonPressed = OLED_BUTTON_PIN;
-  }      
+  }     
+
 }
 
 void quickPressRelease() {
+  
   // turn on the furnance
   if (lastButtonPressed == SMARTOSTAT_BUTTON_PIN) {
     #ifdef TARGET_SMARTOSTAT
@@ -1312,10 +1386,12 @@ void quickPressRelease() {
       currentPage = 0;
     }
   }
+
 }
 
 /********************************** SPIFFS MANAGEMENT *****************************************/
 void readConfigFromSPIFFS() {
+
   bool error = false;
   display.clearDisplay();
   display.setCursor(0, 0);
@@ -1373,9 +1449,11 @@ void readConfigFromSPIFFS() {
   if (!error) {
     delay(delay_4000);
   }
+
 }
 
 void writeConfigToSPIFFS() {
+
     if (SPIFFS.begin()) {
       Serial.println(F("\nSaving config.json\n"));
       DynamicJsonDocument doc(1024);
@@ -1400,6 +1478,7 @@ void writeConfigToSPIFFS() {
     } else {
       Serial.println(F("Failed to mount FS for write"));
     }
+
 }
 
 /********************************** START MAIN LOOP *****************************************/
