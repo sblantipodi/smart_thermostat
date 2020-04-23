@@ -693,17 +693,17 @@ bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
 bool processSmartostatPirState(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  String pir = json[VALUE];
+  pir = (strcmp(json[VALUE], ON_CMD) == 0) ? ON_CMD : OFF_CMD;
   return true;
 
 }
 
 bool processSmartoledCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  String msg = json[VALUE];
-  if (msg == ON_CMD) {
+  String message = (strcmp(json[VALUE], ON_CMD) == 0) ? ON_CMD : OFF_CMD;
+  if (message == ON_CMD) {
     stateOn = true;
-  } else if(msg == OFF_CMD) {
+  } else if(message == OFF_CMD) {
     stateOn = false;
   }
   screenSaverTriggered = false;
@@ -714,7 +714,7 @@ bool processSmartoledCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
 bool processSmartostatAcJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  String ac = json[VALUE];
+  ac = (strcmp(json[VALUE], ON_CMD) == 0) ? ON_CMD : OFF_CMD;;
   if (ac == ON_CMD) {
     acTriggered = true;
     //currentPage = 0;
@@ -725,7 +725,7 @@ bool processSmartostatAcJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
 bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  String furnance = json[VALUE];
+  furnance = (strcmp(json[VALUE], ON_CMD) == 0) ? ON_CMD : OFF_CMD;
   if (furnance == ON_CMD) {
     furnanceTriggered = true;
   }
@@ -742,7 +742,8 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
   bool processSmartostatRebootCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
-    String rebootState = json[VALUE];
+    String msg = json[VALUE];
+    String rebootState = msg;
     sendSmartostatRebootState(OFF_CMD);
     if (rebootState == OFF_CMD) {      
       forceFurnanceOn = false;
@@ -762,7 +763,8 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
   
   bool processIrOnOffCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
-    String acState = json[VALUE];
+    String msg = json[VALUE];
+    String acState = msg;
     if (acState == ON_CMD && ac == OFF_CMD) {
       acTriggered = true;
       ac = ON_CMD;
@@ -829,8 +831,8 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 #ifdef TARGET_SMARTOLED
 
   bool processSmartoledRebootCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
-
-    String rebootState = json[VALUE];
+    
+    const char* rebootState = (strcmp(json[VALUE], ON_CMD) == 0) ? ON_CMD : OFF_CMD;
     sendSmartoledRebootState(OFF_CMD);
     if (rebootState == OFF_CMD) {      
       sendSmartoledRebootCmnd();
@@ -840,15 +842,15 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
   }
 
   bool processSmartostatFurnanceState(StaticJsonDocument<BUFFER_SIZE> json) {
-
-    String furnance = json[VALUE];
+    
+    furnance = (strcmp(json[VALUE], ON_CMD) == 0) ? ON_CMD : OFF_CMD;
     return true;
 
   }
 
   bool processACState(StaticJsonDocument<BUFFER_SIZE> json) {
 
-    String ac = json[VALUE];
+    ac = (strcmp(json[VALUE], ON_CMD) == 0) ? ON_CMD : OFF_CMD;
     return true;
 
   }  
@@ -910,8 +912,7 @@ void sendInfoState() {
 
   void sendSensorState() {    
 
-    StaticJsonDocument<BUFFER_SIZE> doc;
-    JsonObject root = doc.to<JsonObject>();
+    JsonObject root = bootstrapManager.getJsonObject();
     
     root["Time"] = timedate;
     root["state"] = (stateOn) ? ON_CMD : OFF_CMD;
@@ -947,10 +948,7 @@ void sendInfoState() {
       readOnceEveryNTimess = 0;
     }
 
-    char buffer[measureJson(root) + 1];
-    serializeJson(root, buffer, sizeof(buffer));
-
-    bootstrapManager.publish(SMARTOSTAT_SENSOR_STATE_TOPIC, buffer, true);
+    bootstrapManager.publish(SMARTOSTAT_SENSOR_STATE_TOPIC, root, true);
 
   }
 
