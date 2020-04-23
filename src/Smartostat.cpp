@@ -589,7 +589,6 @@ bool processSmartostatSensorJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
 bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  if (json.containsKey("smartostat")) {
     const char* timeConst = json["Time"];
     // On first boot the timedate variable is OFF
     if (timedate == OFF_CMD) {
@@ -614,25 +613,31 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
     humidityThreshold = json["humidity_threshold"];
     tempSensorOffset = json["temp_sensor_offset"];
     const char* operationModeHeatConst = json["smartostat"]["hvac_action"];
-    String operation_mode_heat = operationModeHeatConst;
-    operation_mode_heat = operation_mode_heat == IDLE ? HEAT : operation_mode_heat;
     const char* operationModeCoolConst = json["smartostatac"]["hvac_action"];
-    String operation_mode_cool = operationModeCoolConst;
-    operation_mode_cool = operation_mode_cool == IDLE ? COOL : operation_mode_cool;
+
+    if ((strcmp(operationModeHeatConst, HEAT) == 0) || strcmp(operationModeHeatConst, IDLE) == 0) {
+      operationModeHeatConst = HEAT;
+    } else if ((strcmp(operationModeCoolConst, COOL) == 0) || strcmp(operationModeCoolConst, IDLE) == 0) {
+      operationModeCoolConst = COOL;
+    } else {
+      operationModeCoolConst = OFF_CMD;
+    }
+  
     const char* alarmConst = json["smartostat"]["alarm"];
     alarm = alarmConst;
     const char* fanConst = json["smartostatac"]["fan"];
     fan = fanConst;
-    if (operation_mode_heat == HEAT) {
+    
+    if (operationModeHeatConst == HEAT) {
       float target_temperatureFloat = json["smartostat"]["temperature"];
       target_temperature = serialized(String(target_temperatureFloat,1));  
-      hvac_action = operation_mode_heat;
+      hvac_action = operationModeHeatConst;
       const char* awayModeConst = json["smartostat"]["preset_mode"];
       away_mode = (strcmp(awayModeConst, "away") == 0) ? ON_CMD : OFF_CMD;
-    } else if (operation_mode_cool == COOL) {
+    } else if (operationModeCoolConst == COOL) {
       float target_temperatureFloat = json["smartostatac"]["temperature"];
       target_temperature = serialized(String(target_temperatureFloat,1));  
-      hvac_action = operation_mode_cool;
+      hvac_action = operationModeCoolConst;
       const char* awayModeConst = json["smartostatac"]["preset_mode"];
       away_mode = (strcmp(awayModeConst, "away") == 0) ? ON_CMD : OFF_CMD;
     } else {
@@ -646,8 +651,7 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
       hvac_action = OFF_CMD;
       away_mode = OFF_CMD;
     }
-  }
-
+  
   return true;
 
 }
@@ -693,14 +697,14 @@ bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
 bool processSmartostatPirState(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  pir = (strcmp(json[VALUE], ON_CMD) == 0) ? ON_CMD : OFF_CMD;
+  pir = helper.isOnOff(json);
   return true;
 
 }
 
 bool processSmartoledCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  String message = (strcmp(json[VALUE], ON_CMD) == 0) ? ON_CMD : OFF_CMD;
+  String message = helper.isOnOff(json);
   if (message == ON_CMD) {
     stateOn = true;
   } else if(message == OFF_CMD) {
@@ -714,7 +718,7 @@ bool processSmartoledCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
 bool processSmartostatAcJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  ac = (strcmp(json[VALUE], ON_CMD) == 0) ? ON_CMD : OFF_CMD;;
+  ac = helper.isOnOff(json);;
   if (ac == ON_CMD) {
     acTriggered = true;
     //currentPage = 0;
@@ -725,7 +729,7 @@ bool processSmartostatAcJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
 bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  furnance = (strcmp(json[VALUE], ON_CMD) == 0) ? ON_CMD : OFF_CMD;
+  furnance = helper.isOnOff(json);
   if (furnance == ON_CMD) {
     furnanceTriggered = true;
   }
@@ -832,7 +836,7 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
   bool processSmartoledRebootCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
     
-    const char* rebootState = (strcmp(json[VALUE], ON_CMD) == 0) ? ON_CMD : OFF_CMD;
+    const char* rebootState = helper.isOnOff(json);
     sendSmartoledRebootState(OFF_CMD);
     if (rebootState == OFF_CMD) {      
       sendSmartoledRebootCmnd();
@@ -843,14 +847,14 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
   bool processSmartostatFurnanceState(StaticJsonDocument<BUFFER_SIZE> json) {
     
-    furnance = (strcmp(json[VALUE], ON_CMD) == 0) ? ON_CMD : OFF_CMD;
+    furnance = helper.isOnOff(json);
     return true;
 
   }
 
   bool processACState(StaticJsonDocument<BUFFER_SIZE> json) {
 
-    ac = (strcmp(json[VALUE], ON_CMD) == 0) ? ON_CMD : OFF_CMD;
+    ac = helper.isOnOff(json);
     return true;
 
   }  
