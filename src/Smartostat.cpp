@@ -165,94 +165,44 @@ void manageHardwareButton() {
 /********************************** START CALLBACK *****************************************/
 void callback(char* topic, byte* payload, unsigned int length) {
 
-  // Serial.print(F("Message arrived from [");
-  // Serial.print(topic);
-  // Serial.println(F("] ");
-
-  char message[length + 1];
-  for (unsigned int i = 0; i < length; i++) {
-    message[i] = (char)payload[i];
-  }
-  message[length] = '\0';
-  //Serial.println(message);
+  StaticJsonDocument<BUFFER_SIZE> json = bootstrapManager.parseQueueMsg(topic, payload, length);
 
   if(strcmp(topic, SMARTOSTAT_SENSOR_STATE_TOPIC) == 0) {
-    if (!processSmartostatSensorJson(message)) {
-      return;
-    }
+    processSmartostatSensorJson(json);
+  } else if(strcmp(topic, SMARTOSTAT_CLIMATE_STATE_TOPIC) == 0) {
+    processSmartostatClimateJson(json);
+  } else if(strcmp(topic, SMARTOSTAT_STATE_TOPIC) == 0) {
+    processSmartostatSensorJson(json);
+  } else if(strcmp(topic, UPS_STATE) == 0) {
+    processUpsStateJson(json);
+  } else if(strcmp(topic, SPOTIFY_STATE_TOPIC) == 0) {
+    processSpotifyStateJson(json);
+  } else if(strcmp(topic, SMARTOSTAT_PIR_STATE_TOPIC) == 0) {
+    processSmartostatPirState(json);
+  } else if(strcmp(topic, SMARTOLED_CMND_TOPIC) == 0) {
+    processSmartoledCmnd(json);
+  } else if(strcmp(topic, SMARTOSTAT_FURNANCE_CMND_TOPIC) == 0) {
+    processFurnancedCmnd(json);
   }
   #ifdef TARGET_SMARTOLED
     if(strcmp(topic, SMARTOSTATAC_CMD_TOPIC) == 0) {
-      if (!processSmartostatAcJson(message)) {
-        return;
-      }
-    }
-    if(strcmp(topic, SMARTOSTAT_FURNANCE_STATE_TOPIC) == 0) {
-      if (!processSmartostatFurnanceState(message)) {
-        return;
-      }
-    }
-    if(strcmp(topic, SMARTOSTATAC_STAT_IRSEND) == 0) {
-      if (!processACState(message)) {
-        return;
-      }
-    }
-    if(strcmp(topic, SMARTOLED_CMND_REBOOT) == 0) {
-      if (!processSmartoledRebootCmnd(message)) {
-        return;
-      }
+      processSmartostatAcJson(json);
+    } else if(strcmp(topic, SMARTOSTAT_FURNANCE_STATE_TOPIC) == 0) {
+      processSmartostatFurnanceState(json);
+    } else if(strcmp(topic, SMARTOSTATAC_STAT_IRSEND) == 0) {
+      processACState(json);
+    } else if(strcmp(topic, SMARTOLED_CMND_REBOOT) == 0) {
+      processSmartoledRebootCmnd(json);
     }
   #endif  
-  if(strcmp(topic, SMARTOSTAT_CLIMATE_STATE_TOPIC) == 0) {
-    if (!processSmartostatClimateJson(message)) {
-      return;
-    }
-  }
-  if(strcmp(topic, SMARTOSTAT_STATE_TOPIC) == 0) {
-    if (!processSmartostatSensorJson(message)) {
-      return;
-    }
-  }
-  if(strcmp(topic, UPS_STATE) == 0) {
-    if (!processUpsStateJson(message)) {
-      return;
-    }
-  }
-  if(strcmp(topic, SPOTIFY_STATE_TOPIC) == 0) {
-    if (!processSpotifyStateJson(message)) {
-      return;
-    }
-  }  
-  if(strcmp(topic, SMARTOSTAT_PIR_STATE_TOPIC) == 0) {
-    if (!processSmartostatPirState(message)) {
-      return;
-    }
-  }
-  if(strcmp(topic, SMARTOLED_CMND_TOPIC) == 0) {
-    if (!processSmartoledCmnd(message)) {
-      return;
-    }
-  }
-  if(strcmp(topic, SMARTOSTAT_FURNANCE_CMND_TOPIC) == 0) {
-    if (!processFurnancedCmnd(message)) {
-      return;
-    }
-  }
+  
   #ifdef TARGET_SMARTOSTAT
     if(strcmp(topic, SMARTOSTATAC_CMND_IRSENDSTATE) == 0) {
-      if (!processIrOnOffCmnd(message)) {
-        return;
-      }
-    }
-    if(strcmp(topic, SMARTOSTATAC_CMND_IRSEND) == 0) {
-      if (!processIrSendCmnd(message)) {
-        return;
-      }
-    }
-    if(strcmp(topic, SMARTOSTAT_CMND_REBOOT) == 0) {
-      if (!processSmartostatRebootCmnd(message)) {
-        return;
-      }
+      processIrOnOffCmnd(json);
+    } else if(strcmp(topic, SMARTOSTATAC_CMND_IRSEND) == 0) {
+      processIrSendCmnd(json);
+    } else if(strcmp(topic, SMARTOSTAT_CMND_REBOOT) == 0) {
+      processSmartostatRebootCmnd(json);
     }
   #endif
 
@@ -285,7 +235,7 @@ void draw() {
     display.drawBitmap(0, 10, haSmallLogo, haSmallLogoW, haSmallLogoH, 1);
   }
 
-  if (humidity != "OFF" && humidity.toFloat() >= humidityThreshold) {
+  if (humidity != OFF_CMD && humidity.toFloat() >= humidityThreshold) {
     currentPage = 0;
     display.drawBitmap(14, 18, humidityLogo, humidityLogoW, humidityLogoH, 1);
   } else if (furnance == ON_CMD && currentPage == 0) {
@@ -360,7 +310,7 @@ void draw() {
   // Draw Text
   display.setTextSize(2);
 
-  if (humidity != "OFF" && humidity.toFloat() >= humidityThreshold) {
+  if (humidity != OFF_CMD && humidity.toFloat() >= humidityThreshold) {
     currentPage = 0;
     display.setCursor(55,14);
     display.print(humidity); display.println(F("%"));
@@ -581,17 +531,10 @@ void drawRoundRect() {
 }
 
 /********************************** START PROCESS JSON*****************************************/
-bool processUpsStateJson(char* message) {
+bool processUpsStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  StaticJsonDocument<BUFFER_SIZE> doc;
-  DeserializationError error = deserializeJson(doc, message);
-  if (error) {
-    Serial.println(F("parseObject() failed 1"));
-    return false;
-  }
-
-  if (doc.containsKey("runtime")) {
-    float loadFloat = doc["load"];
+  if (json.containsKey("runtime")) {
+    float loadFloat = json["load"];
     #ifdef TARGET_SMARTOLED
       if (loadFloat > HIGH_WATT && loadFloatPrevious < HIGH_WATT) {
         currentPage = 7;
@@ -603,11 +546,11 @@ bool processUpsStateJson(char* message) {
     }
     
     loadwatt = serialized(String(loadFloat,0));
-    const char* runtimeConst = doc["runtime"];
+    const char* runtimeConst = json["runtime"];
     runtime = runtimeConst;
-    float ivFloat = doc["iv"];
+    float ivFloat = json["iv"];
     inputVoltage = serialized(String(ivFloat,0));
-    float ovFloat = doc["ov"];
+    float ovFloat = json["ov"];
     outputVoltage = serialized(String(ovFloat,0));
   }
 
@@ -615,33 +558,26 @@ bool processUpsStateJson(char* message) {
 
 }
 
-bool processSmartostatSensorJson(char* message) {
+bool processSmartostatSensorJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  StaticJsonDocument<BUFFER_SIZE> doc;
-  DeserializationError error = deserializeJson(doc, message);
-  if (error) {
-    Serial.println(F("parseObject() failed 1"));
-    return false;
-  }
-
-  if (doc.containsKey("BME680")) {
-    float temperatureFloat = doc["BME680"]["Temperature"];
+  if (json.containsKey("BME680")) {
+    float temperatureFloat = json["BME680"]["Temperature"];
     temperature = serialized(String(temperatureFloat,1));
     minTemperature = (temperatureFloat < minTemperature) ? temperatureFloat : minTemperature;
     maxTemperature = (temperatureFloat > maxTemperature) ? temperatureFloat : maxTemperature;
-    float humidityFloat = doc["BME680"]["Humidity"];
+    float humidityFloat = json["BME680"]["Humidity"];
     humidity = serialized(String(humidityFloat,1));    
     minHumidity = (humidityFloat < minHumidity) ? humidityFloat : minHumidity;
     maxHumidity = (humidityFloat > maxHumidity) ? humidityFloat : maxHumidity;
-    float pressureFloat = doc["BME680"]["Pressure"];
+    float pressureFloat = json["BME680"]["Pressure"];
     pressure = serialized(String(pressureFloat,1));    
     minPressure = (pressureFloat < minPressure) ? pressureFloat : minPressure;
     maxPressure = (pressureFloat > maxPressure) ? pressureFloat : maxPressure;
-    float gasResistanceFloat = doc["BME680"]["GasResistance"];
+    float gasResistanceFloat = json["BME680"]["GasResistance"];
     gasResistance = serialized(String(gasResistanceFloat,1));    
     minGasResistance = (gasResistanceFloat < minGasResistance) ? gasResistanceFloat : minGasResistance;
     maxGasResistance = (gasResistanceFloat > maxGasResistance) ? gasResistanceFloat : maxGasResistance;
-    float IAQFloat = doc["BME680"]["IAQ"]; 
+    float IAQFloat = json["BME680"]["IAQ"]; 
     IAQ = serialized(String(IAQFloat,1));    
     minIAQ = (IAQFloat < minIAQ) ? IAQFloat : minIAQ;
     maxIAQ = (IAQFloat > maxIAQ) ? IAQFloat : maxIAQ;
@@ -651,17 +587,10 @@ bool processSmartostatSensorJson(char* message) {
 
 }
 
-bool processSmartostatClimateJson(char* message) {
+bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  StaticJsonDocument<BUFFER_SIZE> doc;
-  DeserializationError error = deserializeJson(doc, message);
-  if (error) {
-    Serial.println(F("parseObject() failed 2"));
-    return false;
-  }
-
-  if (doc.containsKey("smartostat")) {
-    const char* timeConst = doc["Time"];
+  if (json.containsKey("smartostat")) {
+    const char* timeConst = json["Time"];
     // On first boot the timedate variable is OFF
     if (timedate == OFF_CMD) {
       helper.setDateTime(timeConst);
@@ -680,38 +609,38 @@ bool processSmartostatClimateJson(char* message) {
     // if (hours == "23" && minutes == "59") {
     //   resetMinMaxValues();
     // }
-    const char* haVersionConst = doc["haVersion"];
+    const char* haVersionConst = json["haVersion"];
     haVersion = haVersionConst;
-    humidityThreshold = doc["humidity_threshold"];
-    tempSensorOffset = doc["temp_sensor_offset"];
-    const char* operationModeHeatConst = doc["smartostat"]["hvac_action"];
+    humidityThreshold = json["humidity_threshold"];
+    tempSensorOffset = json["temp_sensor_offset"];
+    const char* operationModeHeatConst = json["smartostat"]["hvac_action"];
     String operation_mode_heat = operationModeHeatConst;
     operation_mode_heat = operation_mode_heat == IDLE ? HEAT : operation_mode_heat;
-    const char* operationModeCoolConst = doc["smartostatac"]["hvac_action"];
+    const char* operationModeCoolConst = json["smartostatac"]["hvac_action"];
     String operation_mode_cool = operationModeCoolConst;
     operation_mode_cool = operation_mode_cool == IDLE ? COOL : operation_mode_cool;
-    const char* alarmConst = doc["smartostat"]["alarm"];
+    const char* alarmConst = json["smartostat"]["alarm"];
     alarm = alarmConst;
-    const char* fanConst = doc["smartostatac"]["fan"];
+    const char* fanConst = json["smartostatac"]["fan"];
     fan = fanConst;
     if (operation_mode_heat == HEAT) {
-      float target_temperatureFloat = doc["smartostat"]["temperature"];
+      float target_temperatureFloat = json["smartostat"]["temperature"];
       target_temperature = serialized(String(target_temperatureFloat,1));  
       hvac_action = operation_mode_heat;
-      const char* awayModeConst = doc["smartostat"]["preset_mode"];
+      const char* awayModeConst = json["smartostat"]["preset_mode"];
       away_mode = (strcmp(awayModeConst, "away") == 0) ? ON_CMD : OFF_CMD;
     } else if (operation_mode_cool == COOL) {
-      float target_temperatureFloat = doc["smartostatac"]["temperature"];
+      float target_temperatureFloat = json["smartostatac"]["temperature"];
       target_temperature = serialized(String(target_temperatureFloat,1));  
       hvac_action = operation_mode_cool;
-      const char* awayModeConst = doc["smartostatac"]["preset_mode"];
+      const char* awayModeConst = json["smartostatac"]["preset_mode"];
       away_mode = (strcmp(awayModeConst, "away") == 0) ? ON_CMD : OFF_CMD;
     } else {
       if (temperature.toFloat() > HEAT_COOL_THRESHOLD) {
-        float target_temperatureFloat = doc["smartostatac"]["temperature"];
+        float target_temperatureFloat = json["smartostatac"]["temperature"];
         target_temperature = serialized(String(target_temperatureFloat,1));  
       } else {
-        float target_temperatureFloat = doc["smartostat"]["temperature"];
+        float target_temperatureFloat = json["smartostat"]["temperature"];
         target_temperature = serialized(String(target_temperatureFloat,1));  
       }
       hvac_action = OFF_CMD;
@@ -723,18 +652,11 @@ bool processSmartostatClimateJson(char* message) {
 
 }
 
-bool processSpotifyStateJson(char* message) {
-
-  StaticJsonDocument<BUFFER_SIZE> doc;
-  DeserializationError error = deserializeJson(doc, message);
-  if (error) {
-    Serial.println(F("parseObject() failed 4"));
-    return false;
-  }
+bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
   unsigned int tempCurrentPage = currentPage;
-  if (doc.containsKey("media_artist")) {
-    const char* spotifyActivityConst = doc["spotify_activity"];
+  if (json.containsKey("media_artist")) {
+    const char* spotifyActivityConst = json["spotify_activity"];
     spotifyActivity = spotifyActivityConst;
     // if paused clear mediaTitle and other strings and set current page 0
     if (spotifyActivity == "paused" || spotifyActivity == "idle") {
@@ -748,17 +670,17 @@ bool processSpotifyStateJson(char* message) {
     if (spotifyActivity == "playing" && mediaTitle == "") {
       currentPage = 8;
     }
-    const char* spotifySourceConst = doc["spotifySource"];
+    const char* spotifySourceConst = json["spotifySource"];
     spotifySource = spotifySourceConst;
-    const char* volumeLevelConst = doc["volume_level"];
+    const char* volumeLevelConst = json["volume_level"];
     volumeLevel = volumeLevelConst;
-    const char* mediaArtistConst = doc["media_artist"];
+    const char* mediaArtistConst = json["media_artist"];
     mediaArtist = mediaArtistConst;
-    const char* appNameConst = doc["app_name"];
+    const char* appNameConst = json["app_name"];
     appName = appNameConst;
     // no mediaTitle if is playing
     if (spotifyActivity != "paused" && spotifyActivity != "idle") {
-      const char* mediaTitleConst = doc["media_title"];
+      const char* mediaTitleConst = json["media_title"];
       mediaTitle = mediaTitleConst;
     }
     if (mediaTitle == BT_AUDIO) {
@@ -769,18 +691,19 @@ bool processSpotifyStateJson(char* message) {
 
 }
 
-bool processSmartostatPirState(char* message) {
+bool processSmartostatPirState(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  pir = message;
+  String pir = json[VALUE];
   return true;
 
 }
 
-bool processSmartoledCmnd(char* message) {
+bool processSmartoledCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  if(strcmp(message, ON_CMD) == 0) {
+  String msg = json[VALUE];
+  if (msg == ON_CMD) {
     stateOn = true;
-  } else if(strcmp(message, OFF_CMD) == 0) {
+  } else if(msg == OFF_CMD) {
     stateOn = false;
   }
   screenSaverTriggered = false;
@@ -789,10 +712,9 @@ bool processSmartoledCmnd(char* message) {
 
 }
 
-bool processSmartostatAcJson(char* message) {
+bool processSmartostatAcJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  String msg = message;
-  ac = (msg == "off") ? OFF_CMD : ON_CMD;
+  String ac = json[VALUE];
   if (ac == ON_CMD) {
     acTriggered = true;
     //currentPage = 0;
@@ -801,9 +723,9 @@ bool processSmartostatAcJson(char* message) {
 
 }
 
-bool processFurnancedCmnd(char* message) {
+bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  furnance = message;
+  String furnance = json[VALUE];
   if (furnance == ON_CMD) {
     furnanceTriggered = true;
   }
@@ -818,9 +740,9 @@ bool processFurnancedCmnd(char* message) {
 // IRSEND MQTT message ON OFF only for Smartostat
 #ifdef TARGET_SMARTOSTAT
 
-  bool processSmartostatRebootCmnd(char* message) {
+  bool processSmartostatRebootCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
-    String rebootState = message;
+    String rebootState = json[VALUE];
     sendSmartostatRebootState(OFF_CMD);
     if (rebootState == OFF_CMD) {      
       forceFurnanceOn = false;
@@ -838,9 +760,9 @@ bool processFurnancedCmnd(char* message) {
 
   }
   
-  bool processIrOnOffCmnd(char *message) {
+  bool processIrOnOffCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
-    String acState = message;
+    String acState = json[VALUE];
     if (acState == ON_CMD && ac == OFF_CMD) {
       acTriggered = true;
       ac = ON_CMD;
@@ -862,31 +784,24 @@ bool processFurnancedCmnd(char* message) {
 
   }
 
-  bool processIrSendCmnd(char* message) {
-
-    StaticJsonDocument<BUFFER_SIZE> doc;
-    DeserializationError error = deserializeJson(doc, message);
-    if (error) {
-      Serial.println(F("parseObject() failed processIrSendCmnd"));
-      return false;
-    }
+  bool processIrSendCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
     acir.on();
-    if (doc.containsKey("alette_ac")) {      
+    if (json.containsKey("alette_ac")) {      
       acir.setMode(kSamsungAcCool);
 
-      const char* tempConst = doc["temp"];
+      const char* tempConst = json["temp"];
       uint8_t tempInt = atoi(tempConst);
       
       acir.setTemp(tempInt);
 
-      const char* aletteConst = doc["alette_ac"];
+      const char* aletteConst = json["alette_ac"];
       String alette = aletteConst;
       acir.setQuiet(false);
       acir.setPowerful(false);
       if(alette == "off") {
         acir.setSwing(false);
-        const char* modeConst = doc["mode"];
+        const char* modeConst = json["mode"];
         String mode = modeConst;
         if (mode == "Low") {
           acir.setFan(kSamsungAcFanLow);
@@ -913,9 +828,9 @@ bool processFurnancedCmnd(char* message) {
 
 #ifdef TARGET_SMARTOLED
 
-  bool processSmartoledRebootCmnd(char* message) {
+  bool processSmartoledRebootCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
-    String rebootState = message;
+    String rebootState = json[VALUE];
     sendSmartoledRebootState(OFF_CMD);
     if (rebootState == OFF_CMD) {      
       sendSmartoledRebootCmnd();
@@ -924,18 +839,20 @@ bool processFurnancedCmnd(char* message) {
 
   }
 
-  bool processSmartostatFurnanceState(char* message) {
+  bool processSmartostatFurnanceState(StaticJsonDocument<BUFFER_SIZE> json) {
 
-    furnance = message;
+    String furnance = json[VALUE];
     return true;
 
   }
-  bool processACState(char* message) {
 
-    ac = message;
+  bool processACState(StaticJsonDocument<BUFFER_SIZE> json) {
+
+    String ac = json[VALUE];
     return true;
 
   }  
+
 #endif
 
 void resetMinMaxValues() {
@@ -1126,7 +1043,7 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
     // Write data to file system
     writeConfigToSPIFFS();
     screenSaverTriggered = true;
-    if ((humidity != "OFF" && humidity.toFloat() < humidityThreshold) && (loadFloatPrevious < HIGH_WATT) && ((spotifyActivity == "playing" && currentPage != 8) || spotifyActivity != "playing" )) {
+    if ((humidity != OFF_CMD && humidity.toFloat() < humidityThreshold) && (loadFloatPrevious < HIGH_WATT) && ((spotifyActivity == "playing" && currentPage != 8) || spotifyActivity != "playing" )) {
       currentPage = 0;
     }
   }
