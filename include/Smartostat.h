@@ -101,6 +101,9 @@ const char* UPS_STATE = "stat/ups/INFO";
   const char* SMARTOLED_CMND_REBOOT = "cmnd/smartoled/reboot";
 #endif 
 
+// HEAT COOL THRESHOLD, USED to MANAGE SITUATIONS WHEN THERE IS NO INFO FROM THE MQTT SERVER (used by smartoled for capacitive button too)
+const int HEAT_COOL_THRESHOLD = 20;
+
 // Display state
 bool stateOn = true;
 
@@ -119,40 +122,52 @@ float tempSensorOffset = 0;
 const int numPages = 9;
 const float LOW_WATT = 250;
 const float HIGH_WATT = 350;
-String loadwatt = OFF_CMD;
+String loadwatt = OFF_CMD;;
 float loadwattMax = 0;
 float loadFloatPrevious = 0;
-String runtime = OFF_CMD;
-String inputVoltage = OFF_CMD;
-String outputVoltage = OFF_CMD;
-String temperature = OFF_CMD;
+String runtime = OFF_CMD;;
+String inputVoltage = OFF_CMD;;
+String outputVoltage = OFF_CMD;;
+String temperature = OFF_CMD;;
 float minTemperature = 99;
 float maxTemperature = 0.0;
-String humidity = OFF_CMD;
+String humidity = OFF_CMD;;
 float minHumidity = 99;
 float maxHumidity = 0.0;
-String pressure = OFF_CMD;
+String pressure = OFF_CMD;;
 float minPressure = 2000;
 float maxPressure = 0.0;
-String gasResistance = OFF_CMD;
+String gasResistance = OFF_CMD;;
 float minGasResistance = 2000;
 float maxGasResistance = 0.0;
-String IAQ = OFF_CMD; // indoor air quality
+String IAQ = OFF_CMD;; // indoor air quality
 float minIAQ = 2000;
 float maxIAQ = 0.0;
-const char* furnance = OFF_CMD;
-const char* ac = OFF_CMD;
-const char* pir = OFF_CMD;
-String target_temperature = OFF_CMD;
-const char* hvac_action = OFF_CMD;
-String fan = OFF_CMD;
+const char* furnance = OFF_CMD;;
+const char* ac = OFF_CMD;;
+const char* pir = OFF_CMD;;
+String target_temperature = OFF_CMD;;
+const char* hvac_action = OFF_CMD;;
 const char* COOL = "cooling";
 const char* HEAT = "heating";
 const char* IDLE = "idle";
-const int HEAT_COOL_THRESHOLD = 25;
-String away_mode = OFF_CMD;
+const char* fan = OFF_CMD;;
+const char* FAN_QUIET = "Quiet";
+const char* FAN_LOW = "Low";
+const char* FAN_HIGH = "High";
+const char* FAN_AUTO = "Auto";
+const char* FAN_POWER = "Power";
 
-String alarm = OFF_CMD;
+const char* SPOTIFY_PLAYING = "playing";
+const char* SPOTIFY_IDLE = "idle";
+const char* SPOTIFY_PAUSED = "paused";
+
+String away_mode = OFF_CMD;;
+
+const char* alarm = OFF_CMD;;
+const char* ALARM_ARMED_AWAY = "armed_away";
+const char* ALARM_PENDING = "pending";
+const char* ALARM_TRIGGERED = "triggered";
 bool furnanceTriggered = false;
 bool acTriggered = false;
 const int delay_3000 = 3000;
@@ -164,15 +179,16 @@ bool showHaSplashScreen = true;
 String hours = "";
 String minutes = "";
 bool pressed = false;
-String spotifySource = "";
-String volumeLevel = "";
+const char* spotifySource = "";
+const char* volumeLevel = "";
 String mediaPosition = "";
 String mediaDuration = "";
-String mediaArtist = "";
-String mediaTitle = "";
-String appName = "";
-String spotifyActivity = "";
-const String BT_AUDIO = "Bluetooth Audio";
+const char* mediaArtist = "";
+const char* mediaTitle = OFF_CMD;;
+const char* mediaTitlePrevious = OFF_CMD;;
+const char* appName = "";
+const char* spotifyActivity = "";
+const char* BT_AUDIO = "Bluetooth Audio";
 int offset = 160;
 int offsetAuthor = 130;
 // variable used for faster delay instead of arduino delay(), this custom delay prevent a lot of problem and memory leak
@@ -189,7 +205,7 @@ unsigned int delayTime = 20;
   long unsigned int highIn;
  
   unsigned int readOnceEveryNTimess = 0;
-  const char* lastPirState = OFF_CMD;
+  const char* lastPirState = OFF_CMD;;
   float hum_weighting = 0.25; // so hum effect is 25% of the total air quality score
   float gas_weighting = 0.75; // so gas effect is 75% of the total air quality score
   int   humidity_score, gas_score;
