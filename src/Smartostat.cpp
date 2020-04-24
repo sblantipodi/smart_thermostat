@@ -385,7 +385,7 @@ void draw() {
       display.setTextWrap(false);
 
       // 12 is the text width
-      int titleLen = sizeof(mediaTitle)*12;
+      int titleLen = mediaTitle.length()*12;
       if (-titleLen > offset) {
         offset = 160;
       } else {
@@ -396,7 +396,7 @@ void draw() {
       display.println(mediaTitle);
 
       // 6 is the text width
-      int authorLen = sizeof(mediaArtist)*6;
+      int authorLen = mediaArtist.length()*6;
       if (authorLen > 128) {
         if (-authorLen > offsetAuthor) {
           offsetAuthor = 130;
@@ -648,34 +648,51 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
 bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  unsigned int tempCurrentPage = currentPage;
+  serializeJsonPretty(json, Serial); Serial.println();
   if (json.containsKey("media_artist")) {
+    
     spotifyActivity = helper.getValue(json["spotify_activity"]);
-    // if paused clear mediaTitle and other strings and set current page 0
-    if (spotifyActivity == "paused" || spotifyActivity == "idle") {
-      mediaTitle = "";
-      mediaArtist = "";
-      spotifySource = "";
-      volumeLevel = "";
-      currentPage = 0;
-    }
-    // no one was playing before because mediaTitle is empty, trigger page 4
-    if (spotifyActivity == "playing" && mediaTitle == "") {
-      currentPage = 8;
-    }
+    mediaTitle = helper.getValue(json["media_title"]);
     spotifySource = helper.getValue(json["spotifySource"]);
     volumeLevel = helper.getValue(json["volume_level"]);
     mediaArtist = helper.getValue(json["media_artist"]);
     appName = helper.getValue(json["app_name"]);
-    // no mediaTitle if is playing
-    if (spotifyActivity != "paused" && spotifyActivity != "idle") {
-      mediaTitle = helper.getValue(json["media_title"]);
+    spotifyPosition = helper.getValue(json["position"]);
+
+    if (appName != BT_AUDIO) {
+      if ((spotifyActivity == SPOTIFY_PAUSED || spotifyActivity == SPOTIFY_IDLE) && mediaTitle == mediaTitlePrevious) {
+        cleanSpotifyInfo();
+        currentPage = 0;
+      }
+      if (mediaTitle != mediaTitlePrevious) {
+        currentPage = 8;
+      }
+    } else if (spotifyPosition != spotifyPositionPrevious) {
+      spotifyActivity = SPOTIFY_PLAYING;
+      if (mediaTitle != mediaTitlePrevious) {
+        currentPage = 8;
+      }
+    } else {
+      spotifyActivity = SPOTIFY_IDLE;
+      cleanSpotifyInfo();
     }
-    if (mediaTitle == BT_AUDIO) {
-      currentPage = tempCurrentPage;
-    }
+   
+    mediaTitlePrevious = helper.getValue(json["media_title"]);
+    spotifyPositionPrevious = helper.getValue(json["position"]);
+  
   }
   return true;
+
+}
+
+void cleanSpotifyInfo() {
+
+  mediaTitle = EMPTY_STR;
+  mediaArtist = EMPTY_STR;
+  spotifySource = EMPTY_STR;
+  volumeLevel = EMPTY_STR;
+  currentPage = 0;
+  appName = EMPTY_STR;
 
 }
 
@@ -703,8 +720,6 @@ bool processSmartoledCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 bool processSmartostatAcJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
   ac = helper.isOnOff(json);
-  Serial.println(ac);
-    Serial.println("--------ac");
 
   if (ac == ON_CMD) {
     acTriggered = true;
