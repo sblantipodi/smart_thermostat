@@ -743,7 +743,7 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
       forceACOn = false;
       ac = OFF_CMD;
       sendACState();
-      bootstrapManager.publish(SMARTOSTAT_PIR_STATE_TOPIC, OFF_CMD, true);  
+      bootstrapManager.publish(SMARTOSTAT_PIR_STATE_TOPIC, helper.string2char(OFF_CMD), true);  
       releManagement();
       acManagement();
       sendSmartostatRebootCmnd();
@@ -788,21 +788,21 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
       
       acir.setTemp(tempInt);
 
-      const char* alette = json["alette_ac"];
+      String alette = json["alette_ac"];
       acir.setQuiet(false);
       acir.setPowerful(false);
-      if(strcmp(alette, off_CMD) == 0) {
+      if(alette == off_CMD) {
         acir.setSwing(false);
-        const char* modeConst = json["mode"];
-        if (strcmp(FAN_LOW, modeConst) == 0) {
+        String modeConst = json["mode"];
+        if (FAN_LOW == modeConst) {
           acir.setFan(kSamsungAcFanLow);
-        } else if (strcmp(FAN_POWER, modeConst) == 0) {
+        } else if (FAN_POWER == modeConst) {
           acir.setPowerful(true);
-        } else if (strcmp(FAN_QUIET, modeConst) == 0) {        
+        } else if (FAN_QUIET == modeConst) {        
           acir.setQuiet(true);
-        } else if (strcmp(FAN_AUTO, modeConst) == 0) {
+        } else if (FAN_AUTO == modeConst) {
           acir.setFan(kSamsungAcFanAuto);
-        } else if (strcmp(FAN_HIGH, modeConst) == 0) {
+        } else if (FAN_HIGH == modeConst) {
           acir.setFan(kSamsungAcFanHigh);
         }
       } else {
@@ -880,9 +880,9 @@ void sendInfoState() {
 // Send PIR state via MQTT
 #ifdef TARGET_SMARTOSTAT
   
-  void sendSmartostatRebootState(const char* onOff) {   
+  void sendSmartostatRebootState(String onOff) {   
 
-    bootstrapManager.publish(SMARTOSTAT_STAT_REBOOT, onOff, true);
+    bootstrapManager.publish(SMARTOSTAT_STAT_REBOOT, helper.string2char(onOff), true);
 
   }
 
@@ -895,7 +895,7 @@ void sendInfoState() {
 
   void sendPirState() {   
 
-      bootstrapManager.publish(SMARTOSTAT_PIR_STATE_TOPIC, (pir == ON_CMD) ? ON_CMD : OFF_CMD, true);
+      bootstrapManager.publish(SMARTOSTAT_PIR_STATE_TOPIC, (pir == ON_CMD) ? helper.string2char(ON_CMD) : helper.string2char(OFF_CMD), true);
 
   }
 
