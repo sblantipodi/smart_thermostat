@@ -165,7 +165,7 @@ void manageHardwareButton() {
 /********************************** START CALLBACK *****************************************/
 void callback(char* topic, byte* payload, unsigned int length) {
 
-  StaticJsonDocument<BUFFER_SIZE> json = bootstrapManager.parseQueueMsg(topic, payload, length);
+   StaticJsonDocument<BUFFER_SIZE> json = bootstrapManager.parseQueueMsg(topic, payload, length);
 
   if(strcmp(topic, SMARTOSTAT_SENSOR_STATE_TOPIC) == 0) {
     processSmartostatSensorJson(json);
@@ -392,6 +392,8 @@ void draw() {
         offset -= 2;
       }
       display.setCursor(offset,spotifyLogoW+5);
+
+      Serial.print(mediaTitle);
       display.println(mediaTitle);
 
       // 6 is the text width
@@ -621,7 +623,7 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
     } else if ((strcmp(operationModeCoolConst, COOL) == 0) || strcmp(operationModeCoolConst, IDLE) == 0) {
       operationModeCoolConst = COOL;
     } else {
-      operationModeCoolConst = "OFF";
+      operationModeCoolConst = OFF_CMD;
     }
   
     alarm = json["smartostat"]["alarm"];
@@ -632,7 +634,7 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
     } else if (strcmp(alarm, ALARM_ARMED_AWAY) == 0) {
       alarm = ALARM_ARMED_AWAY;
     } else {
-      alarm = "OFF";
+      alarm = OFF_CMD;
     }
 
     fan = json["smartostatac"]["fan"];
@@ -647,7 +649,7 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
     } else if (strcmp(fan, FAN_POWER) == 0) {
       fan = FAN_POWER;
     } else {
-      fan = "OFF";
+      fan = OFF_CMD;
     }
 
     if (operationModeHeatConst == HEAT) {
@@ -670,8 +672,8 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
         float target_temperatureFloat = json["smartostat"]["temperature"];
         target_temperature = serialized(String(target_temperatureFloat,1));  
       }
-      hvac_action = "OFF";
-      away_mode = "OFF";
+      hvac_action = OFF_CMD;
+      away_mode = OFF_CMD;
     }
   
   return true;
@@ -679,6 +681,8 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 }
 
 bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
+
+      serializeJsonPretty(json, Serial); Serial.println();
 
   unsigned int tempCurrentPage = currentPage;
   if (json.containsKey("media_artist")) {
@@ -693,10 +697,10 @@ bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
     
     // if paused clear mediaTitle and other strings and set current page 0
     if (spotifyActivity == SPOTIFY_PAUSED || spotifyActivity == SPOTIFY_IDLE) {
-      mediaTitle = "OFF";
-      mediaArtist = "OFF";
-      spotifySource = "OFF";
-      volumeLevel = "OFF";
+      mediaTitle = OFF_CMD;
+      mediaArtist = OFF_CMD;
+      spotifySource = OFF_CMD;
+      volumeLevel = OFF_CMD;
       currentPage = 0;
     }
     // no one was playing before because mediaTitle is empty, trigger page 4
@@ -705,11 +709,13 @@ bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
     }
     spotifySource = json["source"];    
     volumeLevel = json["volume_level"];    
-    mediaArtist = "dadss"; //json["media_artist"];
+    mediaArtist = json["media_artist"];
     appName = json["app_name"];
     // no mediaTitle if is playing
     if (spotifyActivity != SPOTIFY_PAUSED && spotifyActivity != SPOTIFY_IDLE) {
-      mediaTitle = "CODI"; //json["media_title"];
+      String s = json["media_title"];
+      Serial.println(s);
+      mediaTitle = json["media_title"];
     }
     if (strcmp(mediaTitle, BT_AUDIO) == 0) {
       currentPage = tempCurrentPage;
@@ -743,6 +749,7 @@ bool processSmartoledCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 bool processSmartostatAcJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
   ac = helper.isOnOff(json);
+  // Serial.println(ac);
   if (ac == ON_CMD) {
     acTriggered = true;
     //currentPage = 0;
@@ -775,10 +782,10 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
     sendSmartostatRebootState(OFF_CMD);
     if (rebootState == OFF_CMD) {      
       forceFurnanceOn = false;
-      furnance = "OFF";
+      furnance = OFF_CMD;
       sendFurnanceState();
       forceACOn = false;
-      ac = "OFF";
+      ac = OFF_CMD;
       sendACState();
       bootstrapManager.publish(SMARTOSTAT_PIR_STATE_TOPIC, OFF_CMD, true);  
       releManagement();
@@ -795,7 +802,7 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
     String acState = msg;
     if (acState == ON_CMD && ac == OFF_CMD) {
       acTriggered = true;
-      ac = "ON";
+      ac = ON_CMD;
       acir.on();
       acir.setFan(kSamsungAcFanLow);
       acir.setMode(kSamsungAcCool);
@@ -804,7 +811,7 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
       acir.sendExtended();
       sendACState();
     } else if (acState == OFF_CMD) {
-      ac = "OFF";
+      ac = OFF_CMD;
       acir.off();
       acir.sendOff();     
       sendACState(); 
@@ -1082,12 +1089,12 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
     if (digitalRead(SR501_PIR_PIN) == HIGH) {
       if (pir == OFF_CMD) {
         highIn = millis();
-        pir = "ON";
+        pir = ON_CMD;
       }
       if (pir == ON_CMD) {
         if ((millis() - highIn) > 500 ) { // 7000 four seconds on time
           if (lastPirState != ON_CMD) {
-            lastPirState = "ON";
+            lastPirState = ON_CMD;
             sendPirState();
           }
           highIn = millis();
@@ -1097,9 +1104,9 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
     if (digitalRead(SR501_PIR_PIN) == LOW) { 
       highIn = millis();     
       if (pir == ON_CMD) {
-        pir = "OFF";
+        pir = OFF_CMD;
         if (lastPirState != OFF_CMD) {
-          lastPirState = "OFF";
+          lastPirState = OFF_CMD;
           sendPirState();
         }
       }      
@@ -1262,14 +1269,14 @@ void commandButtonRelease() {
 
   if (temperature.toFloat() > HEAT_COOL_THRESHOLD) {
     if (ac == ON_CMD) {
-      ac = "OFF";
+      ac = OFF_CMD;
       // stop ac on long press if wifi or mqtt is disconnected
       forceACOn = false;
     } else {
       #ifdef TARGET_SMARTOSTAT
         acTriggered = true;
       #endif
-      ac = "ON";
+      ac = ON_CMD;
       // start ac on long press if wifi or mqtt is disconnected
       forceACOn = true;
     }      
@@ -1281,14 +1288,14 @@ void commandButtonRelease() {
     lastButtonPressed = OLED_BUTTON_PIN;
   } else {
     if (furnance == ON_CMD) {
-      furnance = "OFF";
+      furnance = OFF_CMD;
       // stop furnance on long press if wifi or mqtt is disconnected
       forceFurnanceOn = false;
     } else {
       #ifdef TARGET_SMARTOSTAT
         furnanceTriggered = true;
       #endif
-      furnance = "ON";
+      furnance = ON_CMD;
       // start furnance on long press if wifi or mqtt is disconnected
       forceFurnanceOn = true;
     }      
