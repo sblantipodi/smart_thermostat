@@ -376,7 +376,7 @@ void draw() {
       display.clearDisplay();
       // display.fillTriangle(2, 8, 7, 3, 12, 8, WHITE);
       display.fillTriangle(0, 0, 4, 4, 0, 8, WHITE);
-      if (strcmp(appName, BT_AUDIO) == 0) {
+      if (appName == BT_AUDIO) {
         display.drawBitmap((display.width()/2)-(youtubeLogoW/2), 0, youtubeLogo, youtubeLogoW, youtubeLogoH, 1);
       } else {
         display.drawBitmap((display.width()/2)-(spotifyLogoW/2), 0, spotifyLogo, spotifyLogoW, spotifyLogoH, 1);
@@ -393,7 +393,6 @@ void draw() {
       }
       display.setCursor(offset,spotifyLogoW+5);
 
-      Serial.print(mediaTitle);
       display.println(mediaTitle);
 
       // 6 is the text width
@@ -412,7 +411,7 @@ void draw() {
       display.println(mediaArtist);
 
       // draw volum bar
-      float roundedVolumeLevel = atof(volumeLevel);
+      float roundedVolumeLevel = volumeLevel.toFloat();
       int volume = (roundedVolumeLevel > 0.99) ? display.width() : ((roundedVolumeLevel*100)*1.28);
       display.drawRect(0,(display.height()-4),display.width(),4, WHITE);
       display.fillRect(0,(display.height()-4),volume,4, WHITE);
@@ -548,8 +547,7 @@ bool processUpsStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
     }
     
     loadwatt = serialized(String(loadFloat,0));
-    const char* runtimeConst = json["runtime"];
-    runtime = runtimeConst;
+    runtime = helper.getValue(json["runtime"]);
     float ivFloat = json["iv"];
     inputVoltage = serialized(String(ivFloat,0));
     float ovFloat = json["ov"];
@@ -591,7 +589,7 @@ bool processSmartostatSensorJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
 bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
-    const char* timeConst = json["Time"];
+    String timeConst = json["Time"];
     // On first boot the timedate variable is OFF
     if (timedate == OFF_CMD) {
       helper.setDateTime(timeConst);
@@ -610,58 +608,26 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
     // if (hours == "23" && minutes == "59") {
     //   resetMinMaxValues();
     // }
-    const char* haVersionConst = json["haVersion"];
-    haVersion = haVersionConst;
+    haVersion = helper.getValue(json["haVersion"]);
     humidityThreshold = json["humidity_threshold"];
     tempSensorOffset = json["temp_sensor_offset"];
 
-    const char* operationModeHeatConst = json["smartostat"]["hvac_action"];
-    const char* operationModeCoolConst = json["smartostatac"]["hvac_action"];
-
-    if ((strcmp(operationModeHeatConst, HEAT) == 0) || strcmp(operationModeHeatConst, IDLE) == 0) {
-      operationModeHeatConst = HEAT;
-    } else if ((strcmp(operationModeCoolConst, COOL) == 0) || strcmp(operationModeCoolConst, IDLE) == 0) {
-      operationModeCoolConst = COOL;
-    } else {
-      operationModeCoolConst = OFF_CMD;
-    }
+    String operationModeHeatConst = helper.getValue(json["smartostat"]["hvac_action"]);
+    String operationModeCoolConst = helper.getValue(json["smartostatac"]["hvac_action"]);
   
-    alarm = json["smartostat"]["alarm"];
-    if (strcmp(alarm, ALARM_TRIGGERED) == 0) {
-      alarm = ALARM_TRIGGERED;
-    } else if (strcmp(alarm, ALARM_PENDING) == 0) {
-      alarm = ALARM_PENDING;
-    } else if (strcmp(alarm, ALARM_ARMED_AWAY) == 0) {
-      alarm = ALARM_ARMED_AWAY;
-    } else {
-      alarm = OFF_CMD;
-    }
-
-    fan = json["smartostatac"]["fan"];
-    if (strcmp(fan, FAN_QUIET) == 0) {
-      fan = FAN_QUIET;
-    } else if (strcmp(fan, FAN_LOW) == 0) {
-      fan = FAN_LOW;
-    } else if (strcmp(fan, FAN_AUTO) == 0) {
-      fan = FAN_AUTO;
-    } else if (strcmp(fan, FAN_HIGH) == 0) {
-      fan = FAN_HIGH;
-    } else if (strcmp(fan, FAN_POWER) == 0) {
-      fan = FAN_POWER;
-    } else {
-      fan = OFF_CMD;
-    }
-
-    if (operationModeHeatConst == HEAT) {
+    alarm = helper.getValue(json["smartostat"]["alarm"]);
+    fan = helper.getValue(json["smartostatac"]["fan"]);
+   
+    if (operationModeHeatConst == HEAT || operationModeHeatConst == IDLE) {
       float target_temperatureFloat = json["smartostat"]["temperature"];
       target_temperature = serialized(String(target_temperatureFloat,1));  
-      hvac_action = operationModeHeatConst;
+      hvac_action = HEAT;
       const char* awayModeConst = json["smartostat"]["preset_mode"];
       away_mode = (strcmp(awayModeConst, "away") == 0) ? ON_CMD : OFF_CMD;
-    } else if (operationModeCoolConst == COOL) {
+    } else if (operationModeCoolConst == COOL || operationModeCoolConst == IDLE) {
       float target_temperatureFloat = json["smartostatac"]["temperature"];
       target_temperature = serialized(String(target_temperatureFloat,1));  
-      hvac_action = operationModeCoolConst;
+      hvac_action = COOL;
       const char* awayModeConst = json["smartostatac"]["preset_mode"];
       away_mode = (strcmp(awayModeConst, "away") == 0) ? ON_CMD : OFF_CMD;
     } else {
@@ -682,42 +648,30 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
 bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
-      serializeJsonPretty(json, Serial); Serial.println();
-
   unsigned int tempCurrentPage = currentPage;
   if (json.containsKey("media_artist")) {
-    spotifyActivity = json["spotify_activity"];
-    if (strcmp(SPOTIFY_PAUSED, spotifyActivity) == 0) {
-      spotifyActivity = SPOTIFY_PAUSED;
-    } else if (strcmp(SPOTIFY_PLAYING, spotifyActivity) == 0) {
-      spotifyActivity = SPOTIFY_PLAYING;
-    } else if (strcmp(SPOTIFY_IDLE, spotifyActivity) == 0) {
-      spotifyActivity = SPOTIFY_IDLE;
-    } 
-    
+    spotifyActivity = helper.getValue(json["spotify_activity"]);
     // if paused clear mediaTitle and other strings and set current page 0
-    if (spotifyActivity == SPOTIFY_PAUSED || spotifyActivity == SPOTIFY_IDLE) {
-      mediaTitle = OFF_CMD;
-      mediaArtist = OFF_CMD;
-      spotifySource = OFF_CMD;
-      volumeLevel = OFF_CMD;
+    if (spotifyActivity == "paused" || spotifyActivity == "idle") {
+      mediaTitle = "";
+      mediaArtist = "";
+      spotifySource = "";
+      volumeLevel = "";
       currentPage = 0;
     }
     // no one was playing before because mediaTitle is empty, trigger page 4
-    if (spotifyActivity == SPOTIFY_PLAYING && (strcmp(mediaTitle, OFF_CMD) == 0)) {
+    if (spotifyActivity == "playing" && mediaTitle == "") {
       currentPage = 8;
     }
-    spotifySource = json["source"];    
-    volumeLevel = json["volume_level"];    
-    mediaArtist = json["media_artist"];
-    appName = json["app_name"];
+    spotifySource = helper.getValue(json["spotifySource"]);
+    volumeLevel = helper.getValue(json["volume_level"]);
+    mediaArtist = helper.getValue(json["media_artist"]);
+    appName = helper.getValue(json["app_name"]);
     // no mediaTitle if is playing
-    if (spotifyActivity != SPOTIFY_PAUSED && spotifyActivity != SPOTIFY_IDLE) {
-      String s = json["media_title"];
-      Serial.println(s);
-      mediaTitle = json["media_title"];
+    if (spotifyActivity != "paused" && spotifyActivity != "idle") {
+      mediaTitle = helper.getValue(json["media_title"]);
     }
-    if (strcmp(mediaTitle, BT_AUDIO) == 0) {
+    if (mediaTitle == BT_AUDIO) {
       currentPage = tempCurrentPage;
     }
   }
@@ -749,7 +703,9 @@ bool processSmartoledCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 bool processSmartostatAcJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
   ac = helper.isOnOff(json);
-  // Serial.println(ac);
+  Serial.println(ac);
+    Serial.println("--------ac");
+
   if (ac == ON_CMD) {
     acTriggered = true;
     //currentPage = 0;
@@ -865,7 +821,7 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
   bool processSmartoledRebootCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
     
-    const char* rebootState = helper.isOnOff(json);
+    rebootState = helper.isOnOff(json);
     sendSmartoledRebootState(OFF_CMD);
     if (rebootState == OFF_CMD) {      
       sendSmartoledRebootCmnd();
@@ -908,7 +864,7 @@ void resetMinMaxValues() {
 /********************************** SEND STATE *****************************************/
 void sendPowerState() {
 
-  bootstrapManager.publish(SMARTOLED_STATE_TOPIC, (stateOn) ? ON_CMD : OFF_CMD, true);
+  bootstrapManager.publish(SMARTOLED_STATE_TOPIC, (stateOn) ? helper.string2char(ON_CMD) : helper.string2char(OFF_CMD), true);
 
 }
 
@@ -990,16 +946,16 @@ void sendInfoState() {
     if (furnance == OFF_CMD) {
       forceFurnanceOn = false;
     } 
-    bootstrapManager.publish(SMARTOSTAT_FURNANCE_STATE_TOPIC, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+    bootstrapManager.publish(SMARTOSTAT_FURNANCE_STATE_TOPIC, (furnance == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
 
   }
 #endif
 
 #ifdef TARGET_SMARTOLED
 
-  void sendSmartoledRebootState(const char* onOff) {
+  void sendSmartoledRebootState(String onOff) {
 
-    bootstrapManager.publish(SMARTOLED_STAT_REBOOT, onOff, true);
+    bootstrapManager.publish(SMARTOLED_STAT_REBOOT, helper.string2char(onOff), true);
 
   }
 
@@ -1017,16 +973,16 @@ void sendACCommandState() {
   if (ac == OFF_CMD) {
     forceACOn = false;
   }     
-  bootstrapManager.publish(SMARTOSTATAC_CMND_IRSEND, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+  bootstrapManager.publish(SMARTOSTATAC_CMND_IRSEND, (ac == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
 
 }
 
 void sendClimateState(String mode) {
 
   if (mode == COOL) {
-    bootstrapManager.publish(SMARTOSTAT_CMND_CLIMATE_COOL_STATE, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+    bootstrapManager.publish(SMARTOSTAT_CMND_CLIMATE_COOL_STATE, (ac == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
   } else {
-    bootstrapManager.publish(SMARTOSTAT_CMND_CLIMATE_HEAT_STATE, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+    bootstrapManager.publish(SMARTOSTAT_CMND_CLIMATE_HEAT_STATE, (furnance == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
   } 
 
 }
@@ -1036,7 +992,7 @@ void sendFurnanceCommandState() {
   if (furnance == OFF_CMD) {
     forceFurnanceOn = false;
   } 
-  bootstrapManager.publish(SMARTOSTAT_FURNANCE_CMND_TOPIC, (furnance == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+  bootstrapManager.publish(SMARTOSTAT_FURNANCE_CMND_TOPIC, (furnance == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
 
 }
 
@@ -1045,7 +1001,7 @@ void sendACState() {
   if (ac == OFF_CMD) {
     forceACOn = false;
   }     
-  bootstrapManager.publish(SMARTOSTATAC_STAT_IRSEND, (ac == OFF_CMD) ? OFF_CMD : ON_CMD, true);
+  bootstrapManager.publish(SMARTOSTATAC_STAT_IRSEND, (ac == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
 
 }
 
