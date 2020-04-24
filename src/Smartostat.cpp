@@ -216,7 +216,7 @@ void draw() {
   // currentPage = 7;
 
   if (currentPage == 8) {
-    if (spotifyActivity != "playing") {
+    if (spotifyActivity != SPOTIFY_PLAYING) {
       display.clearDisplay();
       currentPage = numPages;
       bootstrapManager.drawInfoPage(VERSION, AUTHOR);
@@ -229,7 +229,7 @@ void draw() {
   }
 
   // Draw Images
-  if (alarm == "armed_away" || alarm == "pending" || alarm == "triggered") {
+  if (alarm == ALARM_ARMED_AWAY|| alarm == ALARM_PENDING || alarm == ALARM_TRIGGERED) {
     display.drawBitmap(0, 10, shieldLogo, shieldLogoW, shieldLogoH, 1);
   } else if (away_mode == OFF_CMD && currentPage != numPages) {
     display.drawBitmap(0, 10, haSmallLogo, haSmallLogoW, haSmallLogoH, 1);
@@ -245,15 +245,15 @@ void draw() {
     drawRoundRect();
     display.drawBitmap(16, 19, snowLogo, snowLogoW, snowLogoH, 1);
     display.setCursor(3,30);
-    if (fan == "Low") {
+    if (fan == FAN_LOW) {
       display.print(F("L"));
-    } else if (fan == "High") {
+    } else if (fan == FAN_HIGH) {
       display.print(F("H"));
-    } else if (fan == "Auto") {
+    } else if (fan == FAN_AUTO) {
       display.print(F("A"));
-    } else if (fan == "Power") {
+    } else if (fan == FAN_POWER) {
       display.print(F("P"));
-    } else if (fan == "Quiet") {
+    } else if (fan == FAN_QUIET) {
       display.print(F("Q"));
     }    
     display.drawCircle(5, 33, 5, WHITE);
@@ -372,7 +372,7 @@ void draw() {
     display.setCursor(55,25);
     display.print(loadwatt); display.print(F("W"));
   } else if (currentPage == 8) {
-    if (spotifyActivity == "playing") {
+    if (spotifyActivity == SPOTIFY_PLAYING) {
       display.clearDisplay();
       // display.fillTriangle(2, 8, 7, 3, 12, 8, WHITE);
       display.fillTriangle(0, 0, 4, 4, 0, 8, WHITE);
@@ -385,7 +385,7 @@ void draw() {
       display.setTextWrap(false);
 
       // 12 is the text width
-      int titleLen = mediaTitle.length()*12;
+      int titleLen = sizeof(mediaTitle)*12;
       if (-titleLen > offset) {
         offset = 160;
       } else {
@@ -612,6 +612,7 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
     haVersion = haVersionConst;
     humidityThreshold = json["humidity_threshold"];
     tempSensorOffset = json["temp_sensor_offset"];
+
     const char* operationModeHeatConst = json["smartostat"]["hvac_action"];
     const char* operationModeCoolConst = json["smartostatac"]["hvac_action"];
 
@@ -623,11 +624,32 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
       operationModeCoolConst = OFF_CMD;
     }
   
-    const char* alarmConst = json["smartostat"]["alarm"];
-    alarm = alarmConst;
-    const char* fanConst = json["smartostatac"]["fan"];
-    fan = fanConst;
-    
+    alarm = json["smartostat"]["alarm"];
+    if (strcmp(alarm, ALARM_TRIGGERED) == 0) {
+      alarm = ALARM_TRIGGERED;
+    } else if (strcmp(alarm, ALARM_PENDING) == 0) {
+      alarm = ALARM_PENDING;
+    } else if (strcmp(alarm, ALARM_ARMED_AWAY) == 0) {
+      alarm = ALARM_ARMED_AWAY;
+    } else {
+      alarm = OFF_CMD;
+    }
+
+    fan = json["smartostatac"]["fan"];
+    if (strcmp(fan, FAN_QUIET) == 0) {
+      fan = FAN_QUIET;
+    } else if (strcmp(fan, FAN_LOW) == 0) {
+      fan = FAN_LOW;
+    } else if (strcmp(fan, FAN_AUTO) == 0) {
+      fan = FAN_AUTO;
+    } else if (strcmp(fan, FAN_HIGH) == 0) {
+      fan = FAN_HIGH;
+    } else if (strcmp(fan, FAN_POWER) == 0) {
+      fan = FAN_POWER;
+    } else {
+      fan = OFF_CMD;
+    }
+
     if (operationModeHeatConst == HEAT) {
       float target_temperatureFloat = json["smartostat"]["temperature"];
       target_temperature = serialized(String(target_temperatureFloat,1));  
@@ -660,10 +682,18 @@ bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
   unsigned int tempCurrentPage = currentPage;
   if (json.containsKey("media_artist")) {
-    const char* spotifyActivityConst = json["spotify_activity"];
-    spotifyActivity = spotifyActivityConst;
+    spotifyActivity = json["spotify_activity"];
+    if (strcmp(SPOTIFY_PAUSED, spotifyActivity) == 0) {
+      spotifyActivity = SPOTIFY_PAUSED;
+    } else if (strcmp(SPOTIFY_PLAYING, spotifyActivity) == 0) {
+      spotifyActivity = SPOTIFY_PLAYING;
+    } else if (strcmp(SPOTIFY_IDLE, spotifyActivity) == 0) {
+      spotifyActivity = SPOTIFY_IDLE;
+    } else {
+      spotifyActivity = OFF_CMD;
+    }
     // if paused clear mediaTitle and other strings and set current page 0
-    if (spotifyActivity == "paused" || spotifyActivity == "idle") {
+    if (spotifyActivity == SPOTIFY_PAUSED || spotifyActivity == SPOTIFY_IDLE) {
       mediaTitle = "";
       mediaArtist = "";
       spotifySource = "";
@@ -671,7 +701,7 @@ bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
       currentPage = 0;
     }
     // no one was playing before because mediaTitle is empty, trigger page 4
-    if (spotifyActivity == "playing" && mediaTitle == "") {
+    if (spotifyActivity == SPOTIFY_PLAYING && mediaTitle == "") {
       currentPage = 8;
     }
     const char* spotifySourceConst = json["spotifySource"];
@@ -683,9 +713,8 @@ bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
     const char* appNameConst = json["app_name"];
     appName = appNameConst;
     // no mediaTitle if is playing
-    if (spotifyActivity != "paused" && spotifyActivity != "idle") {
-      const char* mediaTitleConst = json["media_title"];
-      mediaTitle = mediaTitleConst;
+    if (spotifyActivity != SPOTIFY_PAUSED && spotifyActivity != SPOTIFY_IDLE) {
+      mediaTitle = json["media_title"];
     }
     if (mediaTitle == BT_AUDIO) {
       currentPage = tempCurrentPage;
@@ -718,7 +747,8 @@ bool processSmartoledCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
 bool processSmartostatAcJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  ac = helper.isOnOff(json);;
+  ac = helper.isOnOff(json);
+  Serial.println(ac);
   if (ac == ON_CMD) {
     acTriggered = true;
     //currentPage = 0;
@@ -801,23 +831,21 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
       
       acir.setTemp(tempInt);
 
-      const char* aletteConst = json["alette_ac"];
-      String alette = aletteConst;
+      const char* alette = json["alette_ac"];
       acir.setQuiet(false);
       acir.setPowerful(false);
-      if(alette == "off") {
+      if(strcmp(alette, off_CMD) == 0) {
         acir.setSwing(false);
         const char* modeConst = json["mode"];
-        String mode = modeConst;
-        if (mode == "Low") {
+        if (strcmp(FAN_LOW, modeConst) == 0) {
           acir.setFan(kSamsungAcFanLow);
-        } else if (mode == "Power") {
+        } else if (strcmp(FAN_POWER, modeConst) == 0) {
           acir.setPowerful(true);
-        } else if (mode == "Quiet") {        
+        } else if (strcmp(FAN_QUIET, modeConst) == 0) {        
           acir.setQuiet(true);
-        } else if (mode == "Auto") {
+        } else if (strcmp(FAN_AUTO, modeConst) == 0) {
           acir.setFan(kSamsungAcFanAuto);
-        } else if (mode == "High") {
+        } else if (strcmp(FAN_HIGH, modeConst) == 0) {
           acir.setFan(kSamsungAcFanHigh);
         }
       } else {
@@ -1045,7 +1073,7 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
     // Write data to file system
     writeConfigToSPIFFS();
     screenSaverTriggered = true;
-    if ((humidity != OFF_CMD && humidity.toFloat() < humidityThreshold) && (loadFloatPrevious < HIGH_WATT) && ((spotifyActivity == "playing" && currentPage != 8) || spotifyActivity != "playing" )) {
+    if ((humidity != OFF_CMD && humidity.toFloat() < humidityThreshold) && (loadFloatPrevious < HIGH_WATT) && ((spotifyActivity == SPOTIFY_PLAYING && currentPage != 8) || spotifyActivity != SPOTIFY_PLAYING )) {
       currentPage = 0;
     }
   }
