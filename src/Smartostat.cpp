@@ -28,6 +28,7 @@
   - Google Home Mini for Voice Recognition
 */
 
+#include <FS.h> //this needs to be first, or it all crashes and burns...
 #include <Smartostat.h>
 
 
@@ -648,7 +649,7 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
 bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
-  serializeJsonPretty(json, Serial); Serial.println();
+  //serializeJsonPretty(json, Serial); Serial.println();
   if (json.containsKey("media_artist")) {
     
     spotifyActivity = helper.getValue(json["spotify_activity"]);
@@ -664,7 +665,7 @@ bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
         cleanSpotifyInfo();
         currentPage = 0;
       }
-      if (mediaTitle != mediaTitlePrevious) {
+      if ((mediaTitle != mediaTitlePrevious) && (mediaTitlePrevious != OFF_CMD)) {
         currentPage = 8;
       }
     } else if (spotifyPosition != spotifyPositionPrevious) {
