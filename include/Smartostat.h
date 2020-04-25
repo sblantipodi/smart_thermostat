@@ -92,6 +92,7 @@ const char* UPS_STATE = "stat/ups/INFO";
   const char* SMARTOSTATAC_CMND_IRSENDSTATE = "cmnd/smartostatac/IRsend";
   const char* SMARTOSTAT_STAT_REBOOT = "stat/smartostat/reboot";
   const char* SMARTOSTAT_CMND_REBOOT = "cmnd/smartostat/reboot";
+  const char* SPIFFS_STATE = "stat/smartostat/SPIFFS";  
 #endif
 #ifdef TARGET_SMARTOLED
   const char* SMARTOLED_CMND_TOPIC = "cmnd/smartoled/POWER3";
@@ -99,6 +100,7 @@ const char* UPS_STATE = "stat/ups/INFO";
   const char* SMARTOLED_INFO_TOPIC = "stat/smartoled/INFO";
   const char* SMARTOLED_STAT_REBOOT = "stat/smartoled/reboot";
   const char* SMARTOLED_CMND_REBOOT = "cmnd/smartoled/reboot";
+  const char* SPIFFS_STATE = "stat/smartoled/SPIFFS";  
 #endif 
 
 // HEAT COOL THRESHOLD, USED to MANAGE SITUATIONS WHEN THERE IS NO INFO FROM THE MQTT SERVER (used by smartoled for capacitive button too)

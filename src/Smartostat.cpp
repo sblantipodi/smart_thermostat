@@ -1395,6 +1395,7 @@ void writeConfigToSPIFFS() {
       serializeJsonPretty(doc, Serial);
       serializeJson(doc, configFile);
       configFile.close();
+      Serial.println(F("\nConfig saved\n"));
     } else {
       Serial.println(F("Failed to mount FS for write"));
     }
