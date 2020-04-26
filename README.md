@@ -50,7 +50,7 @@ If you like **Smart Thermostat**, give it a star, or fork it and contribute!
 ![PHOTO5](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/ha_smartostat_screenshot.jpg)
 ![PHOTO6](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/ha_smartostat_screenshot_2.jpg)
 
-## Desktop Client
+## Home Assistant Desktop Client
 ![PHOTOt](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/smartostat_dashboard.jpg)
 
 ## License
