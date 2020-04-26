@@ -1312,93 +1312,39 @@ void quickPressRelease() {
 /********************************** SPIFFS MANAGEMENT *****************************************/
 void readConfigFromSPIFFS() {
 
-  bool error = false;
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.setTextSize(1);
-  display.println(F("Mounting SPIFSS..."));
-  display.display();
-  // SPIFFS.remove("/config.json");
-  if (SPIFFS.begin()) {
-    display.println(F("FS mounted"));
-    if (SPIFFS.exists("/config.json")) {
-      //file exists, reading and loading
-      display.println(F("Reading config.json file..."));
-      File configFile = SPIFFS.open("/config.json", "r");
-      if (configFile) {
-        display.println(F("Config OK"));
-        size_t size = configFile.size();
-        // Allocate a buffer to store contents of the file.
-        std::unique_ptr<char[]> buf(new char[size]);
+  DynamicJsonDocument doc(1024);
+  doc = bootstrapManager.readSPIFFS(doc, "config.json");
 
-        configFile.readBytes(buf.get(), size);
-        DynamicJsonDocument doc(1024);        
-        DeserializationError deserializeError = deserializeJson(doc, buf.get());
-        Serial.println(F("\nReading config.json"));
-        serializeJsonPretty(doc, Serial);
-        if (!deserializeError) {
-          display.println(F("JSON parsed"));
-          if(doc["minTemperature"]) {
-            display.println(F("Reload previously stored values."));
-            minTemperature = doc["minTemperature"];
-            maxTemperature = doc["maxTemperature"];
-            minHumidity = doc["minHumidity"];
-            maxHumidity = doc["maxHumidity"];
-            minPressure = doc["minPressure"];
-            maxPressure = doc["maxPressure"];
-            minGasResistance = doc["minGasResistance"];
-            maxGasResistance = doc["maxGasResistance"];
-            minIAQ = doc["minIAQ"];
-            maxIAQ = doc["maxIAQ"];
-            configFile.close();
-          } else {
-            error = true;
-            display.println(F("JSON file is empty"));
-          }
-        } else {
-          error = true;
-          display.println(F("Failed to load json config"));
-        }
-      }
-    }
-  } else {
-    error = true;
-    display.println(F("failed to mount FS"));
-  }
-  display.display();
-  if (!error) {
-    delay(delay_4000);
+  if (!(doc.containsKey(VALUE) && doc[VALUE] == ERROR)) {
+    Serial.println(F("\nReload previously stored values."));
+    minTemperature = doc["minTemperature"];
+    maxTemperature = doc["maxTemperature"];
+    minHumidity = doc["minHumidity"];
+    maxHumidity = doc["maxHumidity"];
+    minPressure = doc["minPressure"];
+    maxPressure = doc["maxPressure"];
+    minGasResistance = doc["minGasResistance"];
+    maxGasResistance = doc["maxGasResistance"];
+    minIAQ = doc["minIAQ"];
+    maxIAQ = doc["maxIAQ"];
   }
 
 }
 
 void writeConfigToSPIFFS() {
 
-    if (SPIFFS.begin()) {
-      Serial.println(F("\nSaving config.json\n"));
-      DynamicJsonDocument doc(1024);
-      doc["minTemperature"] = minTemperature;
-      doc["maxTemperature"] = maxTemperature;
-      doc["minHumidity"] = minHumidity;
-      doc["maxHumidity"] = maxHumidity;
-      doc["minPressure"] = minPressure;
-      doc["maxPressure"] = maxPressure;
-      doc["minGasResistance"] = minGasResistance;
-      doc["maxGasResistance"] = maxGasResistance;
-      doc["minIAQ"] = minIAQ;
-      doc["maxIAQ"] = maxIAQ;
-      // SPIFFS.format();
-      File configFile = SPIFFS.open("/config.json", "w");
-      if (!configFile) {
-        Serial.println(F("Failed to open config file for writing"));
-      }
-      serializeJsonPretty(doc, Serial);
-      serializeJson(doc, configFile);
-      configFile.close();
-      Serial.println(F("\nConfig saved\n"));
-    } else {
-      Serial.println(F("Failed to mount FS for write"));
-    }
+  DynamicJsonDocument doc(1024);
+  doc["minTemperature"] = minTemperature;
+  doc["maxTemperature"] = maxTemperature;
+  doc["minHumidity"] = minHumidity;
+  doc["maxHumidity"] = maxHumidity;
+  doc["minPressure"] = minPressure;
+  doc["maxPressure"] = maxPressure;
+  doc["minGasResistance"] = minGasResistance;
+  doc["maxGasResistance"] = maxGasResistance;
+  doc["minIAQ"] = minIAQ;
+  doc["maxIAQ"] = maxIAQ;
+  bootstrapManager.writeToSPIFFS(doc, "config.json");    
 
 }
 
