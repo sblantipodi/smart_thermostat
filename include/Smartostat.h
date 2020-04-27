@@ -41,7 +41,7 @@
 #endif
 #include "Version.h"
 #include "Configuration.h"
-#include "../arduino_bootstrapper/core/BootstrapManager.h"
+#include "BootstrapManager.h"
 
 
 /****************** BOOTSTRAP and WIFI MANAGER ******************/

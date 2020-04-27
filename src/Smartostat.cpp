@@ -663,14 +663,13 @@ bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
     if (appName != BT_AUDIO) {
       if ((spotifyActivity == SPOTIFY_PAUSED || spotifyActivity == SPOTIFY_IDLE) && mediaTitle == mediaTitlePrevious) {
         cleanSpotifyInfo();
-        currentPage = 0;
       }
-      if ((mediaTitle != mediaTitlePrevious) && (mediaTitlePrevious != OFF_CMD)) {
+      if ((mediaTitle != mediaTitlePrevious) && (mediaTitlePrevious != OFF_CMD) && (mediaTitle != BT_AUDIO)) {
         currentPage = 8;
       }
     } else if (spotifyPosition != spotifyPositionPrevious) {
       spotifyActivity = SPOTIFY_PLAYING;
-      if (mediaTitle != mediaTitlePrevious) {
+      if (mediaTitle != mediaTitlePrevious && (mediaTitle != BT_AUDIO)) {
         currentPage = 8;
       }
     } else {
@@ -692,7 +691,6 @@ void cleanSpotifyInfo() {
   mediaArtist = EMPTY_STR;
   spotifySource = EMPTY_STR;
   volumeLevel = EMPTY_STR;
-  currentPage = 0;
   appName = EMPTY_STR;
 
 }
