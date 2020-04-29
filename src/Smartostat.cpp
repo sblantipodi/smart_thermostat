@@ -135,6 +135,9 @@ void manageQueueSubscription() {
     bootstrapManager.subscribe(SMARTOSTATAC_CMND_IRSENDSTATE);    
     bootstrapManager.subscribe(SMARTOSTATAC_CMND_IRSEND);           
   #endif
+  bootstrapManager.subscribe(SOLAR_STATION_POWER_STATE);
+  bootstrapManager.subscribe(SOLAR_STATION_PUMP_POWER);
+  bootstrapManager.subscribe(SOLAR_STATION_STATE);
   
 }
 
@@ -184,7 +187,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
     processSmartoledCmnd(json);
   } else if(strcmp(topic, SMARTOSTAT_FURNANCE_CMND_TOPIC) == 0) {
     processFurnancedCmnd(json);
+  } else if(strcmp(topic, SOLAR_STATION_POWER_STATE) == 0) {
+    processSolarStationPowerState(json);
+  } else if(strcmp(topic, SOLAR_STATION_PUMP_POWER) == 0) {
+    processSolarStationWaterPump(json);
+  } else if(strcmp(topic, SOLAR_STATION_STATE) == 0) {
+    processSolarStationState(json);
   }
+
   #ifdef TARGET_SMARTOLED
     if(strcmp(topic, SMARTOSTATAC_CMD_TOPIC) == 0) {
       processSmartostatAcJson(json);
@@ -305,8 +315,10 @@ void draw() {
   }
 
   if (currentPage != 5 && currentPage != 6 && currentPage != 7 && currentPage != 8 && currentPage != numPages) {
-    drawFooter();
+    manageFooter();
   }
+
+
 
   // Draw Text
   display.setTextSize(2);
@@ -434,15 +446,23 @@ void draw() {
   bootstrapManager.drawScreenSaver(AUTHOR + " domotics");
 
   if (furnanceTriggered) {
-    drawCenterScreenLogo(furnanceTriggered, fireLogo, fireLogoW, fireLogoH, delay_4000);
+    drawCenterScreenLogo(furnanceTriggered, fireLogo, fireLogoW, fireLogoH, DELAY_4000);
   }
 
   if (acTriggered) {
-    drawCenterScreenLogo(acTriggered, snowLogo, snowLogoW, snowLogoH, delay_4000);
+    drawCenterScreenLogo(acTriggered, snowLogo, snowLogoW, snowLogoH, DELAY_4000);
   }
 
   if (showHaSplashScreen) {
-    drawCenterScreenLogo(showHaSplashScreen, HABIGLOGO, HABIGLOGOW, HABIGLOGOH, delay_4000);
+    drawCenterScreenLogo(showHaSplashScreen, HABIGLOGO, HABIGLOGOW, HABIGLOGOH, DELAY_4000);
+  }
+
+  if ((ssTriggered || (ssTriggerCycle > 0)) && !wpTriggered) {
+    drawSolarStationTrigger(SOLAR_STATION_LOGO, SOLAR_STATION_LOGO_W, SOLAR_STATION_LOGO_H);
+  }
+
+  if (wpTriggered) {
+    drawWPRemainingSeconds(WATER_PUMP_LOGO, WATER_PUMP_LOGO_W, WATER_PUMP_LOGO_H);
   }
 
   if (temperature != OFF_CMD) {
@@ -480,7 +500,19 @@ void drawHeader() {
 
 }
 
-void drawFooter() {
+void manageFooter() {
+  if (switchFooter < (SWITCHFOOTEREVERYNDRAW/2)) {
+    drawFooterThermostat();
+  } else {    
+    drawFooterSolarStation();
+  }
+  if (switchFooter > SWITCHFOOTEREVERYNDRAW) {
+    switchFooter = 0;
+  }
+  switchFooter++;
+}
+
+void drawFooterThermostat() {
 
   display.setTextSize(1);
   display.setCursor(0,57);
@@ -489,6 +521,14 @@ void drawFooter() {
   display.print(humidity); display.print(F("%"));
   display.print(F(" "));
   display.print(pressure); display.print(F("hPa"));
+
+}
+
+void drawFooterSolarStation() {
+
+  display.setTextSize(1);
+  display.setCursor(0,57);
+  display.print(solarStationBatteryVoltage+"V  - " + solarStationBattery + " -  " + solarStationWifi + "%"); // "4.2V  -  1012  -  46%");
 
 }
 
@@ -509,6 +549,15 @@ void drawUpsFooter() {
 
 void drawCenterScreenLogo(bool &triggerBool, const unsigned char* logo, const int logoW, const int logoH, const int delayInt) {
 
+  drawCenterScreenLogo(logo, logoW, logoH);
+  if (delayInt > 0) {
+    delay(delayInt);
+  }
+  triggerBool = false;
+
+}
+
+void drawCenterScreenLogo(const unsigned char* logo, const int logoW, const int logoH) {
   display.clearDisplay();
   display.setTextSize(1);
   display.setCursor(0,0);
@@ -517,9 +566,29 @@ void drawCenterScreenLogo(bool &triggerBool, const unsigned char* logo, const in
     (display.height() - logoH) / 2,
     logo, logoW, logoH, 1);
   display.display();
-  delay(delayInt);
-  triggerBool = false;
+}
 
+void drawSolarStationTrigger(const unsigned char* logo, const int logoW, const int logoH) {
+
+  drawCenterScreenLogo(logo, logoW, logoH);
+  ssTriggerCycle--;
+
+}
+
+void drawWPRemainingSeconds(const unsigned char* logo, const int logoW, const int logoH) {
+
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(0,0);
+  display.drawBitmap(
+    20,
+    (display.height() - logoH) / 2,
+    logo, logoW, logoH, 1);
+  display.setCursor(70,22);
+  display.setTextSize(3);
+  display.print(solarStationRemainingSeconds); 
+  display.display();
+  
 }
 
 void drawRoundRect() {
@@ -695,6 +764,47 @@ void cleanSpotifyInfo() {
 
 }
 
+bool processSolarStationPowerState(StaticJsonDocument<BUFFER_SIZE> json) {
+
+  String solarStation = json["state"];
+  if (solarStation == ON_CMD) {
+    ssTriggerCycle = 100;
+    ssTriggered = true;
+    stateOn = true;
+    sendPowerState();
+  } else {
+    ssTriggered = false;
+  }
+  return true;
+
+}
+
+bool processSolarStationWaterPump(StaticJsonDocument<BUFFER_SIZE> json) {
+
+  String waterPump = helper.isOnOff(json);
+  if (waterPump == ON_CMD) {
+    wpTriggered = true;
+    stateOn = true;
+    sendPowerState();
+  } else {
+    wpTriggered = false;
+  }
+  return true;
+
+}
+
+bool processSolarStationState(StaticJsonDocument<BUFFER_SIZE> json) {
+
+  solarStationBattery = json["battery"];
+  float voltage = ((solarStationBattery*4.14)/1024);
+  solarStationBatteryVoltage = (serialized(String(voltage,2)));
+  solarStationWifi = helper.getValue(json["wifi"]);
+  solarStationRemainingSeconds = helper.getValue(json["remaining_seconds"]);
+
+  return true;
+
+}
+
 bool processSmartostatPirState(StaticJsonDocument<BUFFER_SIZE> json) {
 
   pir = helper.isOnOff(json);
@@ -722,7 +832,8 @@ bool processSmartostatAcJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
   if (ac == ON_CMD) {
     acTriggered = true;
-    //currentPage = 0;
+    stateOn = true;
+    sendPowerState();
   }
   return true;
 
@@ -733,6 +844,8 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
   furnance = helper.isOnOff(json);
   if (furnance == ON_CMD) {
     furnanceTriggered = true;
+    stateOn = true;
+    sendPowerState();
   }
   #ifdef TARGET_SMARTOSTAT
     sendFurnanceState();
@@ -902,7 +1015,7 @@ void sendInfoState() {
 
   void sendSmartostatRebootCmnd() {   
 
-    delay(delay_1500);
+    delay(DELAY_1500);
     ESP.restart();
 
   }
@@ -975,7 +1088,7 @@ void sendInfoState() {
 
   void sendSmartoledRebootCmnd() {   
 
-    delay(delay_1500);
+    delay(DELAY_1500);
     ESP.restart();
 
   }
