@@ -38,6 +38,7 @@ void setup() {
   #ifdef TARGET_SMARTOSTAT
     // IRSender Begin
     acir.begin();
+    acir.calibrate();
     Serial.begin(SERIAL_RATE);
 
     // SR501 PIR sensor
@@ -423,11 +424,14 @@ void draw() {
       display.setCursor(offsetAuthor,47);
       display.println(mediaArtist);
 
-      // draw volum bar
-      float roundedVolumeLevel = volumeLevel.toFloat();
-      int volume = (roundedVolumeLevel > 0.99) ? display.width() : ((roundedVolumeLevel*100)*1.28);
+      // float roundedVolumeLevel = volumeLevel.toFloat();
+      // int volume = (roundedVolumeLevel > 0.99) ? display.width() : ((roundedVolumeLevel*100)*1.28);      
+      // draw position bar
+      float currentMediaDuration = mediaDuration.toFloat();
+      float currentMediaPosition = mediaPosition.toFloat();
+      int position = (((currentMediaPosition*100)/currentMediaDuration)*1.28);      
       display.drawRect(0,(display.height()-4),display.width(),4, WHITE);
-      display.fillRect(0,(display.height()-4),volume,4, WHITE);
+      display.fillRect(0,(display.height()-4),position,4, WHITE);
     }
   } else if (currentPage == numPages) {
     bootstrapManager.drawInfoPage(VERSION, AUTHOR);
@@ -725,6 +729,8 @@ bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
     mediaTitle = helper.getValue(json["media_title"]);
     spotifySource = helper.getValue(json["spotifySource"]);
     volumeLevel = helper.getValue(json["volume_level"]);
+    mediaDuration = helper.getValue(json["media_duration"]);
+    mediaPosition = helper.getValue(json["media_position"]);
     mediaArtist = helper.getValue(json["media_artist"]);
     appName = helper.getValue(json["app_name"]);
     spotifyPosition = helper.getValue(json["position"]);
@@ -760,6 +766,8 @@ void cleanSpotifyInfo() {
   mediaArtist = EMPTY_STR;
   spotifySource = EMPTY_STR;
   volumeLevel = EMPTY_STR;
+  mediaDuration = EMPTY_STR;
+  mediaPosition = EMPTY_STR;
   appName = EMPTY_STR;
 
 }
