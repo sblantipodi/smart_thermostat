@@ -32,7 +32,7 @@ Project is bootstrapped with [Arduino Bootstrapper](https://github.com/sblantipo
 - Google Home Mini for Voice Recognition
 
 ## Schematic
-![CIRCUITS](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/smartostat_bb.png)
+![CIRCUITS](https://github.com/sblantipodi/smart_thermostat/blob/master/data/img/fritzing_hardware_project.png)
 
 ## Smartostat YouTube video (Click to watch it on YouTube)
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Hdy5gpQMbEk/0.jpg)](https://www.youtube.com/watch?v=Hdy5gpQMbEk)
