@@ -16,6 +16,9 @@ If you like **Smart Thermostat**, give it a star, or fork it and contribute!
 
 Project is bootstrapped with [Arduino Bootstrapper](https://github.com/sblantipodi/arduino_bootstrapper)
 
+## STL Files
+[Smartostat/Smartoled STL files](https://github.com/sblantipodi/smart_thermostat/tree/master/data/stl_files)
+
 ## Credits
 - Davide Perini
 
