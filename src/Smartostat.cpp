@@ -775,7 +775,7 @@ void cleanSpotifyInfo() {
 bool processSolarStationPowerState(StaticJsonDocument<BUFFER_SIZE> json) {
 
   String solarStation = json["state"];
-  if (solarStation == ON_CMD) {
+  if (solarStation == ON_CMD && stateOn) {
     ssTriggerCycle = 100;
     ssTriggered = true;
     stateOn = true;
