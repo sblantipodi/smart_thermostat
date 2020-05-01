@@ -38,6 +38,10 @@
   #include <IRremoteESP8266.h>
   #include <IRsend.h>
   #include <ir_Samsung.h>
+  #include <IRrecv.h>
+  #include <IRac.h>
+  #include <IRtext.h>
+  #include <IRutils.h>
 #endif
 #include "Version.h"
 #include "Configuration.h"
@@ -62,6 +66,10 @@ Helpers helper;
   Adafruit_BME680 boschBME680; // D2 pin SDA, D1 pin SCL, 3.3V power for BME680 sensor, sensor address I2C 0x76
   const uint16_t kIrLed = D3; // GPIOX for IRsender
   IRSamsungAc acir(kIrLed);  
+  const uint16_t KIRLEDRECV = D4; // GPIOX for IRsender
+  // Use turn on the save buffer feature for more complete capture coverage.
+  IRrecv irrecv(KIRLEDRECV, 1024, 50, true);
+  decode_results results;  // Somewhere to store the results
 #endif
 
 // #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -87,15 +95,16 @@ const char* UPS_STATE = "stat/ups/INFO";
 const char* SOLAR_STATION_POWER_STATE = "stat/solarstation/POWER";
 const char* SOLAR_STATION_PUMP_POWER = "stat/water_pump/POWER";
 const char* SOLAR_STATION_STATE = "tele/solarstation/STATE";
-
+const char* CMND_IR_RECEV = "cmnd/irrecev/ACTIVE";
 #ifdef TARGET_SMARTOSTAT
-  const char* SMARTOLED_CMND_TOPIC = "cmnd/smartostat_oled/POWER3";
-  const char* SMARTOLED_STATE_TOPIC = "stat/smartostat_oled/POWER3";
-  const char* SMARTOLED_INFO_TOPIC = "stat/smartostat_oled/INFO";
+  const char* SMARTOLED_CMND_TOPIC = "cmnd/smartostat/POWER3";
+  const char* SMARTOLED_STATE_TOPIC = "stat/smartostat/POWER3";
+  const char* SMARTOLED_INFO_TOPIC = "stat/smartostat/INFO";
   const char* SMARTOSTATAC_CMND_IRSENDSTATE = "cmnd/smartostatac/IRsend";
   const char* SMARTOSTAT_STAT_REBOOT = "stat/smartostat/reboot";
   const char* SMARTOSTAT_CMND_REBOOT = "cmnd/smartostat/reboot";
   const char* SPIFFS_STATE = "stat/smartostat/SPIFFS";  
+  const char* IR_RECV_TOPIC = "tele/irrecv/INFO";
 #endif
 #ifdef TARGET_SMARTOLED
   const char* SMARTOLED_CMND_TOPIC = "cmnd/smartoled/POWER3";
@@ -229,6 +238,8 @@ unsigned int delayTime = 20;
 // only button can force furnance state to ON even when wifi/mqtt is disconnected, the force state is resetted to OFF even by MQTT topic
 boolean forceFurnanceOn = false;
 boolean forceACOn = false;
+bool printIrReceiving = false;
+bool irReceiveActive = false;
 
 int SWITCHFOOTEREVERYNDRAW = 200;
 int switchFooter = 0;
@@ -530,6 +541,20 @@ const unsigned char UPLOAD_LOGO [] PROGMEM = {
 #define UPLOAD_LOGO_W  30
 #define UPLOAD_LOGO_H  30
 
+// 'irrecv', 30x30px
+const unsigned char IR_RECV_LOGO [] PROGMEM = {
+	0x00, 0x07, 0x80, 0x00, 0x00, 0x07, 0x80, 0x00, 0x00, 0x07, 0x80, 0x00, 0x03, 0x07, 0x83, 0x00, 
+	0x07, 0x87, 0x87, 0x80, 0x03, 0xc0, 0x0f, 0x00, 0x01, 0xe0, 0x1e, 0x00, 0x00, 0xc7, 0x8c, 0x00, 
+	0x00, 0x0f, 0xc0, 0x00, 0x00, 0x1f, 0xe0, 0x00, 0x00, 0x3f, 0xf0, 0x00, 0x3f, 0x3f, 0xf3, 0xf0, 
+	0x3f, 0x3f, 0xf3, 0xf0, 0x3f, 0x3f, 0xf3, 0xf0, 0x00, 0x3f, 0xf0, 0x00, 0x00, 0x3f, 0xf0, 0x00, 
+	0x00, 0x3f, 0xf0, 0x00, 0x00, 0x3f, 0xf0, 0x00, 0x00, 0x3f, 0xf0, 0x00, 0x00, 0x3f, 0xf0, 0x00, 
+	0x01, 0xff, 0xfe, 0x00, 0x01, 0xff, 0xfe, 0x00, 0x01, 0xff, 0xfe, 0x00, 0x00, 0x1c, 0xe0, 0x00, 
+	0x00, 0x1c, 0xe0, 0x00, 0x00, 0x1c, 0xe0, 0x00, 0x00, 0x1c, 0xe0, 0x00, 0x00, 0x1c, 0xe0, 0x00, 
+	0x00, 0x1c, 0xe0, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+#define IR_RECV_LOGO_W  30
+#define IR_RECV_LOGO_H  30
+
 /********************************** FUNCTION DECLARATION (NEEDED BY PLATFORMIO WHILE COMPILING CPP FILES) *****************************************/
 // Bootstrap functions
 void callback(char* topic, byte* payload, unsigned int length);
@@ -548,6 +573,7 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json);
 bool processSolarStationPowerState(StaticJsonDocument<BUFFER_SIZE> json);
 bool processSolarStationWaterPump(StaticJsonDocument<BUFFER_SIZE> json);
 bool processSolarStationState(StaticJsonDocument<BUFFER_SIZE> json);
+bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json);
 void drawHeader();
 void drawRoundRect();
 void drawRoundRect();
@@ -590,6 +616,7 @@ void cleanSpotifyInfo();
   String calculateIAQ(int score); 
   int getHumidityScore();
   int getGasScore();
+  void manageIrRecv();
 #endif
 #ifdef TARGET_SMARTOLED
   void sendSmartoledRebootState(String onOff);

@@ -39,7 +39,7 @@ void setup() {
     // IRSender Begin
     acir.begin();
     acir.calibrate();
-    Serial.begin(SERIAL_RATE);
+    Serial.begin(SERIAL_RATE, SERIAL_8N1, SERIAL_TX_ONLY);
 
     // SR501 PIR sensor
     pinMode(SR501_PIR_PIN, INPUT);
@@ -77,9 +77,14 @@ void setup() {
     display.setRotation(2);
 
   #else 
-    Serial.begin(SERIAL_RATE);
+    Serial.begin(SERIAL_RATE, SERIAL_8N1, SERIAL_TX_ONLY);
   #endif
 
+  // Wait for the serial connection to be establised.
+  while (!Serial) {
+    delay(50);
+  } 
+    
   // OLED TouchButton
   pinMode(OLED_BUTTON_PIN, INPUT);
   
@@ -139,6 +144,7 @@ void manageQueueSubscription() {
   bootstrapManager.subscribe(SOLAR_STATION_POWER_STATE);
   bootstrapManager.subscribe(SOLAR_STATION_PUMP_POWER);
   bootstrapManager.subscribe(SOLAR_STATION_STATE);
+  bootstrapManager.subscribe(CMND_IR_RECEV);
   
 }
 
@@ -194,6 +200,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
     processSolarStationWaterPump(json);
   } else if(strcmp(topic, SOLAR_STATION_STATE) == 0) {
     processSolarStationState(json);
+  } else if(strcmp(topic, CMND_IR_RECEV) == 0) {
+    processIrRecev(json);
   }
 
   #ifdef TARGET_SMARTOLED
@@ -863,6 +871,13 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
 }
 
+bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
+
+  irReceiveActive = (helper.isOnOff(json) == ON_CMD);
+  return true;
+
+}
+
 // IRSEND MQTT message ON OFF only for Smartostat
 #ifdef TARGET_SMARTOSTAT
 
@@ -1172,7 +1187,7 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
   
 }
 
-/********************************** PIR AND RELE' MANAGEMENT *****************************************/
+/********************************** PIR, RELE' AND IR MANAGEMENT *****************************************/
 #ifdef TARGET_SMARTOSTAT
 
   void pirManagement() {
@@ -1285,6 +1300,36 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
     if (gas_score <  0) gas_score = 0;  // Sometimes gas readings can go outside of expected scale minimum
     return gas_score;
 
+  }
+
+  void manageIrRecv() {
+    // Check if the IR code has been received.
+    if (irrecv.decode(&results)) {
+      // Check if we got an IR message that was to big for our capture buffer.
+      if (results.overflow) {
+        bootstrapManager.publish(IR_RECV_TOPIC, "MSG TOO BIG FOR THE BUFFER", false);  
+      }      
+      // Display the basic output of what we found.
+      bootstrapManager.publish(IR_RECV_TOPIC, helper.string2char(resultToHumanReadableBasic(&results)), false);  
+      // Display any extra A/C info if we have it.
+      String description = IRAcUtils::resultAcToString(&results);
+      if (description.length()) {
+        bootstrapManager.publish(IR_RECV_TOPIC, helper.string2char(D_STR_MESGDESC ": " + description), false);  
+      }
+      yield();  // Feed the WDT as the text output can take a while to print.
+      // Output the results as source code
+      String srcCode = resultToSourceCode(&results);
+      int chunkSize = 900;
+      for (unsigned i = 0; i < srcCode.length(); i += chunkSize) {
+        if (i+chunkSize < srcCode.length()) {
+          bootstrapManager.publish(IR_RECV_TOPIC, helper.string2char(srcCode.substring(i,i+chunkSize)), false); 
+        } else {
+          bootstrapManager.publish(IR_RECV_TOPIC, helper.string2char(srcCode.substring(i,srcCode.length())), false); 
+        }
+        delay(DELAY_500); 
+      }
+      yield(); // Feed the WDT (again)
+    }
   }
 
 #endif
@@ -1473,32 +1518,49 @@ void loop() {
   // Bootsrap loop() with Wifi, MQTT and OTA functions
   bootstrapManager.bootstrapLoop(manageDisconnections, manageQueueSubscription, manageHardwareButton);
 
-  // PIR and RELE' MANAGEMENT 
-  #ifdef TARGET_SMARTOSTAT    
-    manageHardwareButton();    
-    pirManagement();
-  #else
-    lastButtonPressed = OLED_BUTTON_PIN;
-    touchButtonManagement(digitalRead(OLED_BUTTON_PIN));
-  #endif
-
-  // // Draw Speed, it influences how long the button should be pressed before switching to the next currentPage
-  delay(delayTime);
-
-  // // Send status on MQTT Broker every n seconds
-  delayAndSendStatus();
-
-  // DRAW THE SCREEN
-  if (stateOn) {
-    draw();
+  if (irReceiveActive) {
+    if (!printIrReceiving) {
+      #ifdef TARGET_SMARTOSTAT    
+        // Ignore messages with less than minimum on or off pulses. NOTE: Set this value very high to effectively turn off UNKNOWN detection.
+        irrecv.setUnknownThreshold(12);
+        irrecv.enableIRIn();  // Start the receiver
+      #endif
+      drawCenterScreenLogo(showHaSplashScreen, IR_RECV_LOGO, IR_RECV_LOGO_W, IR_RECV_LOGO_H, 0);
+      printIrReceiving = true;
+    }
+    #ifdef TARGET_SMARTOSTAT    
+      manageIrRecv();
+    #endif
   } else {
-    display.clearDisplay();
-    display.display();
+    printIrReceiving = false;
+    
+    // PIR and RELE' MANAGEMENT 
+    #ifdef TARGET_SMARTOSTAT    
+      manageHardwareButton();    
+      pirManagement();
+    #else
+      lastButtonPressed = OLED_BUTTON_PIN;
+      touchButtonManagement(digitalRead(OLED_BUTTON_PIN));
+    #endif
+
+    // // Draw Speed, it influences how long the button should be pressed before switching to the next currentPage
+    delay(delayTime);
+
+    // // Send status on MQTT Broker every n seconds
+    delayAndSendStatus();
+
+    // DRAW THE SCREEN
+    if (stateOn) {
+      draw();
+    } else {
+      display.clearDisplay();
+      display.display();
+    }
+
+    // Go To Home Page timer after 5 minutes of inactivity and write data to File System (SPIFFS)
+    goToHomePageAndWriteSPIFFSAfterFiveMinutes();
+
+    bootstrapManager.nonBlokingBlink();
   }
-
-  // Go To Home Page timer after 5 minutes of inactivity and write data to File System (SPIFFS)
-  goToHomePageAndWriteSPIFFSAfterFiveMinutes();
-
-  bootstrapManager.nonBlokingBlink();
-
+  
 }
