@@ -693,6 +693,16 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
     haVersion = helper.getValue(json["haVersion"]);
     humidityThreshold = json["humidity_threshold"];
     tempSensorOffset = json["temp_sensor_offset"];
+    int brightness = json["brightness"];
+
+    display.ssd1306_command(0x81);
+    display.ssd1306_command(brightness); //min 10 max 255
+    display.ssd1306_command(0xD9);
+    if (brightness <= 80) {        
+      display.ssd1306_command(17); 
+    } else {
+      display.ssd1306_command(34); 
+    }
 
     String operationModeHeatConst = helper.getValue(json["smartostat"]["hvac_action"]);
     String operationModeCoolConst = helper.getValue(json["smartostatac"]["hvac_action"]);

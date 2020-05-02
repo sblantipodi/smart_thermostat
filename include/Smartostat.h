@@ -574,6 +574,7 @@ bool processSolarStationPowerState(StaticJsonDocument<BUFFER_SIZE> json);
 bool processSolarStationWaterPump(StaticJsonDocument<BUFFER_SIZE> json);
 bool processSolarStationState(StaticJsonDocument<BUFFER_SIZE> json);
 bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json);
+bool processDisplayBrightness(StaticJsonDocument<BUFFER_SIZE> json);
 void drawHeader();
 void drawRoundRect();
 void drawRoundRect();
