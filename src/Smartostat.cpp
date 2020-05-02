@@ -1123,7 +1123,7 @@ void sendACCommandState() {
   if (ac == OFF_CMD) {
     forceACOn = false;
   }     
-  bootstrapManager.publish(SMARTOSTATAC_CMND_IRSEND, (ac == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
+  bootstrapManager.publish(SMARTOSTATAC_CMND_IRSENDSTATE, (ac == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
 
 }
 

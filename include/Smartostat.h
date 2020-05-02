@@ -89,6 +89,7 @@ const char* SPOTIFY_STATE_TOPIC = "stat/spotify/info";
 const char* SMARTOSTAT_FURNANCE_CMND_TOPIC = "cmnd/smartostat/POWER1";
 const char* SMARTOSTATAC_STAT_IRSEND = "stat/smartostatac/IRsend";
 const char* SMARTOSTATAC_CMND_IRSEND = "cmnd/smartostatac/IRsendCmnd";
+const char* SMARTOSTATAC_CMND_IRSENDSTATE = "cmnd/smartostatac/IRsend";
 const char* SMARTOSTAT_CMND_CLIMATE_HEAT_STATE = "cmnd/smartostat/climateHeatState";
 const char* SMARTOSTAT_CMND_CLIMATE_COOL_STATE = "cmnd/smartostat/climateCoolState";
 const char* UPS_STATE = "stat/ups/INFO";
@@ -100,7 +101,6 @@ const char* CMND_IR_RECEV = "cmnd/irrecev/ACTIVE";
   const char* SMARTOLED_CMND_TOPIC = "cmnd/smartostat/POWER3";
   const char* SMARTOLED_STATE_TOPIC = "stat/smartostat/POWER3";
   const char* SMARTOLED_INFO_TOPIC = "stat/smartostat/INFO";
-  const char* SMARTOSTATAC_CMND_IRSENDSTATE = "cmnd/smartostatac/IRsend";
   const char* SMARTOSTAT_STAT_REBOOT = "stat/smartostat/reboot";
   const char* SMARTOSTAT_CMND_REBOOT = "cmnd/smartostat/reboot";
   const char* SPIFFS_STATE = "stat/smartostat/SPIFFS";  
@@ -116,7 +116,7 @@ const char* CMND_IR_RECEV = "cmnd/irrecev/ACTIVE";
 #endif 
 
 // HEAT COOL THRESHOLD, USED to MANAGE SITUATIONS WHEN THERE IS NO INFO FROM THE MQTT SERVER (used by smartoled for capacitive button too)
-const int HEAT_COOL_THRESHOLD = 20;
+const int HEAT_COOL_THRESHOLD = 25;
 
 // Display state
 bool stateOn = true;
