@@ -4,7 +4,8 @@ Smart thermostat for furnace and air conditioner management,
 home alarm system, light management and ambient statistics (Temperature, Humidity, Pressure, Indoor Air Quality)  
 _Written for Arduino IDE and PlatformIO._
 
-[![GitHub version](https://img.shields.io/github/v/release/sblantipodi/smart_thermostat.svg)](https://img.shields.io/github/v/release/sblantipodi/smart_thermostat.svg)
+[![GitHub Actions CI](https://github.com/sblantipodi/smart_thermostat/workflows/GitHub%20Actions%20CI/badge.svg)](https://github.com/sblantipodi/smart_thermostat/actions)
+[![GitHub version](https://img.shields.io/github/v/release/sblantipodi/smart_thermostat.svg)](https://github.com/sblantipodi/smart_thermostat/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/sblantipodi/smart_thermostat/graphs/commit-activity)
 [![DPsoftware](https://img.shields.io/static/v1?label=DP&message=Software&color=orange)](https://www.dpsoftware.org)
