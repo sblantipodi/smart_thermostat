@@ -1183,7 +1183,7 @@ void delayAndSendStatus() {
 }
 
 // Go to home page after five minutes of inactivity and write SPIFFS
-void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
+void goToHomePageAndWriteToStorageAfterFiveMinutes() {
 
   if(millis() > timeNowGoHomeAfterFiveMinutes + fiveMinutesPeriod){
     timeNowGoHomeAfterFiveMinutes = millis();
@@ -1568,7 +1568,7 @@ void loop() {
     }
 
     // Go To Home Page timer after 5 minutes of inactivity and write data to File System (SPIFFS)
-    goToHomePageAndWriteSPIFFSAfterFiveMinutes();
+    goToHomePageAndWriteToStorageAfterFiveMinutes();
 
     bootstrapManager.nonBlokingBlink();
   }

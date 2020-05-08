@@ -598,6 +598,7 @@ void sendACCommandState();
 void sendClimateState(String mode);  
 void sendFurnanceCommandState();
 void cleanSpotifyInfo();
+void goToHomePageAndWriteToStorageAfterFiveMinutes();
 #ifdef TARGET_SMARTOSTAT
   void sendSmartostatRebootState(String onOff);
   void sendSmartostatRebootCmnd();
