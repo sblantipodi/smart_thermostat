@@ -1544,7 +1544,7 @@ void loop() {
   } else {
     printIrReceiving = false;
     
-    // PIR and RELE' MANAGEMENT 
+    // PIR and RELAY MANAGEMENT 
     #ifdef TARGET_SMARTOSTAT    
       manageHardwareButton();    
       pirManagement();
