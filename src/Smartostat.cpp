@@ -102,7 +102,7 @@ void setup() {
   // Bootsrap setup() with Wifi and MQTT functions
   bootstrapManager.bootstrapSetup(manageDisconnections, manageHardwareButton, callback);
 
-  readConfigFromSPIFFS();
+  readConfigFromStorage();
 
 }
 
@@ -1188,7 +1188,7 @@ void goToHomePageAndWriteSPIFFSAfterFiveMinutes() {
   if(millis() > timeNowGoHomeAfterFiveMinutes + fiveMinutesPeriod){
     timeNowGoHomeAfterFiveMinutes = millis();
     // Write data to file system
-    writeConfigToSPIFFS();
+    writeConfigToStorage();
     screenSaverTriggered = true;
     if ((humidity != OFF_CMD && humidity.toFloat() < humidityThreshold) && (loadFloatPrevious < HIGH_WATT) && ((spotifyActivity == SPOTIFY_PLAYING && currentPage != 8) || spotifyActivity != SPOTIFY_PLAYING )) {
       currentPage = 0;
@@ -1400,7 +1400,7 @@ void veryLongPressRelease() {
   // turn off the display on long pressed
   stateOn = false;
   resetMinMaxValues();
-  writeConfigToSPIFFS();
+  writeConfigToStorage();
 
 }
 
@@ -1484,10 +1484,10 @@ void quickPressRelease() {
 }
 
 /********************************** SPIFFS MANAGEMENT *****************************************/
-void readConfigFromSPIFFS() {
+void readConfigFromStorage() {
 
   DynamicJsonDocument doc(1024);
-  doc = bootstrapManager.readSPIFFS(doc, "config.json");
+  doc = bootstrapManager.readLittleFS("config.json");
 
   if (!(doc.containsKey(VALUE) && doc[VALUE] == ERROR)) {
     Serial.println(F("\nReload previously stored values."));
@@ -1505,7 +1505,7 @@ void readConfigFromSPIFFS() {
 
 }
 
-void writeConfigToSPIFFS() {
+void writeConfigToStorage() {
 
   DynamicJsonDocument doc(1024);
   doc["minTemperature"] = minTemperature;
@@ -1518,7 +1518,7 @@ void writeConfigToSPIFFS() {
   doc["maxGasResistance"] = maxGasResistance;
   doc["minIAQ"] = minIAQ;
   doc["maxIAQ"] = maxIAQ;
-  bootstrapManager.writeToSPIFFS(doc, "config.json");    
+  bootstrapManager.writeToLittleFS(doc, "config.json");    
 
 }
 

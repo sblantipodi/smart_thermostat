@@ -103,7 +103,6 @@ const char* CMND_IR_RECEV = "cmnd/irrecev/ACTIVE";
   const char* SMARTOLED_INFO_TOPIC = "stat/smartostat/INFO";
   const char* SMARTOSTAT_STAT_REBOOT = "stat/smartostat/reboot";
   const char* SMARTOSTAT_CMND_REBOOT = "cmnd/smartostat/reboot";
-  const char* SPIFFS_STATE = "stat/smartostat/SPIFFS";  
   const char* IR_RECV_TOPIC = "tele/irrecv/INFO";
 #endif
 #ifdef TARGET_SMARTOLED
@@ -112,7 +111,6 @@ const char* CMND_IR_RECEV = "cmnd/irrecev/ACTIVE";
   const char* SMARTOLED_INFO_TOPIC = "stat/smartoled/INFO";
   const char* SMARTOLED_STAT_REBOOT = "stat/smartoled/reboot";
   const char* SMARTOLED_CMND_REBOOT = "cmnd/smartoled/reboot";
-  const char* SPIFFS_STATE = "stat/smartoled/SPIFFS";  
 #endif 
 
 // HEAT COOL THRESHOLD, USED to MANAGE SITUATIONS WHEN THERE IS NO INFO FROM THE MQTT SERVER (used by smartoled for capacitive button too)
@@ -592,8 +590,8 @@ void longPressRelease();
 void veryLongPressRelease();
 void commandButtonRelease();
 void quickPressRelease();
-void readConfigFromSPIFFS();
-void writeConfigToSPIFFS();
+void readConfigFromStorage();
+void writeConfigToStorage();
 void resetMinMaxValues();
 void touchButtonManagement(int pinvalue);
 void sendACCommandState();
