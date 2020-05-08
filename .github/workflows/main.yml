@@ -21,7 +21,7 @@ jobs:
         git submodule update --init
     - name: Set lib extra dirs for CI
       run: |     
-        sed -i 's,^lib_extra_dirs =.*$,lib_extra_dirs = /home/runner/work/smart_thermostat/smart_thermostat/arduino_bootstrapper/core,' platformio.ini
+        sed -i 's,^lib_extra_dirs =.*$,lib_extra_dirs = /home/runner/work/smart_thermostat/smart_thermostat/arduino_bootstrapper/arduino_bootstrapper,' platformio.ini
         cat platformio.ini
     - name: Setup template config files
       run: |                
