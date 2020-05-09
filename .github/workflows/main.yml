@@ -28,9 +28,9 @@ jobs:
         cp /home/runner/work/smart_thermostat/smart_thermostat/arduino_bootstrapper/include/Secrets.h.template /home/runner/work/smart_thermostat/smart_thermostat/include/Secrets.h
         cp /home/runner/work/smart_thermostat/smart_thermostat/arduino_bootstrapper/include/Secrets.h.template /home/runner/work/smart_thermostat/smart_thermostat/arduino_bootstrapper/include/Secrets.h   
         cp /home/runner/work/smart_thermostat/smart_thermostat/include/Configuration.h /home/runner/work/smart_thermostat/smart_thermostat/arduino_bootstrapper/include/Configuration.h
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v2         
-    - name: Run PlatformIO (smartostat)
+    # - name: Setup tmate session
+    #   uses: mxschmitt/action-tmate@v2         
+    # - name: Run PlatformIO (smartostat)
       run: platformio run -e smartostat
     - name: Creating smartostat artifact from BIN file 
       uses: actions/upload-artifact@v1
