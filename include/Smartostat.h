@@ -44,7 +44,6 @@
   #include <IRutils.h>
 #endif
 #include "Version.h"
-#include "Configuration.h"
 #include "BootstrapManager.h"
 
 
@@ -52,7 +51,10 @@
 BootstrapManager bootstrapManager;
 Helpers helper;
 
-/**************************** PIN DEFINITIONS **************************************************/
+/**************************** PIN DEFINITIONS ****************************/
+// Initialize the display
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); 
+
 // #define OLED_RESET LED_BUILTIN // Pin used for integrated D1 Mini blue LED
 #ifdef TARGET_SMARTOSTAT
   #define OLED_BUTTON_PIN 12 // D6 Pin, 5V power, for capactitive touch sensor. When Sig Output is high, touch sensor is being 
@@ -78,7 +80,7 @@ Helpers helper;
 // // D2 pin SDA, D1 pin SCL, 5V power 
 // Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); 
 
-/************* MQTT TOPICS **************************/
+/**************************** MQTT TOPICS ****************************/
 const char* SMARTOSTAT_SENSOR_STATE_TOPIC = "tele/smartostat/SENSOR";
 const char* SMARTOSTAT_STATE_TOPIC = "tele/smartostat/STATE";
 const char* SMARTOSTAT_CLIMATE_STATE_TOPIC = "stat/smartostat/CLIMATE";

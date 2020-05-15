@@ -455,7 +455,7 @@ void draw() {
     }
   }
 
-  bootstrapManager.drawScreenSaver(AUTHOR + " domotics");
+  bootstrapManager.drawScreenSaver("DPsoftware domotics");
 
   if (furnanceTriggered) {
     drawCenterScreenLogo(furnanceTriggered, fireLogo, fireLogoW, fireLogoH, DELAY_4000);
