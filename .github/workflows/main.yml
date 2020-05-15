@@ -19,6 +19,9 @@ jobs:
     - name: Install submodules 
       run: |        
         git submodule update --init
+    - name: Setup template config files
+      run: |                
+        cp /home/runner/work/smart_thermostat/smart_thermostat/secrets.ini.template /home/runner/work/smart_thermostat/smart_thermostat/secrets.ini
     # - name: Setup tmate session
     #   uses: mxschmitt/action-tmate@v2     
     - name: Static code analysis
