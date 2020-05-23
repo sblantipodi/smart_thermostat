@@ -466,6 +466,14 @@ class IRsend {
   void sendCarrierAC(uint64_t data, uint16_t nbits = kCarrierAcBits,
                      uint16_t repeat = kCarrierAcMinRepeat);
 #endif
+#if SEND_CARRIER_AC40
+  void sendCarrierAC40(uint64_t data, uint16_t nbits = kCarrierAc40Bits,
+                       uint16_t repeat = kCarrierAc40MinRepeat);
+#endif
+#if SEND_CARRIER_AC64
+  void sendCarrierAC64(uint64_t data, uint16_t nbits = kCarrierAc64Bits,
+                       uint16_t repeat = kCarrierAc64MinRepeat);
+#endif
 #if (SEND_HAIER_AC || SEND_HAIER_AC_YRW02)
   void sendHaierAC(const unsigned char data[],
                    const uint16_t nbytes = kHaierACStateLength,
@@ -572,6 +580,20 @@ class IRsend {
 #if SEND_AIRWELL
   void sendAirwell(uint64_t data, uint16_t nbits = kAirwellBits,
                    uint16_t repeat = kAirwellMinRepeats);
+#endif
+#if SEND_DELONGHI_AC
+  void sendDelonghiAc(uint64_t data, uint16_t nbits = kDelonghiAcBits,
+                      uint16_t repeat = kDelonghiAcDefaultRepeat);
+#endif
+#if SEND_DOSHISHA
+  void sendDoshisha(const uint64_t data, uint16_t nbits = kDoshishaBits,
+                    const uint16_t repeat = kNoRepeat);
+  uint64_t encodeDoshisha(const uint8_t command, const uint8_t channel = 0);
+#endif  // SEND_DOSHISHA
+#if SEND_MULTIBRACKETS
+  void sendMultibrackets(const uint64_t data,
+                         const uint16_t nbits = kMultibracketsBits,
+                         const uint16_t repeat = kMultibracketsDefaultRepeat);
 #endif
 
  protected:

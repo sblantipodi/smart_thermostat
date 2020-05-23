@@ -607,13 +607,15 @@ uint16_t IRsend::minRepeats(const decode_type_t protocol) {
     case MITSUBISHI:
     case MITSUBISHI2:
     case MITSUBISHI_AC:
+    case MULTIBRACKETS:
     case SHERWOOD:
-    case SYMPHONY:
     case TOSHIBA_AC:
       return kSingleRepeat;
     // Special
     case AIRWELL:
       return kAirwellMinRepeats;
+    case CARRIER_AC40:
+      return kCarrierAc40MinRepeat;
     case DISH:
       return kDishMinRepeat;
     case EPSON:
@@ -622,6 +624,8 @@ uint16_t IRsend::minRepeats(const decode_type_t protocol) {
       return kSonyMinRepeat;
     case SONY_38K:
       return kSonyMinRepeat + 1;
+    case SYMPHONY:
+      return kSymphonyDefaultRepeat;
     default:
       return kNoRepeat;
   }
@@ -634,9 +638,10 @@ uint16_t IRsend::minRepeats(const decode_type_t protocol) {
 //   int16_t:  The number of bits.
 uint16_t IRsend::defaultBits(const decode_type_t protocol) {
   switch (protocol) {
-    case SYMPHONY:
-      return 11;
+    case MULTIBRACKETS:
+      return 8;
     case RC5:
+    case SYMPHONY:
       return 12;
     case LASERTAG:
     case RC5X:
@@ -678,6 +683,10 @@ uint16_t IRsend::defaultBits(const decode_type_t protocol) {
       return 35;
     case SAMSUNG36:
       return 36;
+    case CARRIER_AC40:
+      return kCarrierAc40Bits;  // 40
+    case DOSHISHA:
+      return kDoshishaBits;  // 40
     case SANYO_LC7461:
       return kSanyoLC7461Bits;  // 42
     case GOODWEATHER:
@@ -688,6 +697,8 @@ uint16_t IRsend::defaultBits(const decode_type_t protocol) {
     case VESTEL_AC:
       return 56;
     case AMCOR:
+    case CARRIER_AC64:
+    case DELONGHI_AC:
     case PIONEER:
       return 64;
     case ARGO:
@@ -722,8 +733,8 @@ uint16_t IRsend::defaultBits(const decode_type_t protocol) {
       return kHitachiAc1Bits;
     case HITACHI_AC2:
       return kHitachiAc2Bits;
-      case HITACHI_AC3:
-        return kHitachiAc3Bits;
+    case HITACHI_AC3:
+      return kHitachiAc3Bits;
     case HITACHI_AC424:
       return kHitachiAc424Bits;
     case KELVINATOR:
@@ -790,6 +801,16 @@ bool IRsend::send(const decode_type_t type, const uint64_t data,
       sendCarrierAC(data, nbits, min_repeat);
       break;
 #endif
+#if SEND_CARRIER_AC40
+    case CARRIER_AC40:
+      sendCarrierAC40(data, nbits, min_repeat);
+      break;
+#endif  // SEND_CARRIER_AC40
+#if SEND_CARRIER_AC64
+    case CARRIER_AC64:
+      sendCarrierAC64(data, nbits, min_repeat);
+      break;
+#endif  // SEND_CARRIER_AC64
 #if SEND_COOLIX
     case COOLIX:
       sendCOOLIX(data, nbits, min_repeat);
@@ -800,6 +821,11 @@ bool IRsend::send(const decode_type_t type, const uint64_t data,
       sendDaikin64(data, nbits, min_repeat);
       break;
 #endif
+#if SEND_DELONGHI_AC
+    case DELONGHI_AC:
+      sendDelonghiAc(data, nbits, min_repeat);
+      break;
+#endif
 #if SEND_DENON
     case DENON:
       sendDenon(data, nbits, min_repeat);
@@ -808,6 +834,11 @@ bool IRsend::send(const decode_type_t type, const uint64_t data,
 #if SEND_DISH
     case DISH:
       sendDISH(data, nbits, min_repeat);
+      break;
+#endif
+#if SEND_DOSHISHA
+    case DOSHISHA:
+      sendDoshisha(data, nbits, min_repeat);
       break;
 #endif
 #if SEND_EPSON
@@ -881,6 +912,11 @@ bool IRsend::send(const decode_type_t type, const uint64_t data,
 #if SEND_MITSUBISHI2
     case MITSUBISHI2:
       sendMitsubishi2(data, nbits, min_repeat);
+      break;
+#endif
+#if SEND_MULTIBRACKETS
+    case MULTIBRACKETS:
+      sendMultibrackets(data, nbits, min_repeat);
       break;
 #endif
 #if SEND_NIKAI

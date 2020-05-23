@@ -4,6 +4,7 @@
 #include "ir_Amcor.h"
 #include "ir_Argo.h"
 #include "ir_Daikin.h"
+#include "ir_Delonghi.h"
 #include "ir_Electra.h"
 #include "ir_Fujitsu.h"
 #include "ir_Goodweather.h"
@@ -377,6 +378,31 @@ TEST(TestIRac, Daikin64) {
   ASSERT_EQ(expected, IRAcUtils::resultAcToString(&ac._irsend.capture));
 }
 
+TEST(TestIRac, DelonghiAc) {
+  IRDelonghiAc ac(kGpioUnused);
+  IRac irac(kGpioUnused);
+  IRrecv capture(kGpioUnused);
+  char expected[] =
+      "Power: On, Mode: 0 (Cool), Fan: 2 (Medium), Temp: 77F, "
+      "Turbo: On, Sleep: On, On Timer: Off, Off Timer: Off";
+
+  ac.begin();
+  irac.delonghiac(&ac,
+                true,                        // Power
+                stdAc::opmode_t::kCool,      // Mode
+                false,                       // Celsius (i.e. Fahrenheit)
+                77,                          // Degrees (F)
+                stdAc::fanspeed_t::kMedium,  // Fan Speed
+                true,                        // Turbo
+                360);                        // Sleep
+  ASSERT_EQ(expected, ac.toString());
+  ac._irsend.makeDecodeResult();
+  EXPECT_TRUE(capture.decode(&ac._irsend.capture));
+  ASSERT_EQ(decode_type_t::DELONGHI_AC, ac._irsend.capture.decode_type);
+  ASSERT_EQ(kDelonghiAcBits, ac._irsend.capture.bits);
+  ASSERT_EQ(expected, IRAcUtils::resultAcToString(&ac._irsend.capture));
+}
+
 TEST(TestIRac, Electra) {
   IRElectraAc ac(kGpioUnused);
   IRac irac(kGpioUnused);
@@ -518,17 +544,18 @@ TEST(TestIRac, Gree) {
   IRac irac(0);
   IRrecv capture(0);
   char expected[] =
-      "Model: 1 (YAW1F), Power: On, Mode: 1 (Cool), Temp: 22C, "
+      "Model: 1 (YAW1F), Power: On, Mode: 1 (Cool), Temp: 71F, "
       "Fan: 2 (Medium), Turbo: Off, IFeel: Off, WiFi: Off, XFan: On, "
       "Light: On, Sleep: On, Swing(V) Mode: Manual, "
-      "Swing(V): 3 (UNKNOWN), Timer: Off";
+      "Swing(V): 3 (UNKNOWN), Timer: Off, Display Temp: 0 (Off)";
 
   ac.begin();
   irac.gree(&ac,
             gree_ac_remote_model_t::YAW1F,  // Model
             true,                           // Power
             stdAc::opmode_t::kCool,         // Mode
-            22,                             // Celsius
+            false,                          // Celsius
+            71,                             // Degrees (F)
             stdAc::fanspeed_t::kMedium,     // Fan speed
             stdAc::swingv_t::kHigh,         // Veritcal swing
             false,                          // Turbo
@@ -1071,8 +1098,8 @@ TEST(TestIRac, Sharp) {
   IRac irac(0);
   IRrecv capture(0);
   char expected[] =
-      "Power: On, Previous Power: On, Mode: 2 (Cool), Temp: 28C, "
-      "Fan: 3 (Medium)";
+      "Power: On, Mode: 2 (Cool), Temp: 28C, Fan: 3 (Medium), "
+      "Turbo: Off, Swing(V) Toggle: On, Ion: On, Econo: -, Clean: Off";
 
   ac.begin();
   irac.sharp(&ac,
@@ -1080,7 +1107,11 @@ TEST(TestIRac, Sharp) {
              true,                         // Previous Power
              stdAc::opmode_t::kCool,       // Mode
              28,                           // Celsius
-             stdAc::fanspeed_t::kMedium);  // Fan speed
+             stdAc::fanspeed_t::kMedium,   // Fan speed
+             stdAc::swingv_t::kAuto,       // Veritcal swing
+             false,                        // Turbo
+             true,                         // Filter (Ion)
+             false);                       // Clean
   ASSERT_EQ(expected, ac.toString());
   ac._irsend.makeDecodeResult();
   EXPECT_TRUE(capture.decode(&ac._irsend.capture));

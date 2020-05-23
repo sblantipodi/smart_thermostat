@@ -52,7 +52,7 @@
 #endif  // UNIT_TEST
 
 // Library Version
-#define _IRREMOTEESP8266_VERSION_ "2.7.6"
+#define _IRREMOTEESP8266_VERSION_ "2.7.7"
 
 // Set the language & locale for the library. See the `locale` dir for options.
 #ifndef _IR_LOCALE_
@@ -383,6 +383,20 @@
 #define SEND_CARRIER_AC        _IR_ENABLE_DEFAULT_
 #endif  // SEND_CARRIER_AC
 
+#ifndef DECODE_CARRIER_AC40
+#define DECODE_CARRIER_AC40    _IR_ENABLE_DEFAULT_
+#endif  // DECODE_CARRIER_AC40
+#ifndef SEND_CARRIER_AC40
+#define SEND_CARRIER_AC40      _IR_ENABLE_DEFAULT_
+#endif  // SEND_CARRIER_AC40
+
+#ifndef DECODE_CARRIER_AC64
+#define DECODE_CARRIER_AC64    _IR_ENABLE_DEFAULT_
+#endif  // DECODE_CARRIER_AC64
+#ifndef SEND_CARRIER_AC64
+#define SEND_CARRIER_AC64      _IR_ENABLE_DEFAULT_
+#endif  // SEND_CARRIER_AC64
+
 #ifndef DECODE_HAIER_AC
 #define DECODE_HAIER_AC        _IR_ENABLE_DEFAULT_
 #endif  // DECODE_HAIER_AC
@@ -412,10 +426,10 @@
 #endif  // SEND_HITACHI_AC2
 
 #ifndef DECODE_HITACHI_AC3
-#define DECODE_HITACHI_AC3   _IR_ENABLE_DEFAULT_
+#define DECODE_HITACHI_AC3     _IR_ENABLE_DEFAULT_
 #endif  // DECODE_HITACHI_AC3
 #ifndef SEND_HITACHI_AC3
-#define SEND_HITACHI_AC3     _IR_ENABLE_DEFAULT_
+#define SEND_HITACHI_AC3       _IR_ENABLE_DEFAULT_
 #endif  // SEND_HITACHI_AC3
 
 #ifndef DECODE_HITACHI_AC424
@@ -573,32 +587,53 @@
 #endif  // SEND_DAIKIN152
 
 #ifndef DECODE_EPSON
-#define DECODE_EPSON   _IR_ENABLE_DEFAULT_
+#define DECODE_EPSON           _IR_ENABLE_DEFAULT_
 #endif  // DECODE_EPSON
 #ifndef SEND_EPSON
-#define SEND_EPSON     _IR_ENABLE_DEFAULT_
+#define SEND_EPSON             _IR_ENABLE_DEFAULT_
 #endif  // SEND_EPSON
 
 #ifndef DECODE_SYMPHONY
-#define DECODE_SYMPHONY   _IR_ENABLE_DEFAULT_
+#define DECODE_SYMPHONY        _IR_ENABLE_DEFAULT_
 #endif  // DECODE_SYMPHONY
 #ifndef SEND_SYMPHONY
-#define SEND_SYMPHONY     _IR_ENABLE_DEFAULT_
+#define SEND_SYMPHONY          _IR_ENABLE_DEFAULT_
 #endif  // SEND_SYMPHONY
 
 #ifndef DECODE_DAIKIN64
-#define DECODE_DAIKIN64       _IR_ENABLE_DEFAULT_
+#define DECODE_DAIKIN64        _IR_ENABLE_DEFAULT_
 #endif  // DECODE_DAIKIN64
 #ifndef SEND_DAIKIN64
-#define SEND_DAIKIN64         _IR_ENABLE_DEFAULT_
+#define SEND_DAIKIN64          _IR_ENABLE_DEFAULT_
 #endif  // SEND_DAIKIN64
 
 #ifndef DECODE_AIRWELL
-#define DECODE_AIRWELL       _IR_ENABLE_DEFAULT_
+#define DECODE_AIRWELL         _IR_ENABLE_DEFAULT_
 #endif  // DECODE_AIRWELL
 #ifndef SEND_AIRWELL
-#define SEND_AIRWELL         _IR_ENABLE_DEFAULT_
+#define SEND_AIRWELL           _IR_ENABLE_DEFAULT_
 #endif  // SEND_AIRWELL
+
+#ifndef DECODE_DELONGHI_AC
+#define DECODE_DELONGHI_AC     _IR_ENABLE_DEFAULT_
+#endif  // DECODE_DELONGHI_AC
+#ifndef SEND_DELONGHI_AC
+#define SEND_DELONGHI_AC       _IR_ENABLE_DEFAULT_
+#endif  // SEND_DELONGHI_AC
+
+#ifndef DECODE_DOSHISHA
+#define DECODE_DOSHISHA        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_DOSHISHA
+#ifndef SEND_DOSHISHA
+#define SEND_DOSHISHA          _IR_ENABLE_DEFAULT_
+#endif  // SEND_DOSHISHA
+
+#ifndef DECODE_MULTIBRACKETS
+#define DECODE_MULTIBRACKETS   _IR_ENABLE_DEFAULT_
+#endif  // DECODE_MULTIBRACKETS
+#ifndef SEND_MULTIBRACKETS
+#define SEND_MULTIBRACKETS     _IR_ENABLE_DEFAULT_
+#endif  // SEND_MULTIBRACKETS
 
 #if (DECODE_ARGO || DECODE_DAIKIN || DECODE_FUJITSU_AC || DECODE_GREE || \
      DECODE_KELVINATOR || DECODE_MITSUBISHI_AC || DECODE_TOSHIBA_AC || \
@@ -727,8 +762,13 @@ enum decode_type_t {
   HITACHI_AC3,
   DAIKIN64,
   AIRWELL,
+  DELONGHI_AC,  // 80
+  DOSHISHA,
+  MULTIBRACKETS,
+  CARRIER_AC40,
+  CARRIER_AC64,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = AIRWELL,
+  kLastDecodeType = CARRIER_AC64,
 };
 
 // Message lengths & required repeat values
@@ -750,6 +790,10 @@ const uint16_t kCoolixBits = 24;
 const uint16_t kCoolixDefaultRepeat = kSingleRepeat;
 const uint16_t kCarrierAcBits = 32;
 const uint16_t kCarrierAcMinRepeat = kNoRepeat;
+const uint16_t kCarrierAc40Bits = 40;
+const uint16_t kCarrierAc40MinRepeat = 2;
+const uint16_t kCarrierAc64Bits = 64;
+const uint16_t kCarrierAc64MinRepeat = kNoRepeat;
 const uint16_t kDaikinStateLength = 35;
 const uint16_t kDaikinBits = kDaikinStateLength * 8;
 const uint16_t kDaikinStateLengthShort = kDaikinStateLength - 8;
@@ -775,11 +819,14 @@ const uint16_t kDaikin176DefaultRepeat = kNoRepeat;
 const uint16_t kDaikin216StateLength = 27;
 const uint16_t kDaikin216Bits = kDaikin216StateLength * 8;
 const uint16_t kDaikin216DefaultRepeat = kNoRepeat;
+const uint16_t kDelonghiAcBits = 64;
+const uint16_t kDelonghiAcDefaultRepeat = kNoRepeat;
 const uint16_t kDenonBits = 15;
 const uint16_t kDenon48Bits = 48;
 const uint16_t kDenonLegacyBits = 14;
 const uint16_t kDishBits = 16;
 const uint16_t kDishMinRepeat = 3;
+const uint16_t kDoshishaBits = 40;
 const uint16_t kEpsonBits = 32;
 const uint16_t kEpsonMinRepeat = 2;
 const uint16_t kElectraAcStateLength = 13;
@@ -852,6 +899,8 @@ const uint16_t kMitsubishiHeavy88MinRepeat = kNoRepeat;
 const uint16_t kMitsubishiHeavy152StateLength = 19;
 const uint16_t kMitsubishiHeavy152Bits = kMitsubishiHeavy152StateLength * 8;
 const uint16_t kMitsubishiHeavy152MinRepeat = kNoRepeat;
+const uint16_t kMultibracketsBits = 8;
+const uint16_t kMultibracketsDefaultRepeat = kSingleRepeat;
 const uint16_t kNikaiBits = 24;
 const uint16_t kNECBits = 32;
 const uint16_t kNeoclimaStateLength = 12;
@@ -897,8 +946,8 @@ const uint16_t kSony15Bits = 15;
 const uint16_t kSony20Bits = 20;
 const uint16_t kSonyMinBits = 12;
 const uint16_t kSonyMinRepeat = 2;
-const uint16_t kSymphonyBits = 11;
-const uint16_t kSymphonyDefaultRepeat = kSingleRepeat;
+const uint16_t kSymphonyBits = 12;
+const uint16_t kSymphonyDefaultRepeat = 3;
 const uint16_t kTcl112AcStateLength = 14;
 const uint16_t kTcl112AcBits = kTcl112AcStateLength * 8;
 const uint16_t kTcl112AcDefaultRepeat = kNoRepeat;

@@ -11,6 +11,7 @@
 #include "ir_Argo.h"
 #include "ir_Coolix.h"
 #include "ir_Daikin.h"
+#include "ir_Delonghi.h"
 #include "ir_Fujitsu.h"
 #include "ir_Electra.h"
 #include "ir_Goodweather.h"
@@ -174,6 +175,12 @@ void daikin216(IRDaikin216 *ac,
                  const bool quiet, const bool turbo,
                  const int16_t sleep = -1, const int16_t clock = -1);
 #endif  // SEND_DAIKIN64
+#if SEND_DELONGHI_AC
+  void delonghiac(IRDelonghiAc *ac,
+                  const bool on, const stdAc::opmode_t mode, const bool celsius,
+                  const float degrees, const stdAc::fanspeed_t fan,
+                  const bool turbo, const int16_t sleep = -1);
+#endif  // SEND_DELONGHI_AC
 #if SEND_ELECTRA_AC
 void electra(IRElectraAc *ac,
              const bool on, const stdAc::opmode_t mode,
@@ -201,10 +208,10 @@ void electra(IRElectraAc *ac,
 #endif  // SEND_GOODWEATHER
 #if SEND_GREE
   void gree(IRGreeAC *ac, const gree_ac_remote_model_t model,
-            const bool on, const stdAc::opmode_t mode, const float degrees,
-            const stdAc::fanspeed_t fan, const stdAc::swingv_t swingv,
-            const bool turbo, const bool light, const bool clean,
-            const int16_t sleep = -1);
+            const bool on, const stdAc::opmode_t mode, const bool celsius,
+            const float degrees, const stdAc::fanspeed_t fan,
+            const stdAc::swingv_t swingv, const bool turbo, const bool light,
+            const bool clean, const int16_t sleep = -1);
 #endif  // SEND_GREE
 #if SEND_HAIER_AC
   void haier(IRHaierAC *ac,
@@ -325,7 +332,9 @@ void electra(IRElectraAc *ac,
 #if SEND_SHARP_AC
   void sharp(IRSharpAc *ac,
              const bool on, const bool prev_power, const stdAc::opmode_t mode,
-             const float degrees, const stdAc::fanspeed_t fan);
+             const float degrees, const stdAc::fanspeed_t fan,
+             const stdAc::swingv_t swingv, const bool turbo, const bool filter,
+             const bool clean);
 #endif  // SEND_SHARP_AC
 #if SEND_TCL112AC
   void tcl112(IRTcl112Ac *ac,
