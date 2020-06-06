@@ -98,6 +98,7 @@ const char* UPS_STATE = "stat/ups/INFO";
 const char* SOLAR_STATION_POWER_STATE = "stat/solarstation/POWER";
 const char* SOLAR_STATION_PUMP_POWER = "stat/water_pump/POWER";
 const char* SOLAR_STATION_STATE = "tele/solarstation/STATE";
+const char* SOLAR_STATION_REMAINING_SECONDS = "tele/solarstation/REMAINING_SECONDS";
 const char* CMND_IR_RECEV = "cmnd/irrecev/ACTIVE";
 #ifdef TARGET_SMARTOSTAT
   const char* SMARTOLED_CMND_TOPIC = "cmnd/smartostat/POWER3";
@@ -573,6 +574,7 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json);
 bool processSolarStationPowerState(StaticJsonDocument<BUFFER_SIZE> json);
 bool processSolarStationWaterPump(StaticJsonDocument<BUFFER_SIZE> json);
 bool processSolarStationState(StaticJsonDocument<BUFFER_SIZE> json);
+bool processSolarStationRemainingSeconds(StaticJsonDocument<BUFFER_SIZE> json);
 bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json);
 bool processDisplayBrightness(StaticJsonDocument<BUFFER_SIZE> json);
 void drawHeader();

@@ -144,6 +144,7 @@ void manageQueueSubscription() {
   bootstrapManager.subscribe(SOLAR_STATION_POWER_STATE);
   bootstrapManager.subscribe(SOLAR_STATION_PUMP_POWER);
   bootstrapManager.subscribe(SOLAR_STATION_STATE);
+  bootstrapManager.subscribe(SOLAR_STATION_REMAINING_SECONDS);
   bootstrapManager.subscribe(CMND_IR_RECEV);
   
 }
@@ -200,6 +201,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
     processSolarStationWaterPump(json);
   } else if(strcmp(topic, SOLAR_STATION_STATE) == 0) {
     processSolarStationState(json);
+  } else if(strcmp(topic, SOLAR_STATION_REMAINING_SECONDS) == 0) {
+    processSolarStationRemainingSeconds(json);
   } else if(strcmp(topic, CMND_IR_RECEV) == 0) {
     processIrRecev(json);
   }
@@ -825,8 +828,13 @@ bool processSolarStationState(StaticJsonDocument<BUFFER_SIZE> json) {
   float voltage = ((solarStationBattery*4.14)/1024);
   solarStationBatteryVoltage = (serialized(String(voltage,2)));
   solarStationWifi = helper.getValue(json["wifi"]);
-  solarStationRemainingSeconds = helper.getValue(json["remaining_seconds"]);
+  return true;
 
+}
+
+bool processSolarStationRemainingSeconds(StaticJsonDocument<BUFFER_SIZE> json) {
+
+  solarStationRemainingSeconds = helper.getValue(json["remaining_seconds"]);
   return true;
 
 }
