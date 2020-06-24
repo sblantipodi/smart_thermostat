@@ -1075,6 +1075,7 @@ void sendInfoState() {
     root["state"] = (stateOn) ? ON_CMD : OFF_CMD;
     root["POWER1"] = furnance;
     root["POWER2"] = pir;
+    
     JsonObject BME680 = root.createNestedObject("BME680");
     if (readOnceEveryNTimess == 0) {
       if (!boschBME680.performReading()) {
@@ -1561,10 +1562,10 @@ void loop() {
       touchButtonManagement(digitalRead(OLED_BUTTON_PIN));
     #endif
 
-    // // Draw Speed, it influences how long the button should be pressed before switching to the next currentPage
+    // Draw Speed, it influences how long the button should be pressed before switching to the next currentPage
     delay(delayTime);
 
-    // // Send status on MQTT Broker every n seconds
+    // Send status on MQTT Broker every n seconds
     delayAndSendStatus();
 
     // DRAW THE SCREEN

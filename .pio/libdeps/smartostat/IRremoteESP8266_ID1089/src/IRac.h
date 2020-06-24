@@ -9,7 +9,9 @@
 #include "IRremoteESP8266.h"
 #include "ir_Amcor.h"
 #include "ir_Argo.h"
+#include "ir_Carrier.h"
 #include "ir_Coolix.h"
+#include "ir_Corona.h"
 #include "ir_Daikin.h"
 #include "ir_Delonghi.h"
 #include "ir_Fujitsu.h"
@@ -86,7 +88,7 @@ class IRac {
   stdAc::state_t getState(void);
   stdAc::state_t getStatePrev(void);
   bool hasStateChanged(void);
-  stdAc::state_t next;  // The state we want the device to be in after we send.
+  stdAc::state_t next;  ///< The state we want the device to be in after we send
 #ifndef UNIT_TEST
 
  private:
@@ -106,6 +108,12 @@ class IRac {
             const stdAc::fanspeed_t fan, const stdAc::swingv_t swingv,
             const bool turbo, const int16_t sleep = -1);
 #endif  // SEND_ARGO
+#if SEND_CARRIER_AC64
+void carrier64(IRCarrierAc64 *ac,
+               const bool on, const stdAc::opmode_t mode,
+               const float degrees, const stdAc::fanspeed_t fan,
+               const stdAc::swingv_t swingv, const int16_t sleep = -1);
+#endif  // SEND_CARRIER_AC64
 #if SEND_COOLIX
   void coolix(IRCoolixAC *ac,
               const bool on, const stdAc::opmode_t mode, const float degrees,
@@ -114,6 +122,12 @@ class IRac {
               const bool turbo, const bool light, const bool clean,
               const int16_t sleep = -1);
 #endif  // SEND_COOLIX
+#if SEND_CORONA_AC
+  void corona(IRCoronaAc *ac,
+              const bool on, const stdAc::opmode_t mode,
+              const float degrees, const stdAc::fanspeed_t fan,
+              const stdAc::swingv_t swingv, const bool econo);
+#endif  // SEND_CORONA_AC
 #if SEND_DAIKIN
   void daikin(IRDaikinESP *ac,
               const bool on, const stdAc::opmode_t mode, const float degrees,
@@ -242,6 +256,13 @@ void electra(IRElectraAc *ac,
                 const stdAc::swingv_t swingv, const stdAc::swingh_t swingh,
                 const bool swing_toggle, const int16_t sleep = -1);
 #endif  // SEND_HITACHI_AC1
+#if SEND_HITACHI_AC344
+  void hitachi344(IRHitachiAc344 *ac,
+                  const bool on, const stdAc::opmode_t mode,
+                  const float degrees, const stdAc::fanspeed_t fan,
+                  const stdAc::swingv_t swingv,
+                  const stdAc::swingh_t swingh);
+#endif  // SEND_HITACHI_AC344
 #if SEND_HITACHI_AC424
   void hitachi424(IRHitachiAc424 *ac,
                   const bool on, const stdAc::opmode_t mode,
