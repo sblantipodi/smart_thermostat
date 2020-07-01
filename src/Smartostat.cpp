@@ -1085,14 +1085,14 @@ void sendInfoState() {
       }
       BME680["Temperature"] = serialized(String(boschBME680.temperature + tempSensorOffset,1));
       BME680["Humidity"] = serialized(String(boschBME680.humidity,1)); 
-      BME680["Pressure"] = serialized(String(boschBME680.pressure/100,1)); 
+      BME680["Pressure"] = boschBME680.pressure/100; 
       BME680["GasResistance"] = serialized(String(gas_reference/1000,1)); 
       humidity_score = getHumidityScore();
       gas_score = getGasScore();
       //Combine results for the final IAQ index value (0-100% where 100% is good quality air)
       float air_quality_score = humidity_score + gas_score;
       if ((getgasreference_count++) % 5 == 0) getGasReference();
-      BME680["IAQ"] = calculateIAQ(air_quality_score);; 
+      BME680["IAQ"] = calculateIAQ(air_quality_score);
     } else {
       BME680["Temperature"] = temperature;
       BME680["Humidity"] = humidity;
