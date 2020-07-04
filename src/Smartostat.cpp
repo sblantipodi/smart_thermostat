@@ -477,6 +477,9 @@ void draw() {
   }
 
   if (wpTriggered) {
+    if (solarStationRemainingSeconds == 0) {
+      wpTriggered = false;
+    }
     drawWPRemainingSeconds(WATER_PUMP_LOGO, WATER_PUMP_LOGO_W, WATER_PUMP_LOGO_H);
   }
 
