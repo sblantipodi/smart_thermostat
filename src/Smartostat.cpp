@@ -1190,7 +1190,6 @@ void delayAndSendStatus() {
       sendFurnanceState();
       sendACState();
     #endif
-    Ping.ping(IP_DNS);
   }
 
 }
@@ -1200,6 +1199,9 @@ void goToHomePageAndWriteToStorageAfterFiveMinutes() {
 
   if(millis() > timeNowGoHomeAfterFiveMinutes + fiveMinutesPeriod){
     timeNowGoHomeAfterFiveMinutes = millis();
+    // Ping gateway to add presence on the routing table, 
+    // command is synchrounous and adds a bit of lag to the loop
+    Ping.ping(IP_DNS);
     // Write data to file system
     writeConfigToStorage();
     screenSaverTriggered = true;
