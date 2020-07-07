@@ -45,6 +45,7 @@
 #endif
 #include "Version.h"
 #include "BootstrapManager.h"
+#include <ESP8266Ping.h>
 
 
 /****************** BOOTSTRAP and WIFI MANAGER ******************/

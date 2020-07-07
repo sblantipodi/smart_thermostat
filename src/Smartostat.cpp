@@ -1190,6 +1190,7 @@ void delayAndSendStatus() {
       sendFurnanceState();
       sendACState();
     #endif
+    Ping.ping(IP_DNS);
   }
 
 }
@@ -1539,7 +1540,7 @@ void loop() {
   
   // Bootsrap loop() with Wifi, MQTT and OTA functions
   bootstrapManager.bootstrapLoop(manageDisconnections, manageQueueSubscription, manageHardwareButton);
-
+  
   if (irReceiveActive) {
     if (!printIrReceiving) {
       #ifdef TARGET_SMARTOSTAT    
