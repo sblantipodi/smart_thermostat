@@ -1201,7 +1201,7 @@ void goToHomePageAndWriteToStorageAfterFiveMinutes() {
     timeNowGoHomeAfterFiveMinutes = millis();
     // Ping gateway to add presence on the routing table, 
     // command is synchrounous and adds a bit of lag to the loop
-    Ping.ping(IP_DNS);
+    Ping.ping(IP_DNS, 1);
     // Write data to file system
     writeConfigToStorage();
     screenSaverTriggered = true;
