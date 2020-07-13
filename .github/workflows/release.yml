@@ -60,16 +60,19 @@ jobs:
 
       - name: Save artifact (smartostat)
         run: |        
-          mkdir tmp;
-          cp .pio/build/smartostat/firmware.bin tmp/Smartostat_ESP8266_firmware.bin     
+          mkdir esp8266_firmware;
+          cp .pio/build/smartostat/firmware.bin esp8266_firmware/Smartostat_ESP8266_firmware.bin     
           
       - name: Run PlatformIO (smartoled)
         run: platformio run -e smartoled       
 
       - name: Save artifact (smartoled)
         run: |        
-          mkdir tmp;
-          cp .pio/build/smartoled/firmware.bin tmp/Smartoled_ESP8266_firmware.bin        
+          cp .pio/build/smartoled/firmware.bin esp8266_firmware/Smartoled_ESP8266_firmware.bin  
+          
+      - name: Creating tar file
+        run: |        
+          tar cf esp8266_firmware.tar esp8266_firmware
 
       - name: Upload Release Asset (smartoled)
         id: upload-release-asset
@@ -78,6 +81,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: .pio/build/smartoled/firmware.bin
-          asset_name: Smartoled_ESP8266_firmware.bin
+          asset_path: esp8266_firmware.tar
+          asset_name: Smartostat_Smartoled_esp8266_firmware.tar
           asset_content_type: application/octet-stream            
