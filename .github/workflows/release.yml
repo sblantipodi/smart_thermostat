@@ -58,19 +58,18 @@ jobs:
           draft: false
           prerelease: false        
 
-      - name: Upload Release Asset (smartostat)
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: .pio/build/smartostat/firmware.bin
-          asset_name: Smartostat_ESP8266_firmware.bin
-          asset_content_type: application/octet-stream      
+      - name: Save artifact (smartostat)
+        run: |        
+          mkdir tmp;
+          cp .pio/build/smartostat/firmware.bin tmp/Smartostat_ESP8266_firmware.bin     
           
       - name: Run PlatformIO (smartoled)
-        run: platformio run -e smartoled          
+        run: platformio run -e smartoled       
+
+      - name: Save artifact (smartoled)
+        run: |        
+          mkdir tmp;
+          cp .pio/build/smartoled/firmware.bin tmp/Smartoled_ESP8266_firmware.bin        
 
       - name: Upload Release Asset (smartoled)
         id: upload-release-asset
