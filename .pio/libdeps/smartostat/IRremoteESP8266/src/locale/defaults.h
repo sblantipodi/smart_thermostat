@@ -601,6 +601,9 @@
 #ifndef D_STR_MAGIQUEST
 #define D_STR_MAGIQUEST "MAGIQUEST"
 #endif  // D_STR_MAGIQUEST
+#ifndef D_STR_METZ
+#define D_STR_METZ "METZ"
+#endif  // D_STR_METZ
 #ifndef D_STR_MIDEA
 #define D_STR_MIDEA "MIDEA"
 #endif  // D_STR_MIDEA
@@ -730,6 +733,9 @@
 #ifndef D_STR_VESTEL_AC
 #define D_STR_VESTEL_AC "VESTEL_AC"
 #endif  // D_STR_VESTEL_AC
+#ifndef D_STR_VOLTAS
+#define D_STR_VOLTAS "VOLTAS"
+#endif  // D_STR_VOLTAS
 #ifndef D_STR_WHIRLPOOL_AC
 #define D_STR_WHIRLPOOL_AC "WHIRLPOOL_AC"
 #endif  // D_STR_WHIRLPOOL_AC
