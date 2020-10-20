@@ -663,6 +663,12 @@ class IRrecv {
                            const uint16_t nbits = kMultibracketsBits,
                            const bool strict = true);
 #endif  // DECODE_MULTIBRACKETS
+#if DECODE_TECHNIBEL_AC
+  bool decodeTechnibelAc(decode_results *results,
+                         uint16_t offset = kStartOffset,
+                         const uint16_t nbits = kTechnibelAcBits,
+                         const bool strict = true);
+#endif  // DECODE_TECHNIBEL_AC
 #if DECODE_CORONA_AC
   bool decodeCoronaAc(decode_results *results, uint16_t offset = kStartOffset,
                       const uint16_t nbits = kCoronaAcBitsShort,
@@ -678,6 +684,11 @@ bool decodeMetz(decode_results *results, uint16_t offset = kStartOffset,
                 const uint16_t nbits = kMetzBits,
                 const bool strict = true);
 #endif  // DECODE_METZ
+#if DECODE_TRANSCOLD
+bool decodeTranscold(decode_results *results, uint16_t offset = kStartOffset,
+                     const uint16_t nbits = kTranscoldBits,
+                     const bool strict = true);
+#endif  // DECODE_TRANSCOLD
 };
 
 #endif  // IRRECV_H_

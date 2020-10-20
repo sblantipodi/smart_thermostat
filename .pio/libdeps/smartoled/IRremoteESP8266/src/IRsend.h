@@ -118,7 +118,7 @@ namespace stdAc {
 
 /// Fujitsu A/C model numbers
 enum fujitsu_ac_remote_model_t {
-  ARRAH2E = 1,  // (1) AR-RAH2E, AR-RAC1E, AR-RAE1E (Default)
+  ARRAH2E = 1,  // (1) AR-RAH2E, AR-RAC1E, AR-RAE1E, AR-RCE1E (Default)
   ARDB1,        // (2) AR-DB1, AR-DL10 (AR-DL10 swing doesn't work)
   ARREB1E,      // (3) AR-REB1E
   ARJW2,        // (4) AR-JW2  (Same as ARDB1 but with horiz control)
@@ -631,6 +631,10 @@ class IRsend {
                          const uint16_t nbits = kMultibracketsBits,
                          const uint16_t repeat = kMultibracketsDefaultRepeat);
 #endif
+#if SEND_TECHNIBEL_AC
+  void sendTechnibelAc(uint64_t data, uint16_t nbits = kTechnibelAcBits,
+                       uint16_t repeat = kTechnibelAcDefaultRepeat);
+#endif
 #if SEND_CORONA_AC
   void sendCoronaAc(const uint8_t data[],
                     const uint16_t nbytes = kCoronaAcStateLength,
@@ -653,6 +657,10 @@ class IRsend {
   static uint32_t encodeMetz(const uint8_t address, const uint8_t command,
                              const bool toggle = false);
 #endif  // SEND_METZ
+#if SEND_TRANSCOLD
+  void sendTranscold(const uint64_t data, const uint16_t nbits = kTranscoldBits,
+                     const uint16_t repeat = kTranscoldDefaultRepeat);
+#endif  // SEND_TRANSCOLD
 
  protected:
 #ifdef UNIT_TEST

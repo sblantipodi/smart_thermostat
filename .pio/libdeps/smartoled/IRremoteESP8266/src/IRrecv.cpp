@@ -844,6 +844,10 @@ bool IRrecv::decode(decode_results *results, irparams_t *save,
     DPRINTLN("Attempting Carrier 64bit decode");
     if (decodeCarrierAC64(results, offset)) return true;
 #endif  // DECODE_CARRIER_AC64
+#if DECODE_TECHNIBEL_AC
+    DPRINTLN("Attempting Technibel AC decode");
+    if (decodeTechnibelAc(results, offset)) return true;
+#endif  // DECODE_TECHNIBEL_AC
 #if DECODE_CORONA_AC
     DPRINTLN("Attempting CoronaAc decode");
     if (decodeCoronaAc(results, offset)) return true;
@@ -868,6 +872,10 @@ bool IRrecv::decode(decode_results *results, irparams_t *save,
     DPRINTLN("Attempting Metz decode");
     if (decodeMetz(results, offset)) return true;
 #endif  // DECODE_METZ
+#if DECODE_TRANSCOLD
+    DPRINTLN("Attempting Transcold decode");
+    if (decodeTranscold(results, offset)) return true;
+#endif  // DECODE_TRANSCOLD
   // Typically new protocols are added above this line.
   }
 #if DECODE_HASH

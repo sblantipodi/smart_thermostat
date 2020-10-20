@@ -52,7 +52,7 @@
 #endif  // UNIT_TEST
 
 // Library Version
-#define _IRREMOTEESP8266_VERSION_ "2.7.10"
+#define _IRREMOTEESP8266_VERSION_ "2.7.11"
 
 // Set the language & locale for the library. See the `locale` dir for options.
 #ifndef _IR_LOCALE_
@@ -656,6 +656,13 @@
 #define SEND_MULTIBRACKETS     _IR_ENABLE_DEFAULT_
 #endif  // SEND_MULTIBRACKETS
 
+#ifndef DECODE_TECHNIBEL_AC
+#define DECODE_TECHNIBEL_AC     _IR_ENABLE_DEFAULT_
+#endif  // DECODE_TECHNIBEL_AC
+#ifndef SEND_TECHNIBEL_AC
+#define SEND_TECHNIBEL_AC       _IR_ENABLE_DEFAULT_
+#endif  // SEND_TECHNIBEL_AC
+
 #ifndef DECODE_CORONA_AC
 #define DECODE_CORONA_AC       _IR_ENABLE_DEFAULT_
 #endif  // DECODE_CORONA_AC
@@ -678,11 +685,18 @@
 #endif  // SEND_VOLTAS
 
 #ifndef DECODE_METZ
-#define DECODE_METZ          _IR_ENABLE_DEFAULT_
+#define DECODE_METZ            _IR_ENABLE_DEFAULT_
 #endif  // DECODE_METZ
 #ifndef SEND_METZ
-#define SEND_METZ            _IR_ENABLE_DEFAULT_
+#define SEND_METZ              _IR_ENABLE_DEFAULT_
 #endif  // SEND_METZ
+
+#ifndef DECODE_TRANSCOLD
+#define DECODE_TRANSCOLD       _IR_ENABLE_DEFAULT_
+#endif  // DECODE_TRANSCOLD
+#ifndef SEND_TRANSCOLD
+#define SEND_TRANSCOLD         _IR_ENABLE_DEFAULT_
+#endif  // SEND_TRANSCOLD
 
 #if (DECODE_ARGO || DECODE_DAIKIN || DECODE_FUJITSU_AC || DECODE_GREE || \
      DECODE_KELVINATOR || DECODE_MITSUBISHI_AC || DECODE_TOSHIBA_AC || \
@@ -827,8 +841,10 @@ enum decode_type_t {
   SANYO_AC,
   VOLTAS,  // 90
   METZ,
+  TRANSCOLD,
+  TECHNIBEL_AC,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = METZ,
+  kLastDecodeType = TECHNIBEL_AC,
 };
 
 // Message lengths & required repeat values
@@ -885,6 +901,8 @@ const uint16_t kDaikin216Bits = kDaikin216StateLength * 8;
 const uint16_t kDaikin216DefaultRepeat = kNoRepeat;
 const uint16_t kDelonghiAcBits = 64;
 const uint16_t kDelonghiAcDefaultRepeat = kNoRepeat;
+const uint16_t kTechnibelAcBits = 56;
+const uint16_t kTechnibelAcDefaultRepeat = kNoRepeat;
 const uint16_t kDenonBits = 15;
 const uint16_t kDenon48Bits = 48;
 const uint16_t kDenonLegacyBits = 14;
@@ -1032,6 +1050,8 @@ const uint16_t kToshibaACStateLengthShort = kToshibaACStateLength - 2;
 const uint16_t kToshibaACBitsShort = kToshibaACStateLengthShort * 8;
 const uint16_t kToshibaACStateLengthLong = kToshibaACStateLength + 1;
 const uint16_t kToshibaACBitsLong = kToshibaACStateLengthLong * 8;
+const uint16_t kTranscoldBits = 24;
+const uint16_t kTranscoldDefaultRepeat = kNoRepeat;
 const uint16_t kTrotecStateLength = 9;
 const uint16_t kTrotecBits = kTrotecStateLength * 8;
 const uint16_t kTrotecDefaultRepeat = kNoRepeat;

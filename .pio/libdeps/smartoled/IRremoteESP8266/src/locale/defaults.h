@@ -153,6 +153,12 @@
 #ifndef D_STR_CELSIUS
 #define D_STR_CELSIUS "Celsius"
 #endif  // D_STR_CELSIUS
+#ifndef D_STR_FAHRENHEIT
+#define D_STR_FAHRENHEIT "Fahrenheit"
+#endif  // D_STR_FAHRENHEIT
+#ifndef D_STR_CELSIUS_FAHRENHEIT
+#define D_STR_CELSIUS_FAHRENHEIT D_STR_CELSIUS "/" D_STR_FAHRENHEIT
+#endif  // D_STR_CELSIUS_FAHRENHEIT
 #ifndef D_STR_UP
 #define D_STR_UP "Up"
 #endif  // D_STR_UP
@@ -718,12 +724,18 @@
 #ifndef D_STR_TCL112AC
 #define D_STR_TCL112AC "TCL112AC"
 #endif  // D_STR_TCL112AC
+#ifndef D_STR_TECHNIBEL_AC
+#define D_STR_TECHNIBEL_AC "TECHNIBEL_AC"
+#endif  // D_STR_TECHNIBEL_AC
 #ifndef D_STR_TECO
 #define D_STR_TECO "TECO"
 #endif  // D_STR_TECO
 #ifndef D_STR_TOSHIBA_AC
 #define D_STR_TOSHIBA_AC "TOSHIBA_AC"
 #endif  // D_STR_TOSHIBA_AC
+#ifndef D_STR_TRANSCOLD
+#define D_STR_TRANSCOLD "TRANSCOLD"
+#endif  // D_STR_TRANSCOLD
 #ifndef D_STR_TROTEC
 #define D_STR_TROTEC "TROTEC"
 #endif  // D_STR_TROTEC

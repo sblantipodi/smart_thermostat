@@ -62,6 +62,8 @@ const PROGMEM char* kSilentStr = D_STR_SILENT;  ///< "Silent"
 const PROGMEM char* kFilterStr = D_STR_FILTER;  ///< "Filter"
 const PROGMEM char* k3DStr = D_STR_3D;  ///< "3D"
 const PROGMEM char* kCelsiusStr = D_STR_CELSIUS;  ///< "Celsius"
+const PROGMEM char* kCelsiusFahrenheitStr = D_STR_CELSIUS_FAHRENHEIT;  ///<
+///< "Celsius/Fahrenheit"
 const PROGMEM char* kTempUpStr = D_STR_TEMPUP;  ///< "Temp Up"
 const PROGMEM char* kTempDownStr = D_STR_TEMPDOWN;  ///< "Temp Down"
 const PROGMEM char* kStartStr = D_STR_START;  ///< "Start"
@@ -268,5 +270,7 @@ const PROGMEM char *kAllProtocolNamesStr =
     D_STR_SANYO_AC "\x0"
     D_STR_VOLTAS "\x0"
     D_STR_METZ "\x0"
+    D_STR_TRANSCOLD "\x0"
+    D_STR_TECHNIBEL_AC "\x0"
     ///< New protocol strings should be added just above this line.
     "\x0";  ///< This string requires double null termination.

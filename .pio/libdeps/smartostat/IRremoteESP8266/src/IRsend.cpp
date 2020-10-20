@@ -628,6 +628,7 @@ uint16_t IRsend::defaultBits(const decode_type_t protocol) {
     case MIDEA24:
     case NIKAI:
     case RCMM:
+    case TRANSCOLD:
       return 24;
     case LG:
     case LG2:
@@ -659,6 +660,7 @@ uint16_t IRsend::defaultBits(const decode_type_t protocol) {
       return 48;
     case MAGIQUEST:
     case VESTEL_AC:
+    case TECHNIBEL_AC:
       return 56;
     case AMCOR:
     case CARRIER_AC64:
@@ -869,7 +871,12 @@ bool IRsend::send(const decode_type_t type, const uint64_t data,
     case MAGIQUEST:
       sendMagiQuest(data, nbits, min_repeat);
       break;
-#endif
+#endif  // SEND_MAGIQUEST
+#if SEND_METZ
+    case METZ:
+      sendMetz(data, nbits, min_repeat);
+      break;
+#endif  // SEND_METZ
 #if SEND_MIDEA
     case MIDEA:
       sendMidea(data, nbits, min_repeat);
@@ -970,11 +977,21 @@ bool IRsend::send(const decode_type_t type, const uint64_t data,
       sendSymphony(data, nbits, min_repeat);
       break;
 #endif
+#if SEND_TECHNIBEL_AC
+    case TECHNIBEL_AC:
+      sendTechnibelAc(data, nbits, min_repeat);
+      break;
+#endif
 #if SEND_TECO
     case TECO:
       sendTeco(data, nbits, min_repeat);
       break;
-#endif
+#endif  // SEND_TECO
+#if SEND_TRANSCOLD
+    case TRANSCOLD:
+      sendTranscold(data, nbits, min_repeat);
+      break;
+#endif  // SEND_TRANSCOLD
 #if SEND_VESTEL_AC
     case VESTEL_AC:
       sendVestelAc(data, nbits, min_repeat);
@@ -990,11 +1007,6 @@ bool IRsend::send(const decode_type_t type, const uint64_t data,
       sendZepeal(data, nbits, min_repeat);
       break;
 #endif  // SEND_ZEPEAL
-#if SEND_METZ
-    case METZ:
-      sendMetz(data, nbits, min_repeat);
-      break;
-#endif  // SEND_METZ
     default:
       return false;
   }
