@@ -131,7 +131,7 @@ bool longPress = false;
 bool veryLongPress = false;
 
 // Humidity Threshold
-float humidityThreshold = 75;
+float humidityThreshold = 80;
 float tempSensorOffset = 0;
 
 // Total Number of pages
