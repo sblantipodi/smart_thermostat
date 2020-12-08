@@ -173,6 +173,7 @@ String FAN_LOW = "Low";
 String FAN_HIGH = "High";
 String FAN_AUTO = "Auto";
 String FAN_POWER = "Power";
+String FAN_WARM = "Warm";
 
 String SPOTIFY_PLAYING = "playing";
 String SPOTIFY_IDLE = "idle";

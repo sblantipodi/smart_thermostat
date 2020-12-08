@@ -278,7 +278,9 @@ void draw() {
       display.print(F("P"));
     } else if (fan == FAN_QUIET) {
       display.print(F("Q"));
-    }    
+    } else if (fan == FAN_WARM) {
+      display.print(F("W"));
+    }
     display.drawCircle(5, 33, 5, WHITE);
   } else if (hvac_action == HEAT && currentPage == 0) {
     display.drawBitmap(9, 18, tempLogo, tempLogoW, tempLogoH, 1);
@@ -974,6 +976,9 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
         } else if (FAN_AUTO == modeConst) {
           acir.setFan(kSamsungAcFanAuto);
         } else if (FAN_HIGH == modeConst) {
+          acir.setFan(kSamsungAcFanHigh);
+        } else if (FAN_WARM == modeConst) {
+          acir.setMode(kSamsungAcHeat);
           acir.setFan(kSamsungAcFanHigh);
         }
       } else {
