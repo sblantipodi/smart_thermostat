@@ -956,8 +956,10 @@ TEST(TestIRac, Midea) {
   IRac irac(kGpioUnused);
   IRrecv capture(kGpioUnused);
   char expected[] =
-      "Power: On, Mode: 1 (Dry), Celsius: On, Temp: 27C/80F, Fan: 2 (Medium), "
-      "Sleep: On, Swing(V) Toggle: Off, Econo Toggle: Off";
+      "Type: 1 (Command), Power: On, Mode: 1 (Dry), Celsius: On, "
+      "Temp: 27C/80F, On Timer: Off, Off Timer: Off, Fan: 2 (Medium), "
+      "Sleep: On, Swing(V) Toggle: Off, Econo Toggle: Off, "
+      "Turbo Toggle: Off, Light Toggle: Off";
 
   ac.begin();
   irac.midea(&ac,
@@ -967,7 +969,9 @@ TEST(TestIRac, Midea) {
              27,                          // Degrees
              stdAc::fanspeed_t::kMedium,  // Fan speed
              stdAc::swingv_t::kOff,       // Swing(V)
+             false,                       // Turbo
              false,                       // Econo
+             false,                       // Light
              8 * 60 + 0);                 // Sleep time
 
   ASSERT_EQ(expected, ac.toString());
@@ -1286,20 +1290,22 @@ TEST(TestIRac, Sharp) {
   IRac irac(kGpioUnused);
   IRrecv capture(kGpioUnused);
   char expected[] =
-      "Power: On, Mode: 2 (Cool), Temp: 28C, Fan: 3 (Medium), "
+      "Model: 1 (A907), Power: On, Mode: 2 (Cool), Temp: 28C, Fan: 3 (Medium), "
       "Turbo: Off, Swing(V) Toggle: On, Ion: On, Econo: -, Clean: Off";
 
   ac.begin();
   irac.sharp(&ac,
-             true,                         // Power
-             true,                         // Previous Power
-             stdAc::opmode_t::kCool,       // Mode
-             28,                           // Celsius
-             stdAc::fanspeed_t::kMedium,   // Fan speed
-             stdAc::swingv_t::kAuto,       // Vertical swing
-             false,                        // Turbo
-             true,                         // Filter (Ion)
-             false);                       // Clean
+             sharp_ac_remote_model_t::A907,  // Model
+             true,                           // Power
+             true,                           // Previous Power
+             stdAc::opmode_t::kCool,         // Mode
+             28,                             // Celsius
+             stdAc::fanspeed_t::kMedium,     // Fan speed
+             stdAc::swingv_t::kAuto,         // Vertical swing
+             false,                          // Turbo
+             false,                          // Light
+             true,                           // Filter (Ion)
+             false);                         // Clean
   ASSERT_EQ(expected, ac.toString());
   ac._irsend.makeDecodeResult();
   EXPECT_TRUE(capture.decode(&ac._irsend.capture));
@@ -2289,4 +2295,20 @@ TEST(TestIRac, Issue1250) {
   ASSERT_EQ(expected_off, IRAcUtils::resultAcToString(&ac._irsend.capture));
   // Confirm nothing in the state changed with the send.
   ASSERT_FALSE(IRac::cmpStates(irac.next, copy_of_next_pre_send));
+}
+
+// Ensure Protocols that expect the IRac::sendAC() call to have a prev value set
+// still works when it is NULL. i.e. It doesn't crash.
+// Ref: https://github.com/crankyoldgit/IRremoteESP8266/issues/1339
+TEST(TestIRac, Issue1339) {
+  IRac irac(kGpioUnused);
+  stdAc::state_t to_send;
+  IRac::initState(&to_send);
+
+  to_send.protocol = decode_type_t::SAMSUNG_AC;
+  ASSERT_TRUE(irac.sendAc(to_send, NULL));
+  to_send.protocol = decode_type_t::SHARP_AC;
+  ASSERT_TRUE(irac.sendAc(to_send, NULL));
+  to_send.protocol = decode_type_t::HITACHI_AC1;
+  ASSERT_TRUE(irac.sendAc(to_send, NULL));
 }

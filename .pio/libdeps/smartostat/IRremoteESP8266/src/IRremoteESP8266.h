@@ -52,7 +52,7 @@
 #endif  // UNIT_TEST
 
 // Library Version
-#define _IRREMOTEESP8266_VERSION_ "2.7.11"
+#define _IRREMOTEESP8266_VERSION_ "2.7.13"
 
 // Set the language & locale for the library. See the `locale` dir for options.
 #ifndef _IR_LOCALE_
@@ -502,6 +502,13 @@
 #define SEND_PANASONIC_AC      _IR_ENABLE_DEFAULT_
 #endif  // SEND_PANASONIC_AC
 
+#ifndef DECODE_PANASONIC_AC32
+#define DECODE_PANASONIC_AC32  _IR_ENABLE_DEFAULT_
+#endif  // DECODE_PANASONIC_AC32
+#ifndef SEND_PANASONIC_AC32
+#define SEND_PANASONIC_AC32    _IR_ENABLE_DEFAULT_
+#endif  // SEND_PANASONIC_AC32
+
 #ifndef DECODE_MWM
 #define DECODE_MWM             _IR_ENABLE_DEFAULT_
 #endif  // DECODE_MWM
@@ -698,6 +705,20 @@
 #define SEND_TRANSCOLD         _IR_ENABLE_DEFAULT_
 #endif  // SEND_TRANSCOLD
 
+#ifndef DECODE_MIRAGE
+#define DECODE_MIRAGE          _IR_ENABLE_DEFAULT_
+#endif  // DECODE_MIRAGE
+#ifndef SEND_MIRAGE
+#define SEND_MIRAGE            _IR_ENABLE_DEFAULT_
+#endif  // SEND_MIRAGE
+
+#ifndef DECODE_ELITESCREENS
+#define DECODE_ELITESCREENS    _IR_ENABLE_DEFAULT_
+#endif  // DECODE_ELITESCREENS
+#ifndef SEND_ELITESCREENS
+#define SEND_ELITESCREENS      _IR_ENABLE_DEFAULT_
+#endif  // SEND_ELITESCREENS
+
 #if (DECODE_ARGO || DECODE_DAIKIN || DECODE_FUJITSU_AC || DECODE_GREE || \
      DECODE_KELVINATOR || DECODE_MITSUBISHI_AC || DECODE_TOSHIBA_AC || \
      DECODE_TROTEC || DECODE_HAIER_AC || DECODE_HITACHI_AC || \
@@ -710,7 +731,7 @@
      DECODE_AMCOR || DECODE_DAIKIN152 || DECODE_MITSUBISHI136 || \
      DECODE_MITSUBISHI112 || DECODE_HITACHI_AC424 || DECODE_HITACHI_AC3 || \
      DECODE_HITACHI_AC344 || DECODE_CORONA_AC || DECODE_SANYO_AC || \
-     DECODE_VOLTAS)
+     DECODE_VOLTAS || DECODE_MIRAGE)
   // Add any DECODE to the above if it uses result->state (see kStateSizeMax)
   // you might also want to add the protocol to hasACState function
 #define DECODE_AC true  // We need some common infrastructure for decoding A/Cs.
@@ -843,8 +864,11 @@ enum decode_type_t {
   METZ,
   TRANSCOLD,
   TECHNIBEL_AC,
+  MIRAGE,
+  ELITESCREENS,  // 95
+  PANASONIC_AC32,
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = TECHNIBEL_AC,
+  kLastDecodeType = PANASONIC_AC32,
 };
 
 // Message lengths & required repeat values
@@ -914,6 +938,8 @@ const uint16_t kEpsonMinRepeat = 2;
 const uint16_t kElectraAcStateLength = 13;
 const uint16_t kElectraAcBits = kElectraAcStateLength * 8;
 const uint16_t kElectraAcMinRepeat = kNoRepeat;
+const uint16_t kEliteScreensBits = 32;
+const uint16_t kEliteScreensDefaultRepeat = kSingleRepeat;
 const uint16_t kFujitsuAcMinRepeat = kNoRepeat;
 const uint16_t kFujitsuAcStateLength = 16;
 const uint16_t kFujitsuAcStateLengthShort = 7;
@@ -968,6 +994,9 @@ const uint16_t kMideaBits = 48;
 const uint16_t kMideaMinRepeat = kNoRepeat;
 const uint16_t kMidea24Bits = 24;
 const uint16_t kMidea24MinRepeat = kSingleRepeat;
+const uint16_t kMirageStateLength = 15;
+const uint16_t kMirageBits = kMirageStateLength * 8;
+const uint16_t kMirageMinRepeat = kNoRepeat;
 const uint16_t kMitsubishiBits = 16;
 // TODO(anyone): Verify that the Mitsubishi repeat is really needed.
 //               Based on marcosamarinho's code.
@@ -1001,6 +1030,7 @@ const uint16_t kPanasonicAcStateShortLength = 16;
 const uint16_t kPanasonicAcBits = kPanasonicAcStateLength * 8;
 const uint16_t kPanasonicAcShortBits = kPanasonicAcStateShortLength * 8;
 const uint16_t kPanasonicAcDefaultRepeat = kNoRepeat;
+const uint16_t kPanasonicAc32Bits = 32;
 const uint16_t kPioneerBits = 64;
 const uint16_t kProntoMinLength = 6;
 const uint16_t kRC5RawBits = 14;

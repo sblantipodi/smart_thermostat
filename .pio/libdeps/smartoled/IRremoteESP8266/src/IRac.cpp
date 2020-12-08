@@ -59,7 +59,7 @@ IRac::IRac(const uint16_t pin, const bool inverted, const bool use_modulation) {
   this->markAsSent();
 }
 
-/// Initialse the given state with the supplied settings.
+/// Initialise the given state with the supplied settings.
 /// @param[out] state A Ptr to where the settings will be stored.
 /// @param[in] vendor The vendor/protocol type.
 /// @param[in] model The A/C model if applicable.
@@ -112,7 +112,7 @@ void IRac::initState(stdAc::state_t *state,
   state->clock = clock;
 }
 
-/// Initialse the given state with the supplied settings.
+/// Initialise the given state with the supplied settings.
 /// @param[out] state A Ptr to where the settings will be stored.
 /// @note Sets all the parameters to reasonable base/automatic defaults.
 void IRac::initState(stdAc::state_t *state) {
@@ -1281,14 +1281,16 @@ void IRac::lg(IRLgAc *ac, const lg_ac_remote_model_t model,
 /// @param[in] degrees The temperature setting in degrees.
 /// @param[in] fan The speed setting for the fan.
 /// @param[in] swingv The vertical swing setting.
-/// @param[in] econo Run the device in economical mode.
+/// @param[in] turbo Toggle the device's turbo/powerful mode.
+/// @param[in] econo Toggle the device's economical mode.
+/// @param[in] light Toggle the LED/Display mode.
 /// @param[in] sleep Nr. of minutes for sleep mode. -1 is Off, >= 0 is on.
 /// @note On Danby A/C units, swingv controls the Ion Filter instead.
 void IRac::midea(IRMideaAC *ac,
                  const bool on, const stdAc::opmode_t mode, const bool celsius,
                  const float degrees, const stdAc::fanspeed_t fan,
-                 const stdAc::swingv_t swingv, const bool econo,
-                 const int16_t sleep) {
+                 const stdAc::swingv_t swingv, const bool turbo,
+                 const bool econo, const bool light, const int16_t sleep) {
   ac->begin();
   ac->setPower(on);
   ac->setMode(ac->convertMode(mode));
@@ -1298,9 +1300,9 @@ void IRac::midea(IRMideaAC *ac,
   ac->setSwingVToggle(swingv != stdAc::swingv_t::kOff);
   // No Horizontal swing setting available.
   // No Quiet setting available.
-  // No Turbo setting available.
+  ac->setTurboToggle(turbo);
   ac->setEconoToggle(econo);
-  // No Light setting available.
+  ac->setLightToggle(light);
   // No Filter setting available.
   // No Clean setting available.
   // No Beep setting available.
@@ -1672,6 +1674,7 @@ void IRac::sanyo(IRSanyoAc *ac,
 /// Send a Sharp A/C message with the supplied settings.
 /// @note Multiple IR messages may be generated & sent.
 /// @param[in, out] ac A Ptr to an IRSharpAc object to use.
+/// @param[in] model The A/C model to use.
 /// @param[in] on The power setting.
 /// @param[in] prev_power The power setting from the previous A/C state.
 /// @param[in] mode The operation mode setting.
@@ -1679,26 +1682,28 @@ void IRac::sanyo(IRSanyoAc *ac,
 /// @param[in] fan The speed setting for the fan.
 /// @param[in] swingv The vertical swing setting.
 /// @param[in] turbo Run the device in turbo/powerful mode.
+/// @param[in] light Turn on the LED/Display mode.
 /// @param[in] filter Turn on the (ion/pollen/etc) filter mode.
 /// @param[in] clean Turn on the self-cleaning mode. e.g. Mould, dry filters etc
-void IRac::sharp(IRSharpAc *ac,
+void IRac::sharp(IRSharpAc *ac, const sharp_ac_remote_model_t model,
                  const bool on, const bool prev_power,
                  const stdAc::opmode_t mode,
                  const float degrees, const stdAc::fanspeed_t fan,
                  const stdAc::swingv_t swingv, const bool turbo,
-                 const bool filter, const bool clean) {
+                 const bool light, const bool filter, const bool clean) {
   ac->begin();
+  ac->setModel(model);
   ac->setPower(on, prev_power);
   ac->setMode(ac->convertMode(mode));
   ac->setTemp(degrees);
   ac->setFan(ac->convertFan(fan));
   ac->setSwingToggle(swingv != stdAc::swingv_t::kOff);
-  // Econo  deliberately not used as it cycles through 3 modes uncontrolably.
+  // Econo  deliberately not used as it cycles through 3 modes uncontrollably.
   // ac->setEconoToggle(econo);
   ac->setIon(filter);
   // No Horizontal swing setting available.
   // No Quiet setting available.
-  // No Light setting available.
+  ac->setLightToggle(light);
   // No Beep setting available.
   // No Sleep setting available.
   // No Clock setting available.
@@ -2105,12 +2110,21 @@ stdAc::state_t IRac::handleToggles(const stdAc::state_t desired,
         result.light = desired.light ^ prev->light;
         break;
       case decode_type_t::MIDEA:
+        result.turbo = desired.turbo ^ prev->turbo;
         result.econo = desired.econo ^ prev->econo;
+        result.light = desired.light ^ prev->light;
         // FALL THRU
       case decode_type_t::CORONA_AC:
       case decode_type_t::HITACHI_AC344:
       case decode_type_t::HITACHI_AC424:
+        if ((desired.swingv == stdAc::swingv_t::kOff) ^
+            (prev->swingv == stdAc::swingv_t::kOff))  // It changed, so toggle.
+          result.swingv = stdAc::swingv_t::kAuto;
+        else
+          result.swingv = stdAc::swingv_t::kOff;  // No change, so no toggle.
+        break;
       case decode_type_t::SHARP_AC:
+        result.light = desired.light ^ prev->light;
         if ((desired.swingv == stdAc::swingv_t::kOff) ^
             (prev->swingv == stdAc::swingv_t::kOff))  // It changed, so toggle.
           result.swingv = stdAc::swingv_t::kAuto;
@@ -2183,6 +2197,11 @@ bool IRac::sendAc(const stdAc::state_t desired, const stdAc::state_t *prev) {
       desired.celsius ? desired.degrees : fahrenheitToCelsius(desired.degrees);
   // special `state_t` that is required to be sent based on that.
   stdAc::state_t send = this->handleToggles(this->cleanState(desired), prev);
+  // Some protocols expect a previous state for power.
+  // Construct a pointer-safe previous power state incase prev is NULL/NULLPTR.
+#if (SEND_HITACHI_AC1 || SEND_SAMSUNG_AC || SEND_SHARP_AC)
+  const bool prev_power = (prev != NULL) ? prev->power : !send.power;
+#endif
   // Per vendor settings & setup.
   switch (send.protocol) {
 #if SEND_AIRWELL
@@ -2444,7 +2463,8 @@ bool IRac::sendAc(const stdAc::state_t desired, const stdAc::state_t *prev) {
     {
       IRMideaAC ac(_pin, _inverted, _modulation);
       midea(&ac, send.power, send.mode, send.celsius, send.degrees,
-            send.fanspeed, send.swingv, send.econo, send.sleep);
+            send.fanspeed, send.swingv, send.turbo, send.econo, send.light,
+            send.sleep);
       break;
     }
 #endif  // SEND_MIDEA
@@ -2519,7 +2539,7 @@ bool IRac::sendAc(const stdAc::state_t desired, const stdAc::state_t *prev) {
       IRSamsungAc ac(_pin, _inverted, _modulation);
       samsung(&ac, send.power, send.mode, degC, send.fanspeed, send.swingv,
               send.quiet, send.turbo, send.light, send.filter, send.clean,
-              send.beep, prev->power);
+              send.beep, prev_power);
       break;
     }
 #endif  // SEND_SAMSUNG_AC
@@ -2536,10 +2556,9 @@ bool IRac::sendAc(const stdAc::state_t desired, const stdAc::state_t *prev) {
     case SHARP_AC:
     {
       IRSharpAc ac(_pin, _inverted, _modulation);
-      bool prev_power = !send.power;
-      if (prev != NULL) prev_power = prev->power;
-      sharp(&ac, send.power, prev_power, send.mode, degC, send.fanspeed,
-            send.swingv, send.turbo, send.filter, send.clean);
+      sharp(&ac, (sharp_ac_remote_model_t)send.model, send.power, prev_power,
+            send.mode, degC, send.fanspeed, send.swingv, send.turbo, send.light,
+            send.filter, send.clean);
       break;
     }
 #endif  // SEND_SHARP_AC
@@ -2666,7 +2685,7 @@ bool IRac::hasStateChanged(void) { return cmpStates(next, _prev); }
 /// Convert the supplied str into the appropriate enum.
 /// @param[in] str A Ptr to a C-style string to be converted.
 /// @param[in] def The enum to return if no conversion was possible.
-/// @return The equivilent enum.
+/// @return The equivalent enum.
 stdAc::opmode_t IRac::strToOpmode(const char *str,
                                   const stdAc::opmode_t def) {
   if (!strcasecmp(str, kAutoStr) ||
@@ -2696,7 +2715,7 @@ stdAc::opmode_t IRac::strToOpmode(const char *str,
 /// Convert the supplied str into the appropriate enum.
 /// @param[in] str A Ptr to a C-style string to be converted.
 /// @param[in] def The enum to return if no conversion was possible.
-/// @return The equivilent enum.
+/// @return The equivalent enum.
 stdAc::fanspeed_t IRac::strToFanspeed(const char *str,
                                       const stdAc::fanspeed_t def) {
   if (!strcasecmp(str, kAutoStr) ||
@@ -2727,7 +2746,7 @@ stdAc::fanspeed_t IRac::strToFanspeed(const char *str,
 /// Convert the supplied str into the appropriate enum.
 /// @param[in] str A Ptr to a C-style string to be converted.
 /// @param[in] def The enum to return if no conversion was possible.
-/// @return The equivilent enum.
+/// @return The equivalent enum.
 stdAc::swingv_t IRac::strToSwingV(const char *str,
                                   const stdAc::swingv_t def) {
   if (!strcasecmp(str, kAutoStr) ||
@@ -2768,7 +2787,7 @@ stdAc::swingv_t IRac::strToSwingV(const char *str,
 /// Convert the supplied str into the appropriate enum.
 /// @param[in] str A Ptr to a C-style string to be converted.
 /// @param[in] def The enum to return if no conversion was possible.
-/// @return The equivilent enum.
+/// @return The equivalent enum.
 stdAc::swingh_t IRac::strToSwingH(const char *str,
                                   const stdAc::swingh_t def) {
   if (!strcasecmp(str, kAutoStr) ||
@@ -2808,7 +2827,7 @@ stdAc::swingh_t IRac::strToSwingH(const char *str,
 /// @note Assumes str is the model code or an integer >= 1.
 /// @param[in] str A Ptr to a C-style string to be converted.
 /// @param[in] def The enum to return if no conversion was possible.
-/// @return The equivilent enum.
+/// @return The equivalent enum.
 int16_t IRac::strToModel(const char *str, const int16_t def) {
   // Gree
   if (!strcasecmp(str, "YAW1F")) {
@@ -2871,7 +2890,7 @@ int16_t IRac::strToModel(const char *str, const int16_t def) {
 /// Convert the supplied str into the appropriate boolean value.
 /// @param[in] str A Ptr to a C-style string to be converted.
 /// @param[in] def The boolean value to return if no conversion was possible.
-/// @return The equivilent boolean value.
+/// @return The equivalent boolean value.
 bool IRac::strToBool(const char *str, const bool def) {
   if (!strcasecmp(str, kOnStr) ||
       !strcasecmp(str, "1") ||
@@ -2889,14 +2908,14 @@ bool IRac::strToBool(const char *str, const bool def) {
 
 /// Convert the supplied boolean into the appropriate String.
 /// @param[in] value The boolean value to be converted.
-/// @return The equivilent String for the locale.
+/// @return The equivalent String for the locale.
 String IRac::boolToString(const bool value) {
   return value ? kOnStr : kOffStr;
 }
 
 /// Convert the supplied operation mode into the appropriate String.
 /// @param[in] mode The enum to be converted.
-/// @return The equivilent String for the locale.
+/// @return The equivalent String for the locale.
 String IRac::opmodeToString(const stdAc::opmode_t mode) {
   switch (mode) {
     case stdAc::opmode_t::kOff:
@@ -2918,7 +2937,7 @@ String IRac::opmodeToString(const stdAc::opmode_t mode) {
 
 /// Convert the supplied fan speed enum into the appropriate String.
 /// @param[in] speed The enum to be converted.
-/// @return The equivilent String for the locale.
+/// @return The equivalent String for the locale.
 String IRac::fanspeedToString(const stdAc::fanspeed_t speed) {
   switch (speed) {
     case stdAc::fanspeed_t::kAuto:
@@ -2940,7 +2959,7 @@ String IRac::fanspeedToString(const stdAc::fanspeed_t speed) {
 
 /// Convert the supplied enum into the appropriate String.
 /// @param[in] swingv The enum to be converted.
-/// @return The equivilent String for the locale.
+/// @return The equivalent String for the locale.
 String IRac::swingvToString(const stdAc::swingv_t swingv) {
   switch (swingv) {
     case stdAc::swingv_t::kOff:
@@ -2964,7 +2983,7 @@ String IRac::swingvToString(const stdAc::swingv_t swingv) {
 
 /// Convert the supplied enum into the appropriate String.
 /// @param[in] swingh The enum to be converted.
-/// @return The equivilent String for the locale.
+/// @return The equivalent String for the locale.
 String IRac::swinghToString(const stdAc::swingh_t swingh) {
   switch (swingh) {
     case stdAc::swingh_t::kOff:
