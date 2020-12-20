@@ -131,7 +131,8 @@ void manageQueueSubscription() {
     bootstrapManager.subscribe(SMARTOSTAT_PIR_STATE_TOPIC);
     bootstrapManager.subscribe(SMARTOSTATAC_CMD_TOPIC);
     bootstrapManager.subscribe(SMARTOSTATAC_STAT_IRSEND);
-    bootstrapManager.subscribe(SMARTOLED_CMND_REBOOT);            
+    bootstrapManager.subscribe(SMARTOLED_CMND_REBOOT);
+    bootstrapManager.subscribe(LUCIFERIN_FRAMERATE);
   #endif
   bootstrapManager.subscribe(SPOTIFY_STATE_TOPIC);
   bootstrapManager.subscribe(SMARTOLED_CMND_TOPIC);
@@ -216,6 +217,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
       processACState(json);
     } else if(strcmp(topic, SMARTOLED_CMND_REBOOT) == 0) {
       processSmartoledRebootCmnd(json);
+    } else if(strcmp(topic, LUCIFERIN_FRAMERATE) == 0) {
+      processSmartoledFramerate(json);
     }
   #endif  
   
@@ -556,14 +559,11 @@ void drawUpsFooter() {
 
   display.setTextSize(1);
   display.setCursor(0,57);
-  display.print(serialized(String(loadwattMax,0))); display.print(F("W"));
+  display.print(producing); display.print(F("FPS"));
   display.print(F(" "));
-  display.print(runtime); 
+  display.print(consuming); display.print(F("FPS"));
   display.print(F(" "));
-  display.print(inputVoltage); display.print(F("V"));
-  display.print(F(" "));
-  display.print(outputVoltage); display.print(F("V"));
-  display.print(F(" "));
+  display.print(runtime);
 
 }
 
@@ -996,11 +996,23 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
 #ifdef TARGET_SMARTOLED
 
   bool processSmartoledRebootCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
-    
+
     rebootState = helper.isOnOff(json);
     sendSmartoledRebootState(OFF_CMD);
-    if (rebootState == OFF_CMD) {      
+    if (rebootState == OFF_CMD) {
       sendSmartoledRebootCmnd();
+    }
+    return true;
+
+  }
+
+  bool processSmartoledFramerate(StaticJsonDocument<BUFFER_SIZE> json) {
+
+    if (json.containsKey("producing")) {
+      float producingFloat = json["producing"];
+      float consumingFloat = json["consuming"];
+      producing = serialized(String(producingFloat,1));
+      consuming = serialized(String(consumingFloat,1));
     }
     return true;
 
