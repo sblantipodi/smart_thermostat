@@ -133,6 +133,7 @@ void manageQueueSubscription() {
     bootstrapManager.subscribe(SMARTOSTATAC_STAT_IRSEND);
     bootstrapManager.subscribe(SMARTOLED_CMND_REBOOT);
     bootstrapManager.subscribe(LUCIFERIN_FRAMERATE);
+    bootstrapManager.subscribe(GLOWORM_FRAMERATE);
   #endif
   bootstrapManager.subscribe(SPOTIFY_STATE_TOPIC);
   bootstrapManager.subscribe(SMARTOLED_CMND_TOPIC);
@@ -219,6 +220,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
       processSmartoledRebootCmnd(json);
     } else if(strcmp(topic, LUCIFERIN_FRAMERATE) == 0) {
       processSmartoledFramerate(json);
+    } else if(strcmp(topic, GLOWORM_FRAMERATE) == 0) {
+      processSmartoledGlowWormFramerate(json);
     }
   #endif  
   
@@ -563,7 +566,7 @@ void drawUpsFooter() {
   display.print(F(" "));
   display.print(consuming); display.print(F("FPS"));
   display.print(F(" "));
-  display.print(runtime);
+  display.print(gwconsuming); display.print(F("FPS"));
 
 }
 
@@ -1013,6 +1016,16 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
       float consumingFloat = json["consuming"];
       producing = serialized(String(producingFloat,1));
       consuming = serialized(String(consumingFloat,1));
+    }
+    return true;
+
+  }
+
+  bool processSmartoledGlowWormFramerate(StaticJsonDocument<BUFFER_SIZE> json) {
+
+    if (json.containsKey("framerate")) {
+      float consumingFloat = json["framerate"];
+      gwconsuming = serialized(String(consumingFloat,1));
     }
     return true;
 
