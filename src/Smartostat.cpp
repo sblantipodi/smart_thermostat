@@ -1016,6 +1016,9 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
       float consumingFloat = json["consuming"];
       producing = serialized(String(producingFloat,1));
       consuming = serialized(String(consumingFloat,1));
+      if (producingFloat < 2) {
+        gwconsuming = serialized(String(0,1));;
+      }
     }
     return true;
 

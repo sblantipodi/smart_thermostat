@@ -102,7 +102,7 @@ const char* SOLAR_STATION_STATE = "tele/solarstation/STATE";
 const char* SOLAR_STATION_REMAINING_SECONDS = "tele/solarstation/REMAINING_SECONDS";
 const char* CMND_IR_RECEV = "cmnd/irrecev/ACTIVE";
 const char* LUCIFERIN_FRAMERATE = "lights/firelyluciferin/framerate";
-const char* GLOWORM_FRAMERATE = "lights/glowwormluciferin";
+const char* GLOWORM_FRAMERATE = "lights/glowwormluciferin/fps";
 #ifdef TARGET_SMARTOSTAT
   const char* SMARTOLED_CMND_TOPIC = "cmnd/smartostat/POWER3";
   const char* SMARTOLED_STATE_TOPIC = "stat/smartostat/POWER3";
