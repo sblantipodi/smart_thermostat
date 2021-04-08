@@ -56,12 +56,30 @@ namespace irutils {
                           const bool precomma = true);
   String addTempToString(const uint16_t degrees, const bool celsius = true,
                          const bool precomma = true);
+  String addTempFloatToString(const float degrees, const bool celsius = true,
+                              const bool precomma = true);
   String addModeToString(const uint8_t mode, const uint8_t automatic,
                          const uint8_t cool, const uint8_t heat,
                          const uint8_t dry, const uint8_t fan);
   String addFanToString(const uint8_t speed, const uint8_t high,
                         const uint8_t low, const uint8_t automatic,
-                        const uint8_t quiet, const uint8_t medium);
+                        const uint8_t quiet, const uint8_t medium,
+                        const uint8_t maximum = 0xFF);
+  String addSwingHToString(const uint8_t position, const uint8_t automatic,
+                           const uint8_t maxleft, const uint8_t left,
+                           const uint8_t middle,
+                           const uint8_t right, const uint8_t maxright,
+                           const uint8_t off,
+                           const uint8_t leftright, const uint8_t rightleft,
+                           const uint8_t threed, const uint8_t wide);
+  String addSwingVToString(const uint8_t position, const uint8_t automatic,
+                           const uint8_t highest, const uint8_t high,
+                           const uint8_t uppermiddle,
+                           const uint8_t middle,
+                           const uint8_t lowermiddle,
+                           const uint8_t low, const uint8_t lowest,
+                           const uint8_t off, const uint8_t swing,
+                           const uint8_t breeze, const uint8_t circulate);
   String addDayToString(const uint8_t day_of_week, const int8_t offset = 0,
                         const bool precomma = true);
   String htmlEscape(const String unescaped);

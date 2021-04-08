@@ -106,6 +106,7 @@ const PROGMEM char* kHeatStr = D_STR_HEAT;  ///< "Heat"
 const PROGMEM char* kFanStr = D_STR_FAN;  ///< "Fan"
 const PROGMEM char* kDryStr = D_STR_DRY;  ///< "Dry"
 const PROGMEM char* kFanOnlyStr = D_STR_FANONLY;  ///< "fan_only"
+const PROGMEM char* kRecycleStr = D_STR_RECYCLE;  ///< "Recycle"
 
 const PROGMEM char* kMaxStr = D_STR_MAX;  ///< "Max"
 const PROGMEM char* kMaximumStr = D_STR_MAXIMUM;  ///< "Maximum"
@@ -278,5 +279,8 @@ const PROGMEM char *kAllProtocolNamesStr =
     D_STR_MIRAGE "\x0"
     D_STR_ELITESCREENS "\x0"
     D_STR_PANASONIC_AC32 "\x0"
+    D_STR_MILESTAG2 "\x0"
+    D_STR_ECOCLIM "\x0"
+    D_STR_XMP "\x0"
     ///< New protocol strings should be added just above this line.
     "\x0";  ///< This string requires double null termination.

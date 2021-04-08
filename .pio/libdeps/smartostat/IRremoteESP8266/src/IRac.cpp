@@ -23,6 +23,7 @@
 #include "ir_Coolix.h"
 #include "ir_Corona.h"
 #include "ir_Daikin.h"
+#include "ir_Ecoclim.h"
 #include "ir_Electra.h"
 #include "ir_Fujitsu.h"
 #include "ir_Haier.h"
@@ -182,6 +183,9 @@ bool IRac::isProtocolSupported(const decode_type_t protocol) {
 #if SEND_DELONGHI_AC
     case decode_type_t::DELONGHI_AC:
 #endif
+#if SEND_ECOCLIM
+    case decode_type_t::ECOCLIM:
+#endif
 #if SEND_ELECTRA_AC
     case decode_type_t::ELECTRA_AC:
 #endif
@@ -240,6 +244,9 @@ bool IRac::isProtocolSupported(const decode_type_t protocol) {
 #endif
 #if SEND_PANASONIC_AC
     case decode_type_t::PANASONIC_AC:
+#endif
+#if SEND_PANASONIC_AC32
+    case decode_type_t::PANASONIC_AC32:
 #endif
 #if SEND_SAMSUNG_AC
     case decode_type_t::SAMSUNG_AC:
@@ -769,7 +776,7 @@ void IRac::daikin64(IRDaikin64 *ac,
   ac->setTurbo(turbo);
   ac->setQuiet(quiet);
   ac->setSleep(sleep >= 0);
-  ac->setClock(clock);
+  if (clock >= 0) ac->setClock(clock);
   ac->send();
 }
 #endif  // SEND_DAIKIN64
@@ -799,6 +806,45 @@ void IRac::delonghiac(IRDelonghiAc *ac,
 }
 #endif  // SEND_DELONGHI_AC
 
+#if SEND_ECOCLIM
+/// Send an EcoClim A/C message with the supplied settings.
+/// @param[in, out] ac A Ptr to an IREcoclimAc object to use.
+/// @param[in] on The power setting.
+/// @param[in] mode The operation mode setting.
+/// @param[in] degrees The temperature setting in degrees.
+/// @param[in] fan The speed setting for the fan.
+/// @param[in] sleep Nr. of minutes for sleep mode. -1 is Off, >= 0 is on.
+/// @param[in] clock The time in Nr. of mins since midnight. < 0 is ignore.
+void IRac::ecoclim(IREcoclimAc *ac,
+                   const bool on, const stdAc::opmode_t mode,
+                   const float degrees, const stdAc::fanspeed_t fan,
+                   const int16_t sleep, const int16_t clock) {
+  ac->begin();
+  ac->setPower(on);
+  uint8_t new_mode;
+  if (sleep >= 0)  // EcoClim has a descrete Sleep operation mode, not a setting
+    new_mode = kEcoclimSleep;  // Override the requested operating mode.
+  else
+    new_mode = ac->convertMode(mode);  // Not Sleep, so use the supplied mode.
+  ac->setMode(new_mode);
+  ac->setTemp(degrees);
+  ac->setSensorTemp(degrees);  //< Set to the desired temp until we cab disable.
+  ac->setFan(ac->convertFan(fan));
+  // No SwingV setting available
+  // No SwingH setting available
+  // No Quiet setting available.
+  // No Turbo setting available.
+  // No Light setting available.
+  // No Econo setting available.
+  // No Filter setting available.
+  // No Clean setting available
+  // No Beep setting available.
+  // No Sleep setting available.
+  if (clock >= 0) ac->setClock(clock);
+  ac->send();
+}
+#endif  // SEND_ECOCLIM
+
 #if SEND_ELECTRA_AC
 /// Send an Electra A/C message with the supplied settings.
 /// @param[in, out] ac A Ptr to an IRElectraAc object to use.
@@ -827,7 +873,6 @@ void IRac::electra(IRElectraAc *ac,
   // No Quiet setting available.
   ac->setTurbo(turbo);
   ac->setLightToggle(lighttoggle);
-  // No Light setting available.
   // No Econo setting available.
   // No Filter setting available.
   ac->setClean(clean);
@@ -1331,6 +1376,8 @@ void IRac::mitsubishi(IRMitsubishiAC *ac,
                       const stdAc::swingh_t swingh,
                       const bool quiet, const int16_t clock) {
   ac->begin();
+  // Uncomment next line if you *really* need the weekly timer enabled via IRac.
+  // ac->setWeeklyTimerEnabled(true);  // Weekly Timer is disabled by default.
   ac->setPower(on);
   ac->setMode(ac->convertMode(mode));
   ac->setTemp(degrees);
@@ -1583,6 +1630,40 @@ void IRac::panasonic(IRPanasonicAc *ac, const panasonic_ac_remote_model_t model,
 }
 #endif  // SEND_PANASONIC_AC
 
+#if SEND_PANASONIC_AC32
+/// Send a Panasonic A/C message with the supplied settings.
+/// @param[in, out] ac A Ptr to an IRPanasonicAc32 object to use.
+/// @param[in] on The power setting.
+/// @param[in] mode The operation mode setting.
+/// @param[in] degrees The temperature setting in degrees.
+/// @param[in] fan The speed setting for the fan.
+/// @param[in] swingv The vertical swing setting.
+/// @param[in] swingh The horizontal swing setting.
+void IRac::panasonic32(IRPanasonicAc32 *ac,
+                       const bool on, const stdAc::opmode_t mode,
+                       const float degrees, const stdAc::fanspeed_t fan,
+                       const stdAc::swingv_t swingv,
+                       const stdAc::swingh_t swingh) {
+  ac->begin();
+  ac->setPowerToggle(on);
+  ac->setMode(ac->convertMode(mode));
+  ac->setTemp(degrees);
+  ac->setFan(ac->convertFan(fan));
+  ac->setSwingVertical(ac->convertSwingV(swingv));
+  ac->setSwingHorizontal(swingh != stdAc::swingh_t::kOff);
+  // No Quiet setting available.
+  // No Turbo setting available.
+  // No Filter setting available.
+  // No Light setting available.
+  // No Econo setting available.
+  // No Clean setting available.
+  // No Beep setting available.
+  // No Sleep setting available.
+  // No Clock setting available.
+  ac->send();
+}
+#endif  // SEND_PANASONIC_AC32
+
 #if SEND_SAMSUNG_AC
 /// Send a Samsung A/C message with the supplied settings.
 /// @note Multiple IR messages may be generated & sent.
@@ -1693,10 +1774,9 @@ void IRac::sharp(IRSharpAc *ac, const sharp_ac_remote_model_t model,
                  const bool light, const bool filter, const bool clean) {
   ac->begin();
   ac->setModel(model);
-  ac->setPower(on, prev_power);
   ac->setMode(ac->convertMode(mode));
   ac->setTemp(degrees);
-  ac->setFan(ac->convertFan(fan));
+  ac->setFan(ac->convertFan(fan, model));
   ac->setSwingToggle(swingv != stdAc::swingv_t::kOff);
   // Econo  deliberately not used as it cycles through 3 modes uncontrollably.
   // ac->setEconoToggle(econo);
@@ -1716,6 +1796,7 @@ void IRac::sharp(IRSharpAc *ac, const sharp_ac_remote_model_t model,
     ac->send();
   }
   ac->setClean(clean);
+  ac->setPower(on, prev_power);
   if (turbo) {
     ac->send();  // Send the current state.
     // Set up turbo mode as it needs to be sent after everything else.
@@ -2109,6 +2190,10 @@ stdAc::state_t IRac::handleToggles(const stdAc::state_t desired,
       case decode_type_t::ELECTRA_AC:
         result.light = desired.light ^ prev->light;
         break;
+      case decode_type_t::FUJITSU_AC:
+        result.turbo = desired.turbo ^ prev->turbo;
+        result.econo = desired.econo ^ prev->econo;
+        break;
       case decode_type_t::MIDEA:
         result.turbo = desired.turbo ^ prev->turbo;
         result.econo = desired.econo ^ prev->econo;
@@ -2133,6 +2218,7 @@ stdAc::state_t IRac::handleToggles(const stdAc::state_t desired,
         break;
       case decode_type_t::AIRWELL:
       case decode_type_t::DAIKIN64:
+      case decode_type_t::PANASONIC_AC32:
       case decode_type_t::WHIRLPOOL_AC:
         result.power = desired.power ^ prev->power;
         break;
@@ -2153,6 +2239,8 @@ stdAc::state_t IRac::handleToggles(const stdAc::state_t desired,
 /// @param[in] model The A/C model if applicable.
 /// @param[in] power The power setting.
 /// @param[in] mode The operation mode setting.
+/// @note Changing mode from "Off" to something else does NOT turn on a device.
+/// You need to use `power` for that.
 /// @param[in] degrees The temperature setting in degrees.
 /// @param[in] celsius Temperature units. True is Celsius, False is Fahrenheit.
 /// @param[in] fan The speed setting for the fan.
@@ -2190,6 +2278,8 @@ bool IRac::sendAc(const decode_type_t vendor, const int16_t model,
 /// Send A/C message for a given device using state_t structures.
 /// @param[in] desired The state_t structure describing the desired new ac state
 /// @param[in] prev A Ptr to the state_t structure containing the previous state
+/// @note Changing mode from "Off" to something else does NOT turn on a device.
+/// You need to use `power` for that.
 /// @return True, if accepted/converted/attempted etc. False, if unsupported.
 bool IRac::sendAc(const stdAc::state_t desired, const stdAc::state_t *prev) {
   // Convert the temp from Fahrenheit to Celsius if we are not in Celsius mode.
@@ -2337,6 +2427,14 @@ bool IRac::sendAc(const stdAc::state_t desired, const stdAc::state_t *prev) {
       break;
     }
 #endif  // SEND_DELONGHI_AC
+#if SEND_ECOCLIM
+    case ECOCLIM:
+    {
+      IREcoclimAc ac(_pin, _inverted, _modulation);
+      ecoclim(&ac, send.power, send.mode, degC, send.fanspeed, send.clock);
+      break;
+    }
+#endif  // SEND_ECOCLIM
 #if SEND_ELECTRA_AC
     case ELECTRA_AC:
     {
@@ -2533,6 +2631,15 @@ bool IRac::sendAc(const stdAc::state_t desired, const stdAc::state_t *prev) {
       break;
     }
 #endif  // SEND_PANASONIC_AC
+#if SEND_PANASONIC_AC32
+    case PANASONIC_AC32:
+    {
+      IRPanasonicAc32 ac(_pin, _inverted, _modulation);
+      panasonic32(&ac, send.power, send.mode, degC, send.fanspeed,
+                  send.swingv, send.swingh);
+      break;
+    }
+#endif  // SEND_PANASONIC_AC32
 #if SEND_SAMSUNG_AC
     case SAMSUNG_AC:
     {
@@ -3106,6 +3213,16 @@ namespace IRAcUtils {
         return ac.toString();
       }
 #endif  // DECODE_DELONGHI_AC
+#if DECODE_ECOCLIM
+      case decode_type_t::ECOCLIM: {
+        if (result->bits == kEcoclimBits) {
+          IREcoclimAc ac(kGpioUnused);
+          ac.setRaw(result->value);  // EcoClim uses value instead of state.
+          return ac.toString();
+        }
+        return "";
+      }
+#endif  // DECODE_ECOCLIM
 #if DECODE_ELECTRA_AC
       case decode_type_t::ELECTRA_AC: {
         IRElectraAc ac(kGpioUnused);
@@ -3170,7 +3287,7 @@ namespace IRAcUtils {
 #if DECODE_TOSHIBA_AC
       case decode_type_t::TOSHIBA_AC: {
         IRToshibaAC ac(kGpioUnused);
-        ac.setRaw(result->state);
+        ac.setRaw(result->state, result->bits / 8);
         return ac.toString();
       }
 #endif  // DECODE_TOSHIBA_AC
@@ -3257,6 +3374,16 @@ namespace IRAcUtils {
         if (result->bits > kPanasonicAcShortBits) {
           IRPanasonicAc ac(kGpioUnused);
           ac.setRaw(result->state);
+          return ac.toString();
+        }
+        return "";
+      }
+#endif  // DECODE_PANASONIC_AC
+#if DECODE_PANASONIC_AC32
+      case decode_type_t::PANASONIC_AC32: {
+        if (result->bits >= kPanasonicAc32Bits) {
+          IRPanasonicAc32 ac(kGpioUnused);
+          ac.setRaw(result->value);  // Uses value instead of state.
           return ac.toString();
         }
         return "";
@@ -3496,6 +3623,18 @@ namespace IRAcUtils {
         break;
       }
 #endif  // DECODE_DELONGHI_AC
+#if DECODE_ECOCLIM
+      case decode_type_t::ECOCLIM: {
+        if (decode->bits == kEcoclimBits) {
+          IREcoclimAc ac(kGpioUnused);
+          ac.setRaw(decode->value);  // Uses value instead of state.
+          *result = ac.toCommon();
+        } else {
+          return false;
+        }
+        break;
+      }
+#endif  // DECODE_ECOCLIM
 #if DECODE_ELECTRA_AC
       case decode_type_t::ELECTRA_AC: {
         IRElectraAc ac(kGpioUnused);
@@ -3663,6 +3802,18 @@ namespace IRAcUtils {
         break;
       }
 #endif  // DECODE_PANASONIC_AC
+#if DECODE_PANASONIC_AC32
+      case decode_type_t::PANASONIC_AC32: {
+        IRPanasonicAc32 ac(kGpioUnused);
+        if (decode->bits >= kPanasonicAc32Bits) {
+          ac.setRaw(decode->value);  // Uses value instead of state.
+          *result = ac.toCommon(prev);
+        } else {
+          return false;
+        }
+        break;
+      }
+#endif  // DECODE_PANASONIC_AC32
 #if DECODE_SAMSUNG_AC
       case decode_type_t::SAMSUNG_AC: {
         IRSamsungAc ac(kGpioUnused);
@@ -3714,8 +3865,8 @@ namespace IRAcUtils {
 #if DECODE_TOSHIBA_AC
       case decode_type_t::TOSHIBA_AC: {
         IRToshibaAC ac(kGpioUnused);
-        ac.setRaw(decode->state);
-        *result = ac.toCommon();
+        ac.setRaw(decode->state, decode->bits / 8);
+        *result = ac.toCommon(prev);
         break;
       }
 #endif  // DECODE_TOSHIBA_AC

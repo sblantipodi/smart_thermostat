@@ -16,6 +16,7 @@
 #include "ir_Daikin.h"
 #include "ir_Delonghi.h"
 #include "ir_Fujitsu.h"
+#include "ir_Ecoclim.h"
 #include "ir_Electra.h"
 #include "ir_Goodweather.h"
 #include "ir_Gree.h"
@@ -206,6 +207,12 @@ void daikin216(IRDaikin216 *ac,
                   const float degrees, const stdAc::fanspeed_t fan,
                   const bool turbo, const int16_t sleep = -1);
 #endif  // SEND_DELONGHI_AC
+#if SEND_ECOCLIM
+void ecoclim(IREcoclimAc *ac,
+             const bool on, const stdAc::opmode_t mode,
+             const float degrees, const stdAc::fanspeed_t fan,
+             const int16_t sleep = -1, const int16_t clock = -1);
+#endif  // SEND_ECOCLIM
 #if SEND_ELECTRA_AC
 void electra(IRElectraAc *ac,
              const bool on, const stdAc::opmode_t mode,
@@ -354,6 +361,12 @@ void electra(IRElectraAc *ac,
                  const bool quiet, const bool turbo, const bool filter,
                  const int16_t clock = -1);
 #endif  // SEND_PANASONIC_AC
+#if SEND_PANASONIC_AC32
+  void panasonic32(IRPanasonicAc32 *ac,
+                   const bool on, const stdAc::opmode_t mode,
+                   const float degrees, const stdAc::fanspeed_t fan,
+                   const stdAc::swingv_t swingv, const stdAc::swingh_t swingh);
+#endif  // SEND_PANASONIC_AC32
 #if SEND_SAMSUNG_AC
   void samsung(IRSamsungAc *ac,
                const bool on, const stdAc::opmode_t mode, const float degrees,

@@ -118,11 +118,15 @@ namespace stdAc {
 
 /// Fujitsu A/C model numbers
 enum fujitsu_ac_remote_model_t {
-  ARRAH2E = 1,  // (1) AR-RAH2E, AR-RAC1E, AR-RAE1E, AR-RCE1E (Default)
-  ARDB1,        // (2) AR-DB1, AR-DL10 (AR-DL10 swing doesn't work)
-  ARREB1E,      // (3) AR-REB1E
-  ARJW2,        // (4) AR-JW2  (Same as ARDB1 but with horiz control)
-  ARRY4,        // (5) AR-RY4 (Same as AR-RAH2E but with clean & filter)
+  ARRAH2E = 1,  ///< (1) AR-RAH2E, AR-RAC1E, AR-RAE1E, AR-RCE1E (Default)
+                ///< Warning: Use on incorrect models can cause the A/C to lock
+                ///< up, requring the A/C to be physically powered off to fix.
+                ///< e.g. AR-RAH1U may lock up with a Swing command.
+  ARDB1,        ///< (2) AR-DB1, AR-DL10 (AR-DL10 swing doesn't work)
+  ARREB1E,      ///< (3) AR-REB1E, AR-RAH1U (Similar to ARRAH2E but no horiz
+                ///<     control)
+  ARJW2,        ///< (4) AR-JW2  (Same as ARDB1 but with horiz control)
+  ARRY4,        ///< (5) AR-RY4 (Same as AR-RAH2E but with clean & filter)
 };
 
 /// Gree A/C model numbers
@@ -150,8 +154,9 @@ enum panasonic_ac_remote_model_t {
 
 /// Sharp A/C model numbers
 enum sharp_ac_remote_model_t {
-  A907 = 1,  // 802 too.
+  A907 = 1,
   A705 = 2,
+  A903 = 3,  // 820 too
 };
 
 /// Voltas A/C model numbers
@@ -682,6 +687,21 @@ class IRsend {
                         const uint16_t nbits = kEliteScreensBits,
                         const uint16_t repeat = kEliteScreensDefaultRepeat);
 #endif  // SEND_ELITESCREENS
+#if SEND_MILESTAG2
+  // Since There 2 types of transmissions
+  // (14bits for Shooting by default, you can set 24 bit for msg delivery)
+  void sendMilestag2(const uint64_t data,
+                     const uint16_t nbits = kMilesTag2ShotBits,
+                     const uint16_t repeat = kMilesMinRepeat);
+#endif  // SEND_MILESTAG2
+#if SEND_ECOCLIM
+  void sendEcoclim(const uint64_t data, const uint16_t nbits = kEcoclimBits,
+                   const uint16_t repeat = kNoRepeat);
+#endif  // SEND_ECOCLIM
+#if SEND_XMP
+  void sendXmp(const uint64_t data, const uint16_t nbits = kXmpBits,
+               const uint16_t repeat = kNoRepeat);
+#endif  // SEND_XMP
 
  protected:
 #ifdef UNIT_TEST

@@ -1,5 +1,73 @@
 # Release Notes
 
+## _v2.7.16 (20210324)_
+
+**[Features]**
+- ToshibaAC: Swing handling and `setRaw()` improvements. (#1423 #1424 #1425)
+- Support for XMP (Xfinity) protocol. (#1414 #1422)
+- ToshibaAC: Adjust inter-message gap timing to improve matching. (#1420 #1421)
+- Ecoclim: Add detailed A/C support (#1397 #1415)
+
+**[Misc]**
+- [ESP32] Fix `addApbChangeCallback(): duplicate func` kernel msgs (#1434 #1435)
+- refactor ir_Fujitsu (#1419)
+- refactor ir_Whirlpool (#1416)
+- refactor ir_Vestel (#1413)
+- refactor ir_Trotec (#1412)
+
+
+## _v2.7.15 (20210213)_
+
+**[BREAKING CHANGES]**
+- Some Daikin2 constants have been changed. (#1393)
+
+**[Features]**
+- Experimental basic support for EcoClim 56 & 15 bit protocols. (#1397 #1410)
+- MITSUBISHI_AC: Add support for enabling Weekly Timer. (#1403 #1404)
+- Mitsubishi ACs: Improve handling swing/vane settings. (#1399 #1401)
+- MITSUBISHI_AC: Add support for half degrees. (#1398 #1400)
+- Add `irutils::addSwing[V|H]ToString()` and adjust some constants (#1365 #1393)
+- SharpAc: Add support for model A903, and improve `IRac` fan & power control. (#1387 #1390)
+- Experimental support for Milestag2 (#1360 #1380)
+
+**[Misc]**
+- Improve `IRac::sendAc()` documentation. (#1408 #1409)
+- refactor ir_Transcold (#1407)
+- refactor ir_Toshiba (#1395)
+- Fix Travis-CI build issues. (#1396)
+- refactor ir_Teco (#1392)
+- Fujitsu A/C: Add warning/suggestions for AR-RAH1U devices (#1376 #1386)
+- refactor ir_Technibel (#1385)
+- Add the new logo and banner :tada: (#1371 #1372)
+- Update references to sbprojects website. (#1381 #1383)
+- refactor ir_Tcl (#1379)
+
+
+## _v2.7.14 (20210103)_
+
+**[Bug Fixes]**
+- SanyoAc: Fix Sensor Location error (#1359)
+- IRMQTTServer: Compiler error under PlatformIO on Windows. (#1353 #1354)
+- Workaround for ESP32 hw timer library calls not in IRAM. (#1350 #1351)
+
+**[Features]**
+- PANASONIC_AC32: Add limited detailed support. (#1364 #1366)
+- Move global vars in IRrecv into a namespace. (#1350 #1352)
+- Fujitsu: Handle toggles of Econo & Turbo when `IRac` interface is used. (#1334 #1345)
+
+**[Misc]**
+- Elitescreens: Update supported brands/models (#1375)
+- refactor ir_Sharp (#1374)
+- refactor ir_Sanyo (#1359)
+- Gree: List Amana as supported. (#1361 #1363)
+- Lasertag: Increase matching tolerance. (#1360 #1362)
+- refactor ir_Samsung (#1358)
+- refactor ir_Neoclima (#1349)
+- Update issue templates (#1348 #1355)
+- Midea: Update supported devices & add notes for an odd Pioneer System. (#1342 #1344)
+- Kelvinator: Update supported models. (#1335 #1346)
+
+
 ## _v2.7.13 (20201125)_
 
 **[Bug Fixes]**

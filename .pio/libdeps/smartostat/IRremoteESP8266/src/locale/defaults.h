@@ -270,6 +270,9 @@
 #ifndef D_STR_SPECIAL
 #define D_STR_SPECIAL "Special"
 #endif  // D_STR_SPECIAL
+#ifndef D_STR_RECYCLE
+#define D_STR_RECYCLE "Recycle"
+#endif  // D_STR_RECYCLE
 
 #ifndef D_STR_AUTO
 #define D_STR_AUTO "Auto"
@@ -544,6 +547,9 @@
 #ifndef D_STR_DOSHISHA
 #define D_STR_DOSHISHA "DOSHISHA"
 #endif  // D_STR_DOSHISHA
+#ifndef D_STR_ECOCLIM
+#define D_STR_ECOCLIM "ECOCLIM"
+#endif  // D_STR_ECOCLIM
 #ifndef D_STR_ELECTRA_AC
 #define D_STR_ELECTRA_AC "ELECTRA_AC"
 #endif  // D_STR_ELECTRA_AC
@@ -628,6 +634,9 @@
 #ifndef D_STR_MIDEA24
 #define D_STR_MIDEA24 "MIDEA24"
 #endif  // D_STR_MIDEA24
+#ifndef D_STR_MILESTAG2
+#define D_STR_MILESTAG2 "MILESTAG2"
+#endif  // D_STR_MILESTAG2
 #ifndef D_STR_MIRAGE
 #define D_STR_MIRAGE "MIRAGE"
 #endif  // D_STR_MIRAGE
@@ -772,6 +781,9 @@
 #ifndef D_STR_WHYNTER
 #define D_STR_WHYNTER "WHYNTER"
 #endif  // D_STR_WHYNTER
+#ifndef D_STR_XMP
+#define D_STR_XMP "XMP"
+#endif  // D_STR_XMP
 #ifndef D_STR_ZEPEAL
 #define D_STR_ZEPEAL "ZEPEAL"
 #endif  // D_STR_ZEPEAL
