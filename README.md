@@ -15,7 +15,7 @@ If you like **Smart Thermostat**, give it a star, or fork it and contribute!
 [![GitHub stars](https://img.shields.io/github/stars/sblantipodi/smart_thermostat.svg?style=social&label=Star)](https://github.com/sblantipodi/smart_thermostat/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/sblantipodi/smart_thermostat.svg?style=social&label=Fork)](https://github.com/sblantipodi/smart_thermostat/network)
 
-Project is bootstrapped with my [Arduino Bootstrapper](https://github.com/sblantipodi/arduino_bootstrapper) library.
+Project is bootstrapped with my [Arduino Bootstrapper](https://github.com/sblantipodi/arduino_bootstrapper) library and my [PlatformIO version increment](https://github.com/sblantipodi/platformio_version_increment) script.
 
 ## STL Files
 [Smartostat/Smartoled STL files](https://github.com/sblantipodi/smart_thermostat/tree/master/data/stl_files)
