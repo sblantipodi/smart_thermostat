@@ -944,6 +944,8 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
       sendACState();
     } else if (acState == OFF_CMD) {
       ac = OFF_CMD;
+      acir.setFan(kSamsungAcFanAuto);
+      acir.setMode(kSamsungAcCool);
       acir.off();
       acir.sendOff();     
       sendACState(); 
