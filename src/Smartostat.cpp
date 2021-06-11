@@ -944,11 +944,13 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
       sendACState();
     } else if (acState == OFF_CMD) {
       ac = OFF_CMD;
-      acir.setFan(kSamsungAcFanAuto);
-      acir.setMode(kSamsungAcCool);
       acir.off();
-      acir.sendOff();     
-      sendACState(); 
+      acir.setFan(kSamsungAcFanLow);
+      acir.setMode(kSamsungAcCool);
+      acir.setTemp(20);
+      acir.setSwing(false);
+      acir.sendOff();
+      sendACState();
     }
     //Serial.printf("  %s\n", acir.toString().c_str());
     return true;
