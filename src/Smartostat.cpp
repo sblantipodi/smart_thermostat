@@ -943,15 +943,17 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
       acir.sendExtended();
       sendACState();
     } else if (acState == OFF_CMD) {
-      ac = ON_CMD;
-      acir.on();
-      acir.setMode(kSamsungAcCool);
-      acir.setTemp(27);
-      acir.setPowerful(false);
-      acir.setSwing(false);
-      acir.setQuiet(true);
-      acir.send();
-      delay(1500);
+      if (stateOn) {
+        ac = ON_CMD;
+        acir.on();
+        acir.setMode(kSamsungAcCool);
+        acir.setTemp(27);
+        acir.setPowerful(false);
+        acir.setSwing(false);
+        acir.setQuiet(true);
+        acir.send();
+        delay(1500);
+      }
       ac = OFF_CMD;
       acir.off();
       acir.sendOff();
