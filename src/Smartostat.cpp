@@ -955,6 +955,13 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
         delay(1500);
       }
       ac = OFF_CMD;
+      delay(1500);
+      acir.off();
+      acir.sendOff();
+      delay(1500);
+      acir.off();
+      acir.sendOff();
+      delay(1500);
       acir.off();
       acir.sendOff();
       sendACState();
