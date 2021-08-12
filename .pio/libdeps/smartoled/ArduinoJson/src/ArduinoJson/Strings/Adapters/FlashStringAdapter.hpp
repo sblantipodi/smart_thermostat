@@ -4,16 +4,16 @@
 
 #pragma once
 
-#include <ArduinoJson/Namespace.hpp>
-#include <ArduinoJson/Strings/IsString.hpp>
+#include <ArduinoJson/Polyfills/pgmspace.hpp>
 #include <ArduinoJson/Strings/StoragePolicy.hpp>
+#include <ArduinoJson/Strings/StringAdapter.hpp>
 
 namespace ARDUINOJSON_NAMESPACE {
 
-class SizedFlashStringAdapter {
+template <>
+class StringAdapter<const __FlashStringHelper*> {
  public:
-  SizedFlashStringAdapter(const __FlashStringHelper* str, size_t sz)
-      : _str(str), _size(sz) {}
+  StringAdapter(const __FlashStringHelper* str) : _str(str) {}
 
   int compare(const char* other) const {
     if (!other && !_str)
@@ -22,11 +22,7 @@ class SizedFlashStringAdapter {
       return -1;
     if (!other)
       return 1;
-    return -strncmp_P(other, reinterpret_cast<const char*>(_str), _size);
-  }
-
-  bool equals(const char* expected) const {
-    return compare(expected) == 0;
+    return -strcmp_P(other, reinterpret_cast<const char*>(_str));
   }
 
   bool isNull() const {
@@ -38,18 +34,15 @@ class SizedFlashStringAdapter {
   }
 
   size_t size() const {
-    return _size;
+    if (!_str)
+      return 0;
+    return strlen_P(reinterpret_cast<const char*>(_str));
   }
 
   typedef storage_policies::store_by_copy storage_policy;
 
  private:
   const __FlashStringHelper* _str;
-  size_t _size;
 };
 
-inline SizedFlashStringAdapter adaptString(const __FlashStringHelper* str,
-                                           size_t sz) {
-  return SizedFlashStringAdapter(str, sz);
-}
 }  // namespace ARDUINOJSON_NAMESPACE
