@@ -45,12 +45,13 @@
 #endif
 #include "Version.h"
 #include "BootstrapManager.h"
-#include <ESP8266Ping.h>
+#include "PingESP.h"
 
 
 /****************** BOOTSTRAP and WIFI MANAGER ******************/
 BootstrapManager bootstrapManager;
 Helpers helper;
+PingESP pingESP;
 
 /**************************** PIN DEFINITIONS ****************************/
 // Initialize the display
