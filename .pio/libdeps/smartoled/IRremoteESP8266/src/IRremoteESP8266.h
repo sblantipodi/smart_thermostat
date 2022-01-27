@@ -52,8 +52,29 @@
 #include <string>
 #endif  // UNIT_TEST
 
-// Library Version
-#define _IRREMOTEESP8266_VERSION_ "2.7.20"
+// Library Version Information
+// Major version number (X.x.x)
+#define _IRREMOTEESP8266_VERSION_MAJOR 2
+// Minor version number (x.X.x)
+#define _IRREMOTEESP8266_VERSION_MINOR 8
+// Patch version number (x.x.X)
+#define _IRREMOTEESP8266_VERSION_PATCH 1
+// Macro to convert version info into an integer
+#define _IRREMOTEESP8266_VERSION_VAL(major, minor, patch) \
+                                    ((major << 16) | (minor << 8) | (patch))
+// Macro to convert literal into a string
+#define MKSTR(x) #x
+// Integer version
+#define _IRREMOTEESP8266_VERSION _IRREMOTEESP8266_VERSION_VAL(\
+    _IRREMOTEESP8266_VERSION_MAJOR, \
+    _IRREMOTEESP8266_VERSION_MINOR, \
+    _IRREMOTEESP8266_VERSION_PATCH)
+// String version
+#define _IRREMOTEESP8266_VERSION_STR MKSTR(_IRREMOTEESP8266_VERSION_MAJOR) "." \
+                                     MKSTR(_IRREMOTEESP8266_VERSION_MINOR) "." \
+                                     MKSTR(_IRREMOTEESP8266_VERSION_PATCH)
+// String version (DEPRECATED)
+#define _IRREMOTEESP8266_VERSION_ _IRREMOTEESP8266_VERSION_STR
 
 // Set the language & locale for the library. See the `locale` dir for options.
 #ifndef _IR_LOCALE_
@@ -313,6 +334,13 @@
 #ifndef SEND_COOLIX
 #define SEND_COOLIX            _IR_ENABLE_DEFAULT_
 #endif  // SEND_COOLIX
+
+#ifndef DECODE_COOLIX48
+#define DECODE_COOLIX48        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_COOLIX48
+#ifndef SEND_COOLIX48
+#define SEND_COOLIX48          _IR_ENABLE_DEFAULT_
+#endif  // SEND_COOLIX48
 
 #ifndef DECODE_GLOBALCACHE
 #define DECODE_GLOBALCACHE     false  // Not applicable.
@@ -790,6 +818,27 @@
 #define SEND_BOSE           _IR_ENABLE_DEFAULT_
 #endif  // SEND_BOSE
 
+#ifndef DECODE_ARRIS
+#define DECODE_ARRIS        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_ARRIS
+#ifndef SEND_ARRIS
+#define SEND_ARRIS          _IR_ENABLE_DEFAULT_
+#endif  // SEND_ARRIS
+
+#ifndef DECODE_RHOSS
+#define DECODE_RHOSS        _IR_ENABLE_DEFAULT_
+#endif  // DECODE_RHOSS
+#ifndef SEND_RHOSS
+#define SEND_RHOSS          _IR_ENABLE_DEFAULT_
+#endif  // SEND_RHOSS
+
+#ifndef DECODE_AIRTON
+#define DECODE_AIRTON       _IR_ENABLE_DEFAULT_
+#endif  // DECODE_AIRTON
+#ifndef SEND_AIRTON
+#define SEND_AIRTON         _IR_ENABLE_DEFAULT_
+#endif  // SEND_AIRTON
+
 #if (DECODE_ARGO || DECODE_DAIKIN || DECODE_FUJITSU_AC || DECODE_GREE || \
      DECODE_KELVINATOR || DECODE_MITSUBISHI_AC || DECODE_TOSHIBA_AC || \
      DECODE_TROTEC || DECODE_HAIER_AC || DECODE_HITACHI_AC || \
@@ -804,7 +853,7 @@
      DECODE_HITACHI_AC344 || DECODE_CORONA_AC || DECODE_SANYO_AC || \
      DECODE_VOLTAS || DECODE_MIRAGE || DECODE_HAIER_AC176 || \
      DECODE_TEKNOPOINT || DECODE_KELON || DECODE_TROTEC_3550 || \
-     DECODE_SANYO_AC88 || \
+     DECODE_SANYO_AC88 || DECODE_RHOSS || \
      false)
   // Add any DECODE to the above if it uses result->state (see kStateSizeMax)
   // you might also want to add the protocol to hasACState function
@@ -951,14 +1000,20 @@ enum decode_type_t {
   TROTEC_3550,
   SANYO_AC88,  // 105
   BOSE,
+  ARRIS,
+  RHOSS,
+  AIRTON,
+  COOLIX48,  // 110
   // Add new entries before this one, and update it to point to the last entry.
-  kLastDecodeType = BOSE,
+  kLastDecodeType = COOLIX48,
 };
 
 // Message lengths & required repeat values
 const uint16_t kNoRepeat = 0;
 const uint16_t kSingleRepeat = 1;
 
+const uint16_t kAirtonBits = 56;
+const uint16_t kAirtonDefaultRepeat = kNoRepeat;
 const uint16_t kAirwellBits = 34;
 const uint16_t kAirwellMinRepeats = 2;
 const uint16_t kAiwaRcT501Bits = 15;
@@ -970,7 +1025,9 @@ const uint16_t kAmcorDefaultRepeat = kSingleRepeat;
 const uint16_t kArgoStateLength = 12;
 const uint16_t kArgoBits = kArgoStateLength * 8;
 const uint16_t kArgoDefaultRepeat = kNoRepeat;
+const uint16_t kArrisBits = 32;
 const uint16_t kCoolixBits = 24;
+const uint16_t kCoolix48Bits = kCoolixBits * 2;
 const uint16_t kCoolixDefaultRepeat = kSingleRepeat;
 const uint16_t kCarrierAcBits = 32;
 const uint16_t kCarrierAcMinRepeat = kNoRepeat;
@@ -1195,6 +1252,9 @@ const uint16_t kMilesTag2ShotBits = 14;
 const uint16_t kMilesTag2MsgBits = 24;
 const uint16_t kMilesMinRepeat = 0;
 const uint16_t kBoseBits = 16;
+const uint16_t kRhossStateLength = 12;
+const uint16_t kRhossBits = kRhossStateLength * 8;
+const uint16_t kRhossDefaultRepeat = 0;
 
 
 // Legacy defines. (Deprecated)
