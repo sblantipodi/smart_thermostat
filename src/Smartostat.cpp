@@ -54,6 +54,8 @@ void setup() {
     // BME680 initialization
     if (!boschBME680.begin(0x76)) {
       Serial.println("Could not find a valid BME680 sensor, check wiring!");
+      ESP.wdtFeed();
+      delay(50);
       while (1);
     }
     boschBME680.setTemperatureOversampling(BME680_OS_8X); // BME680_OS_1X/BME680_OS_8X
@@ -82,6 +84,7 @@ void setup() {
 
   // Wait for the serial connection to be establised.
   while (!Serial) {
+    ESP.wdtFeed();
     delay(50);
   } 
     
@@ -94,6 +97,8 @@ void setup() {
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
     Serial.println(F("SSD1306 allocation failed"));
+    ESP.wdtFeed();
+    delay(50);
     for(;;); // Don't proceed, loop forever
   }
 
@@ -485,7 +490,7 @@ void draw() {
   }
 
   if (wpTriggered) {
-    if (solarStationRemainingSeconds == 0) {
+    if (solarStationRemainingSeconds == "0") {
       wpTriggered = false;
     }
     drawWPRemainingSeconds(WATER_PUMP_LOGO, WATER_PUMP_LOGO_W, WATER_PUMP_LOGO_H);
