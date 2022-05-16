@@ -952,10 +952,10 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
         ac = ON_CMD;
         acir.on();
         acir.setMode(kSamsungAcCool);
-        acir.setTemp(27);
-        acir.setPowerful(false);
+        acir.setTemp(28);
+        acir.setPowerful(true);
         acir.setSwing(false);
-        acir.setQuiet(true);
+        acir.setQuiet(false);
         acir.send();
         delay(1500);
       }
