@@ -948,7 +948,26 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
       acir.sendExtended();
       sendACState();
     } else if (acState == OFF_CMD) {
+      // set power mode before shutdown, if you don't do this sometimes the off command does not work
+      if (stateOn) {
+        ac = ON_CMD;
+        acir.on();
+        acir.setMode(kSamsungAcCool);
+        acir.setTemp(28);
+        acir.setPowerful(true);
+        acir.setSwing(false);
+        acir.setQuiet(false);
+        acir.send();
+        delay(1500);
+      }
       ac = OFF_CMD;
+      delay(1500);
+      acir.off();
+      acir.sendOff();
+      delay(1500);
+      acir.off();
+      acir.sendOff();
+      delay(1500);
       acir.off();
       acir.sendOff();
       sendACState();
