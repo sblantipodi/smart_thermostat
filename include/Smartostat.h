@@ -74,6 +74,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
   // Use turn on the save buffer feature for more complete capture coverage.
   IRrecv irrecv(KIRLEDRECV, 1024, 50, true);
   decode_results results;  // Somewhere to store the results
+  boolean sensorOk = false;
 #endif
 
 // #define SCREEN_WIDTH 128 // OLED display width, in pixels

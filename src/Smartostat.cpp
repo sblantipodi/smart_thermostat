@@ -56,17 +56,19 @@ void setup() {
       Serial.println("Could not find a valid BME680 sensor, check wiring!");
       ESP.wdtFeed();
       delay(50);
-      while (1);
+      sensorOk = false;
+    } else {
+      sensorOk = true;
+      boschBME680.setTemperatureOversampling(BME680_OS_8X); // BME680_OS_1X/BME680_OS_8X
+      boschBME680.setHumidityOversampling(BME680_OS_2X);    // BME680_OS_1X/BME680_OS_2X
+      boschBME680.setPressureOversampling(BME680_OS_4X);    // BME680_OS_1X/BME680_OS_4X
+      boschBME680.setIIRFilterSize(BME680_FILTER_SIZE_0);   // BME680_FILTER_SIZE_0/BME680_FILTER_SIZE_3
+      boschBME680.setGasHeater(320, 150); // 320*C for 150 ms
+      // Now run the sensor to normalise the readings, then use combination of relative humidity and gas resistance to estimate indoor air quality as a percentage.
+      // The sensor takes ~30-mins to fully stabilise
+      getGasReference();
+      delay(30);
     }
-    boschBME680.setTemperatureOversampling(BME680_OS_8X); // BME680_OS_1X/BME680_OS_8X
-    boschBME680.setHumidityOversampling(BME680_OS_2X);    // BME680_OS_1X/BME680_OS_2X
-    boschBME680.setPressureOversampling(BME680_OS_4X);    // BME680_OS_1X/BME680_OS_4X
-    boschBME680.setIIRFilterSize(BME680_FILTER_SIZE_0);   // BME680_FILTER_SIZE_0/BME680_FILTER_SIZE_3
-    boschBME680.setGasHeater(320, 150); // 320*C for 150 ms   
-    // Now run the sensor to normalise the readings, then use combination of relative humidity and gas resistance to estimate indoor air quality as a percentage.
-    // The sensor takes ~30-mins to fully stabilise
-    getGasReference(); 
-    delay(30);
 
     acir.off();
     acir.setFan(kSamsungAcFanLow);
@@ -1137,7 +1139,7 @@ void sendInfoState() {
     root["POWER2"] = pir;
     
     JsonObject BME680 = root.createNestedObject("BME680");
-    if (readOnceEveryNTimess == 0) {
+    if (readOnceEveryNTimess == 0 && sensorOk) {
       if (!boschBME680.performReading()) {
         Serial.println("Failed to perform reading :(");
         delay(500);
