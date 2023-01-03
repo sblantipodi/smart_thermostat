@@ -80,7 +80,7 @@ void setup() {
     // Display Rotation 180°
     display.setRotation(2);
 
-  #else 
+  #else
     Serial.begin(SERIAL_RATE, SERIAL_8N1, SERIAL_TX_ONLY);
   #endif
 
@@ -88,11 +88,11 @@ void setup() {
   while (!Serial) {
     ESP.wdtFeed();
     delay(50);
-  } 
-    
+  }
+
   // OLED TouchButton
   pinMode(OLED_BUTTON_PIN, INPUT);
-  
+
   // LED_BUILTIN
   pinMode(LED_BUILTIN, OUTPUT);
 
@@ -1199,11 +1199,11 @@ void sendInfoState() {
 
 #endif
 
-void sendACCommandState() {    
+void sendACCommandState() {
 
   if (ac == OFF_CMD) {
     forceACOn = false;
-  }     
+  }
   bootstrapManager.publish(SMARTOSTATAC_CMND_IRSENDSTATE, (ac == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
 
 }
@@ -1214,7 +1214,7 @@ void sendClimateState(String mode) {
     bootstrapManager.publish(SMARTOSTAT_CMND_CLIMATE_COOL_STATE, (ac == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
   } else {
     bootstrapManager.publish(SMARTOSTAT_CMND_CLIMATE_HEAT_STATE, (furnance == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
-  } 
+  }
 
 }
 
@@ -1222,35 +1222,38 @@ void sendFurnanceCommandState() {
 
   if (furnance == OFF_CMD) {
     forceFurnanceOn = false;
-  } 
+  }
   bootstrapManager.publish(SMARTOSTAT_FURNANCE_CMND_TOPIC, (furnance == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
 
 }
 
-void sendACState() {    
+void sendACState() {
 
   if (ac == OFF_CMD) {
     forceACOn = false;
-  }     
+  }
   bootstrapManager.publish(SMARTOSTATAC_STAT_IRSEND, (ac == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
 
 }
 
 // Send status to MQTT broker every ten seconds
 void delayAndSendStatus() {
-
-  if(millis() > timeNowStatus + tenSecondsPeriod){
+  if (millis() > timeNowStatus + tenSecondsPeriod) {
     timeNowStatus = millis();
     ledTriggered = true;
     sendPowerState();
+    ESP.wdtFeed();
     sendInfoState();
-    #ifdef TARGET_SMARTOSTAT
-      sendSensorState();
-      sendFurnanceState();
-      sendACState();
-    #endif
+    ESP.wdtFeed();
+#ifdef TARGET_SMARTOSTAT
+    sendSensorState();
+    ESP.wdtFeed();
+    sendFurnanceState();
+    ESP.wdtFeed();
+    sendACState();
+    ESP.wdtFeed();
+#endif
   }
-
 }
 
 // Go to home page after five minutes of inactivity and write SPIFFS
@@ -1597,7 +1600,7 @@ void writeConfigToStorage() {
 }
 
 /********************************** START MAIN LOOP *****************************************/
-void loop() {  
+void loop() {
   
   // Bootsrap loop() with Wifi, MQTT and OTA functions
   bootstrapManager.bootstrapLoop(manageDisconnections, manageQueueSubscription, manageHardwareButton);
@@ -1617,10 +1620,11 @@ void loop() {
     #endif
   } else {
     printIrReceiving = false;
-    
+    ESP.wdtFeed();
+
     // PIR and RELAY MANAGEMENT 
     #ifdef TARGET_SMARTOSTAT    
-      manageHardwareButton();    
+      manageHardwareButton();
       pirManagement();
     #else
       lastButtonPressed = OLED_BUTTON_PIN;
@@ -1640,11 +1644,14 @@ void loop() {
       display.clearDisplay();
       display.display();
     }
+    ESP.wdtFeed();
 
     // Go To Home Page timer after 5 minutes of inactivity and write data to File System (SPIFFS)
     goToHomePageAndWriteToStorageAfterFiveMinutes();
 
     bootstrapManager.nonBlokingBlink();
+    ESP.wdtFeed();
+
   }
   
 }
