@@ -44,20 +44,7 @@ jobs:
         run: platformio check --verbose --severity=high --skip-packages 
 
       - name: Run PlatformIO (smartostat)
-        run: platformio run -e smartostat           
-           
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: ${{ github.ref }}
-          name: Release ${{ github.ref_name }}
-          body: |
-            Changes in this Release
-            ${{ env.commitmsg }}
-          draft: false
-          prerelease: false        
+        run: platformio run -e smartostat
 
       - name: Save artifact (smartostat)
         run: |        
@@ -73,15 +60,18 @@ jobs:
           
       - name: Creating tar file
         run: |        
-          tar cf esp8266_firmware.tar esp8266_firmware
+          tar cf Smartostat_Smartoled_esp8266_firmware.tar esp8266_firmware
 
-      - name: Upload Release Asset (smartoled)
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: esp8266_firmware.tar
-          asset_name: Smartostat_Smartoled_esp8266_firmware.tar
-          asset_content_type: application/octet-stream            
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ github.ref }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            Changes in this Release
+            ${{ env.commitmsg }}
+          files: Smartostat_Smartoled_esp8266_firmware.tar
+          draft: false
+          prerelease: false
