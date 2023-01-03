@@ -66,7 +66,10 @@ typedef enum {
   SENSOR_TYPE_OBJECT_TEMPERATURE = (14),
   SENSOR_TYPE_VOLTAGE = (15),
   SENSOR_TYPE_CURRENT = (16),
-  SENSOR_TYPE_COLOR = (17)
+  SENSOR_TYPE_COLOR = (17),
+  SENSOR_TYPE_TVOC = (18),
+  SENSOR_TYPE_VOC_INDEX = (19),
+  SENSOR_TYPE_NOX_INDEX = (20)
 } sensors_type_t;
 
 /** struct sensors_vec_s is used to return a vector in a common format. */
@@ -134,8 +137,13 @@ typedef struct {
     float relative_humidity; /**< relative humidity in percent */
     float current;           /**< current in milliamps (mA) */
     float voltage;           /**< voltage in volts (V) */
-    sensors_color_t color;   /**< color in RGB component values */
-  };                         ///< Union for the wide ranges of data we can carry
+    float tvoc;              /**< Total Volatile Organic Compounds, in ppb */
+    float voc_index; /**< VOC (Volatile Organic Compound) index where 100 is
+                          normal (unitless) */
+    float nox_index; /**< NOx (Nitrogen Oxides) index where 100 is normal
+                          (unitless) */
+    sensors_color_t color; /**< color in RGB component values */
+  };                       ///< Union for the wide ranges of data we can carry
 } sensors_event_t;
 
 /* Sensor details (40 bytes) */

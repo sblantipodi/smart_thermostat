@@ -1,8 +1,8 @@
-Adafruit BME680 Library
-Adafruit BusIO
-Adafruit SSD1306
-IRremoteESP8266
-ArduinoJson
-PubSubClient
-Adafruit Unified Sensor
-Adafruit GFX Library
+adafruit/Adafruit SSD1306
+bblanchon/ArduinoJson
+adafruit/Adafruit GFX Library
+adafruit/Adafruit BME680 Library
+crankyoldgit/IRremoteESP8266
+adafruit/Adafruit Unified Sensor
+adafruit/Adafruit BusIO
+knolleary/PubSubClient
