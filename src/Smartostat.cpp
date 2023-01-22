@@ -1263,7 +1263,7 @@ void goToHomePageAndWriteToStorageAfterFiveMinutes() {
     timeNowGoHomeAfterFiveMinutes = millis();
     // Ping gateway to add presence on the routing table, 
     // command is synchrounous and adds a bit of lag to the loop
-    pingESP.ping(WiFi.gatewayIP());
+    pingESP.ping();
     // Write data to file system
     writeConfigToStorage();
     screenSaverTriggered = true;
