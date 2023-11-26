@@ -72,6 +72,11 @@ jobs:
           body: |
             Changes in this Release
             ${{ env.commitmsg }}
-          files: Smartostat_Smartoled_esp8266_firmware.tar
           draft: false
           prerelease: false
+
+      - name: Release files
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: Smartostat_Smartoled_esp8266_firmware.tar
