@@ -1,7 +1,7 @@
 /*
   Smartostat.h - Smart Thermostat based on Arduino SDK
   
-  Copyright © 2020 - 2023  Davide Perini
+  Copyright © 2020 - 2024  Davide Perini
   
   Permission is hereby granted, free of charge, to any person obtaining a copy of 
   this software and associated documentation files (the "Software"), to deal
@@ -186,7 +186,7 @@ void manageHardwareButton() {
 /********************************** START CALLBACK *****************************************/
 void callback(char* topic, byte* payload, unsigned int length) {
 
-   StaticJsonDocument<BUFFER_SIZE> json = bootstrapManager.parseQueueMsg(topic, payload, length);
+   JsonDocument json = bootstrapManager.parseQueueMsg(topic, payload, length);
 
   if(strcmp(topic, SMARTOSTAT_SENSOR_STATE_TOPIC) == 0) {
     processSmartostatSensorJson(json);
@@ -632,7 +632,7 @@ void drawRoundRect() {
 }
 
 /********************************** START PROCESS JSON*****************************************/
-bool processUpsStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
+bool processUpsStateJson(JsonDocument json) {
 
   if (json.containsKey("runtime")) {
     float loadFloat = json["load"];
@@ -658,7 +658,7 @@ bool processUpsStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
 }
 
-bool processSmartostatSensorJson(StaticJsonDocument<BUFFER_SIZE> json) {
+bool processSmartostatSensorJson(JsonDocument json) {
 
   if (json.containsKey("BME680")) {
     float temperatureFloat = json["BME680"]["Temperature"];
@@ -687,7 +687,7 @@ bool processSmartostatSensorJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
 }
 
-bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
+bool processSmartostatClimateJson(JsonDocument json) {
 
     String timeConst = json["Time"];
     // On first boot the timedate variable is OFF
@@ -756,7 +756,7 @@ bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
 }
 
-bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json) {
+bool processSpotifyStateJson(JsonDocument json) {
 
   //serializeJsonPretty(json, Serial); Serial.println();
   if (json.containsKey("media_artist")) {
@@ -808,7 +808,7 @@ void cleanSpotifyInfo() {
 
 }
 
-bool processSolarStationPowerState(StaticJsonDocument<BUFFER_SIZE> json) {
+bool processSolarStationPowerState(JsonDocument json) {
 
   String solarStation = json["state"];
   if (solarStation == ON_CMD && stateOn) {
@@ -823,7 +823,7 @@ bool processSolarStationPowerState(StaticJsonDocument<BUFFER_SIZE> json) {
 
 }
 
-bool processSolarStationWaterPump(StaticJsonDocument<BUFFER_SIZE> json) {
+bool processSolarStationWaterPump(JsonDocument json) {
 
   String waterPump = helper.isOnOff(json);
   if (waterPump == ON_CMD) {
@@ -837,7 +837,7 @@ bool processSolarStationWaterPump(StaticJsonDocument<BUFFER_SIZE> json) {
 
 }
 
-bool processSolarStationState(StaticJsonDocument<BUFFER_SIZE> json) {
+bool processSolarStationState(JsonDocument json) {
 
   solarStationBattery = json["battery"];
   float voltage = ((solarStationBattery*4.14)/1024);
@@ -847,21 +847,21 @@ bool processSolarStationState(StaticJsonDocument<BUFFER_SIZE> json) {
 
 }
 
-bool processSolarStationRemainingSeconds(StaticJsonDocument<BUFFER_SIZE> json) {
+bool processSolarStationRemainingSeconds(JsonDocument json) {
 
   solarStationRemainingSeconds = helper.getValue(json["remaining_seconds"]);
   return true;
 
 }
 
-bool processSmartostatPirState(StaticJsonDocument<BUFFER_SIZE> json) {
+bool processSmartostatPirState(JsonDocument json) {
 
   pir = helper.isOnOff(json);
   return true;
 
 }
 
-bool processSmartoledCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
+bool processSmartoledCmnd(JsonDocument json) {
 
   String message = helper.isOnOff(json);
   if (message == ON_CMD) {
@@ -875,7 +875,7 @@ bool processSmartoledCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
 }
 
-bool processSmartostatAcJson(StaticJsonDocument<BUFFER_SIZE> json) {
+bool processSmartostatAcJson(JsonDocument json) {
 
   ac = helper.isOnOff(json);
 
@@ -888,7 +888,7 @@ bool processSmartostatAcJson(StaticJsonDocument<BUFFER_SIZE> json) {
 
 }
 
-bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
+bool processFurnancedCmnd(JsonDocument json) {
 
   furnance = helper.isOnOff(json);
   if (furnance == ON_CMD) {
@@ -904,7 +904,7 @@ bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
 
 }
 
-bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
+bool processIrRecev(JsonDocument json) {
 
   irReceiveActive = (helper.isOnOff(json) == ON_CMD);
   return true;
@@ -914,7 +914,7 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
 // IRSEND MQTT message ON OFF only for Smartostat
 #ifdef TARGET_SMARTOSTAT
 
-  bool processSmartostatRebootCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
+  bool processSmartostatRebootCmnd(JsonDocument json) {
 
     String msg = json[VALUE];
     String rebootState = msg;
@@ -935,7 +935,7 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
 
   }
   
-  bool processIrOnOffCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
+  bool processIrOnOffCmnd(JsonDocument json) {
 
     String msg = json[VALUE];
     String acState = msg;
@@ -979,7 +979,7 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
 
   }
 
-  bool processIrSendCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
+  bool processIrSendCmnd(JsonDocument json) {
 
     acir.on();
     if (json.containsKey("alette_ac")) {      
@@ -1024,7 +1024,7 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
 
 #ifdef TARGET_SMARTOLED
 
-  bool processSmartoledRebootCmnd(StaticJsonDocument<BUFFER_SIZE> json) {
+  bool processSmartoledRebootCmnd(JsonDocument json) {
 
     rebootState = helper.isOnOff(json);
     sendSmartoledRebootState(OFF_CMD);
@@ -1035,7 +1035,7 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
 
   }
 
-  bool processSmartoledFramerate(StaticJsonDocument<BUFFER_SIZE> json) {
+  bool processSmartoledFramerate(JsonDocument json) {
 
     if (json.containsKey("producing")) {
       float producingFloat = json["producing"];
@@ -1050,7 +1050,7 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
 
   }
 
-  bool processSmartoledGlowWormFramerate(StaticJsonDocument<BUFFER_SIZE> json) {
+  bool processSmartoledGlowWormFramerate(JsonDocument json) {
 
     if (json.containsKey("framerate")) {
       float consumingFloat = json["framerate"];
@@ -1060,14 +1060,14 @@ bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json) {
 
   }
 
-  bool processSmartostatFurnanceState(StaticJsonDocument<BUFFER_SIZE> json) {
+  bool processSmartostatFurnanceState(JsonDocument json) {
     
     furnance = helper.isOnOff(json);
     return true;
 
   }
 
-  bool processACState(StaticJsonDocument<BUFFER_SIZE> json) {
+  bool processACState(JsonDocument json) {
 
     ac = helper.isOnOff(json);
     return true;
@@ -1563,7 +1563,7 @@ void quickPressRelease() {
 /********************************** SPIFFS MANAGEMENT *****************************************/
 void readConfigFromStorage() {
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
   doc = bootstrapManager.readLittleFS("config.json");
 
   if (!(doc.containsKey(VALUE) && doc[VALUE] == ERROR)) {
@@ -1584,7 +1584,7 @@ void readConfigFromStorage() {
 
 void writeConfigToStorage() {
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
   doc["minTemperature"] = minTemperature;
   doc["maxTemperature"] = maxTemperature;
   doc["minHumidity"] = minHumidity;

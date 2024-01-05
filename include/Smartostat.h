@@ -1,7 +1,7 @@
 /*
   Smartostat.h - Smart Thermostat based on Arduino SDK
   
-  Copyright © 2020 - 2023  Davide Perini
+  Copyright © 2020 - 2024  Davide Perini
   
   Permission is hereby granted, free of charge, to any person obtaining a copy of 
   this software and associated documentation files (the "Software"), to deal
@@ -572,22 +572,22 @@ void manageDisconnections();
 void manageQueueSubscription();
 void manageHardwareButton();
 // Project specific functions
-bool processSmartostatSensorJson(StaticJsonDocument<BUFFER_SIZE> json);
-bool processUpsStateJson(StaticJsonDocument<BUFFER_SIZE> json);
-bool processSmartostatAcJson(StaticJsonDocument<BUFFER_SIZE> json);
-bool processSmartostatClimateJson(StaticJsonDocument<BUFFER_SIZE> json);
-bool processSpotifyStateJson(StaticJsonDocument<BUFFER_SIZE> json);
-bool processSmartostatPirState(StaticJsonDocument<BUFFER_SIZE> json);
-bool processSmartoledCmnd(StaticJsonDocument<BUFFER_SIZE> json);
-bool processFurnancedCmnd(StaticJsonDocument<BUFFER_SIZE> json);
-bool processSolarStationPowerState(StaticJsonDocument<BUFFER_SIZE> json);
-bool processSolarStationWaterPump(StaticJsonDocument<BUFFER_SIZE> json);
-bool processSolarStationState(StaticJsonDocument<BUFFER_SIZE> json);
-bool processSolarStationRemainingSeconds(StaticJsonDocument<BUFFER_SIZE> json);
-bool processIrRecev(StaticJsonDocument<BUFFER_SIZE> json);
-bool processDisplayBrightness(StaticJsonDocument<BUFFER_SIZE> json);
-bool processSmartoledFramerate(StaticJsonDocument<BUFFER_SIZE> json);
-bool processSmartoledGlowWormFramerate(StaticJsonDocument<BUFFER_SIZE> json);
+bool processSmartostatSensorJson(JsonDocument json);
+bool processUpsStateJson(JsonDocument json);
+bool processSmartostatAcJson(JsonDocument json);
+bool processSmartostatClimateJson(JsonDocument json);
+bool processSpotifyStateJson(JsonDocument json);
+bool processSmartostatPirState(JsonDocument json);
+bool processSmartoledCmnd(JsonDocument json);
+bool processFurnancedCmnd(JsonDocument json);
+bool processSolarStationPowerState(JsonDocument json);
+bool processSolarStationWaterPump(JsonDocument json);
+bool processSolarStationState(JsonDocument json);
+bool processSolarStationRemainingSeconds(JsonDocument json);
+bool processIrRecev(JsonDocument json);
+bool processDisplayBrightness(JsonDocument json);
+bool processSmartoledFramerate(JsonDocument json);
+bool processSmartoledGlowWormFramerate(JsonDocument json);
 void drawHeader();
 void drawRoundRect();
 void drawRoundRect();
@@ -624,9 +624,9 @@ void goToHomePageAndWriteToStorageAfterFiveMinutes();
   void acManagement();
   void sendFurnanceState();
   void sendACState();  
-  bool processIrOnOffCmnd(StaticJsonDocument<BUFFER_SIZE> json);
-  bool processIrSendCmnd(StaticJsonDocument<BUFFER_SIZE> json);
-  bool processSmartostatRebootCmnd(StaticJsonDocument<BUFFER_SIZE> json);
+  bool processIrOnOffCmnd(JsonDocument json);
+  bool processIrSendCmnd(JsonDocument json);
+  bool processSmartostatRebootCmnd(JsonDocument json);
   void getGasReference();
   String calculateIAQ(int score); 
   int getHumidityScore();
@@ -636,7 +636,7 @@ void goToHomePageAndWriteToStorageAfterFiveMinutes();
 #ifdef TARGET_SMARTOLED
   void sendSmartoledRebootState(String onOff);
   void sendSmartoledRebootCmnd();
-  bool processSmartostatFurnanceState(StaticJsonDocument<BUFFER_SIZE> json);
-  bool processACState(StaticJsonDocument<BUFFER_SIZE> json);
-  bool processSmartoledRebootCmnd(StaticJsonDocument<BUFFER_SIZE> json);
+  bool processSmartostatFurnanceState(JsonDocument json);
+  bool processACState(JsonDocument json);
+  bool processSmartoledRebootCmnd(JsonDocument json);
 #endif
