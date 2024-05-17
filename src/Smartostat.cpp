@@ -97,7 +97,11 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+#ifdef TARGET_SMARTOSTAT
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
+#else
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3D)) { // Address 0x3D for 128x64
+#endif
     Serial.println(F("SSD1306 allocation failed"));
     ESP.wdtFeed();
     delay(50);
@@ -1138,7 +1142,7 @@ void sendInfoState() {
     root["POWER1"] = furnance;
     root["POWER2"] = pir;
     
-    JsonObject BME680 = root.createNestedObject("BME680");
+    JsonObject BME680 = root["BME680"].to<JsonObject>();
     if (readOnceEveryNTimess == 0 && sensorOk) {
       if (!boschBME680.performReading()) {
         Serial.println("Failed to perform reading :(");
