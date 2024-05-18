@@ -61,7 +61,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #ifdef TARGET_SMARTOSTAT
   #define OLED_BUTTON_PIN 12 // D6 Pin, 5V power, for capactitive touch sensor. When Sig Output is high, touch sensor is being 
 #else
-  #define OLED_BUTTON_PIN 14 // D5 Pin, 5V power, for capactitive touch sensor. When Sig Output is high, touch sensor is being 
+  #define OLED_BUTTON_PIN D6 // D5 Pin, 5V power, for capactitive touch sensor. When Sig Output is high, touch sensor is being
 #endif
 #define SMARTOSTAT_BUTTON_PIN 15 // D8 pin, 5V power, for touch button used to start stop the furnance 
 #ifdef TARGET_SMARTOSTAT
