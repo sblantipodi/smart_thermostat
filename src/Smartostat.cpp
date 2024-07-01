@@ -70,6 +70,9 @@ void setup() {
       delay(30);
     }
 
+    acir.setBeep(false);
+    acir.send();
+
     acir.off();
     acir.setFan(kSamsungAcFanLow);
     acir.setMode(kSamsungAcCool);
@@ -951,7 +954,7 @@ bool processIrRecev(JsonDocument json) {
       acir.setMode(kSamsungAcCool);
       acir.setTemp(20);
       acir.setSwing(false);
-      acir.sendExtended();
+      acir.sendExtended(IR_RETRY);
       sendACState();
     } else if (acState == OFF_CMD) {
       // set power mode before shutdown, if you don't do this sometimes the off command does not work
@@ -963,19 +966,13 @@ bool processIrRecev(JsonDocument json) {
         acir.setPowerful(true);
         acir.setSwing(false);
         acir.setQuiet(false);
-        acir.send();
+        acir.send(IR_RETRY);
         delay(1500);
       }
       ac = OFF_CMD;
-      delay(1500);
       acir.off();
-      acir.sendOff();
+      acir.sendOff(IR_RETRY);
       delay(1500);
-      acir.off();
-      acir.sendOff();
-      delay(1500);
-      acir.off();
-      acir.sendOff();
       sendACState();
     }
     //Serial.printf("  %s\n", acir.toString().c_str());
@@ -1018,7 +1015,7 @@ bool processIrRecev(JsonDocument json) {
         acir.setFan(kSamsungAcFanHigh);
         acir.setSwing(true);
       }    
-      acir.send();    
+      acir.send(IR_RETRY);
       //Serial.printf("  %s\n", acir.toString().c_str()); 
     }
     return true;
@@ -1329,10 +1326,10 @@ void goToHomePageAndWriteToStorageAfterFiveMinutes() {
       acir.setMode(kSamsungAcCool);
       acir.setTemp(20);
       acir.setSwing(false);
-      acir.sendExtended();
+      acir.sendExtended(IR_RETRY);
     } else {
       acir.off();
-      acir.sendOff();     
+      acir.sendOff(IR_RETRY);
     }
 
   }
