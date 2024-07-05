@@ -103,6 +103,7 @@ const char* SOLAR_STATION_PUMP_POWER = "stat/water_pump/POWER";
 const char* SOLAR_STATION_STATE = "tele/solarstation/STATE";
 const char* SOLAR_STATION_REMAINING_SECONDS = "tele/solarstation/REMAINING_SECONDS";
 const char* CMND_IR_RECEV = "cmnd/irrecev/ACTIVE";
+const char* TOGGLE_BEEP = "cmnd/irrecev/TOGGLE_BEEP";
 const char* LUCIFERIN_FRAMERATE = "lights/firelyluciferin/framerate";
 const char* GLOWORM_FRAMERATE = "lights/glowwormluciferin";
 #ifdef TARGET_SMARTOSTAT
@@ -628,6 +629,7 @@ void goToHomePageAndWriteToStorageAfterFiveMinutes();
   bool processIrOnOffCmnd(JsonDocument json);
   bool processIrSendCmnd(JsonDocument json);
   bool processSmartostatRebootCmnd(JsonDocument json);
+  bool toggleBeep(JsonDocument json);
   void getGasReference();
   String calculateIAQ(int score); 
   int getHumidityScore();

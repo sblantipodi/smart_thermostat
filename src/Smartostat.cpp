@@ -70,9 +70,7 @@ void setup() {
       delay(30);
     }
 
-    acir.setBeep(false);
-    acir.send();
-
+    acir.stateReset();
     acir.off();
     acir.setFan(kSamsungAcFanLow);
     acir.setMode(kSamsungAcCool);
@@ -156,6 +154,7 @@ void manageQueueSubscription() {
     bootstrapManager.subscribe(SMARTOSTAT_CMND_REBOOT);    
     bootstrapManager.subscribe(SMARTOSTATAC_CMND_IRSENDSTATE);    
     bootstrapManager.subscribe(SMARTOSTATAC_CMND_IRSEND);           
+    bootstrapManager.subscribe(TOGGLE_BEEP);
   #endif
   bootstrapManager.subscribe(SOLAR_STATION_POWER_STATE);
   bootstrapManager.subscribe(SOLAR_STATION_PUMP_POWER);
@@ -246,6 +245,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
       processIrSendCmnd(json);
     } else if(strcmp(topic, SMARTOSTAT_CMND_REBOOT) == 0) {
       processSmartostatRebootCmnd(json);
+  } else if(strcmp(topic, TOGGLE_BEEP) == 0) {
+      toggleBeep(json);
     }
   #endif
 
@@ -920,20 +921,31 @@ bool processIrRecev(JsonDocument json) {
 
 // IRSEND MQTT message ON OFF only for Smartostat
 #ifdef TARGET_SMARTOSTAT
+  bool toggleBeep(JsonDocument json) {
+
+    acir.stateReset();
+    acir.setBeep(true);
+    acir.off();
+    acir.send();
+    acir.stateReset();
+    EspClass::restart();
+    return true;
+
+  }
 
   bool processSmartostatRebootCmnd(JsonDocument json) {
 
     String msg = json[VALUE];
     String rebootState = msg;
     sendSmartostatRebootState(OFF_CMD);
-    if (rebootState == OFF_CMD) {      
+    if (rebootState == OFF_CMD) {
       forceFurnanceOn = false;
       furnance = OFF_CMD;
       sendFurnanceState();
       forceACOn = false;
       ac = OFF_CMD;
       sendACState();
-      bootstrapManager.publish(SMARTOSTAT_PIR_STATE_TOPIC, helper.string2char(OFF_CMD), true);  
+      bootstrapManager.publish(SMARTOSTAT_PIR_STATE_TOPIC, helper.string2char(OFF_CMD), true);
       releManagement();
       acManagement();
       sendSmartostatRebootCmnd();
@@ -970,6 +982,7 @@ bool processIrRecev(JsonDocument json) {
         delay(1500);
       }
       ac = OFF_CMD;
+      acir.stateReset();
       acir.off();
       acir.sendOff(IR_RETRY);
       delay(1500);
