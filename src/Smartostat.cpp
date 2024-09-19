@@ -642,7 +642,7 @@ void drawRoundRect() {
 /********************************** START PROCESS JSON*****************************************/
 bool processUpsStateJson(JsonDocument json) {
 
-  if (json.containsKey("runtime")) {
+  if (json["runtime"].is<JsonVariant>()) {
     float loadFloat = json["load"];
     #ifdef TARGET_SMARTOLED
       if (loadFloat > HIGH_WATT && loadFloatPrevious < HIGH_WATT) {
@@ -668,7 +668,7 @@ bool processUpsStateJson(JsonDocument json) {
 
 bool processSmartostatSensorJson(JsonDocument json) {
 
-  if (json.containsKey("BME680")) {
+  if (json["BME680"].is<JsonVariant>()) {
     float temperatureFloat = json["BME680"]["Temperature"];
     temperature = serialized(String(temperatureFloat,1));
     minTemperature = (temperatureFloat < minTemperature) ? temperatureFloat : minTemperature;
@@ -767,8 +767,7 @@ bool processSmartostatClimateJson(JsonDocument json) {
 bool processSpotifyStateJson(JsonDocument json) {
 
   //serializeJsonPretty(json, Serial); Serial.println();
-  if (json.containsKey("media_artist")) {
-    
+  if (json["media_artist"].is<JsonVariant>()) {
     spotifyActivity = helper.getValue(json["spotify_activity"]);
     mediaTitle = helper.getValue(json["media_title"]);
     spotifySource = helper.getValue(json["spotifySource"]);
@@ -996,7 +995,7 @@ bool processIrRecev(JsonDocument json) {
   bool processIrSendCmnd(JsonDocument json) {
 
     acir.on();
-    if (json.containsKey("alette_ac")) {      
+    if (json["alette_ac"].is<JsonVariant>()) {
       acir.setMode(kSamsungAcCool);
 
       const char* tempConst = json["temp"];
@@ -1051,7 +1050,7 @@ bool processIrRecev(JsonDocument json) {
 
   bool processSmartoledFramerate(JsonDocument json) {
 
-    if (json.containsKey("producing")) {
+    if (json["producing"].is<JsonVariant>()) {
       float producingFloat = json["producing"];
       float consumingFloat = json["consuming"];
       producing = serialized(String(producingFloat,1));
@@ -1066,7 +1065,7 @@ bool processIrRecev(JsonDocument json) {
 
   bool processSmartoledGlowWormFramerate(JsonDocument json) {
 
-    if (json.containsKey("framerate")) {
+    if (json["framerate"].is<JsonVariant>()) {
       float consumingFloat = json["framerate"];
       gwconsuming = serialized(String(consumingFloat,1));
     }
@@ -1579,8 +1578,7 @@ void readConfigFromStorage() {
 
   JsonDocument doc;
   doc = bootstrapManager.readLittleFS("config.json");
-
-  if (!(doc.containsKey(VALUE) && doc[VALUE] == ERROR)) {
+  if (!(doc[VALUE].is<JsonVariant>() && doc[VALUE] == ERROR)) {
     Serial.println(F("\nReload previously stored values."));
     minTemperature = doc["minTemperature"];
     maxTemperature = doc["maxTemperature"];
