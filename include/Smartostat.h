@@ -32,7 +32,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
   #include <Adafruit_Sensor.h>
   #include <Adafruit_BME680.h>
   #include <IRremoteESP8266.h>
@@ -51,26 +51,56 @@
 /****************** BOOTSTRAP and WIFI MANAGER ******************/
 BootstrapManager bootstrapManager;
 Helpers helper;
+#if defined(ESP8266)
 PingESP pingESP;
+#endif
 
 /**************************** PIN DEFINITIONS ****************************/
 // Initialize the display
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); 
 
 // #define OLED_RESET LED_BUILTIN // Pin used for integrated D1 Mini blue LED
-#ifdef TARGET_SMARTOSTAT
-  #define OLED_BUTTON_PIN 12 // D6 Pin, 5V power, for capactitive touch sensor. When Sig Output is high, touch sensor is being 
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
+#if defined(ESP8266)
+#define OLED_BUTTON_PIN 12 // D6 Pin, 5V power, for capactitive touch sensor. When Sig Output is high, touch sensor is being
 #else
-  #define OLED_BUTTON_PIN D6 // D5 Pin, 5V power, for capactitive touch sensor. When Sig Output is high, touch sensor is being
+#define OLED_BUTTON_PIN 13 // D6 Pin, 5V power, for capactitive touch sensor. When Sig Output is high, touch sensor is being
 #endif
-#define SMARTOSTAT_BUTTON_PIN 15 // D8 pin, 5V power, for touch button used to start stop the furnance 
-#ifdef TARGET_SMARTOSTAT
-  #define SR501_PIR_PIN 16 // D0 Pin, 5V power, for SR501 PIR sensor
-  #define RELE_PIN 14 // D5 Pin, 5V power, for relè //TODO configurare releè pin
+#else
+#if defined(ESP8266)
+  #define OLED_BUTTON_PIN D6 // D5 Pin, 5V power, for capactitive touch sensor. When Sig Output is high, touch sensor is being
+#else
+  #define OLED_BUTTON_PIN 13 // D5 Pin, 5V power, for capactitive touch sensor. When Sig Output is high, touch sensor is being
+#endif
+#endif
+#if defined(ESP8266)
+#define SMARTOSTAT_BUTTON_PIN 15 // D8 pin, 5V power, for touch button used to start stop the furnance
+#else
+#define SMARTOSTAT_BUTTON_PIN 10 // D8 pin, 5V power, for touch button used to start stop the furnance
+#endif
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
+#if defined(ESP8266)
+#define SR501_PIR_PIN 16 // D0 Pin, 5V power, for SR501 PIR sensor
+#else
+#define SR501_PIR_PIN 4 // D0 Pin, 5V power, for SR501 PIR sensor
+#endif
+#if defined(ESP8266)
+#define RELE_PIN 14 // D5 Pin, 5V power, for relè //TODO configurare releè pin
+#else
+#define RELE_PIN 12 // D5 Pin, 5V power, for relè //TODO configurare releè pin
+#endif
   Adafruit_BME680 boschBME680; // D2 pin SDA, D1 pin SCL, 3.3V power for BME680 sensor, sensor address I2C 0x76
-  const uint16_t kIrLed = D3; // GPIOX for IRsender
-  IRSamsungAc acir(kIrLed);  
-  const uint16_t KIRLEDRECV = D4; // GPIOX for IRsender
+#if defined(ESP8266)
+const uint16_t kIrLed = D3; // GPIOX for IRsender
+#else
+const uint16_t kIrLed = 18; // GPIOX for IRsender
+#endif
+  IRSamsungAc acir(kIrLed);
+#if defined(ESP8266)
+const uint16_t KIRLEDRECV = D4; // GPIOX for IRsender
+#else
+const uint16_t KIRLEDRECV = 16; // GPIOX for IRsender
+#endif
   // Use turn on the save buffer feature for more complete capture coverage.
   IRrecv irrecv(KIRLEDRECV, 1024, 50, true);
   decode_results results;  // Somewhere to store the results
@@ -106,7 +136,7 @@ const char* CMND_IR_RECEV = "cmnd/irrecev/ACTIVE";
 const char* TOGGLE_BEEP = "cmnd/irrecev/TOGGLE_BEEP";
 const char* LUCIFERIN_FRAMERATE = "lights/firelyluciferin/framerate";
 const char* GLOWORM_FRAMERATE = "lights/glowwormluciferin";
-#ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
   const char* SMARTOLED_CMND_TOPIC = "cmnd/smartostat/POWER3";
   const char* SMARTOLED_STATE_TOPIC = "stat/smartostat/POWER3";
   const char* SMARTOLED_INFO_TOPIC = "stat/smartostat/INFO";
@@ -114,7 +144,7 @@ const char* GLOWORM_FRAMERATE = "lights/glowwormluciferin";
   const char* SMARTOSTAT_CMND_REBOOT = "cmnd/smartostat/reboot";
   const char* IR_RECV_TOPIC = "tele/irrecv/INFO";
 #endif
-#ifdef TARGET_SMARTOLED
+#if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
   const char* SMARTOLED_CMND_TOPIC = "cmnd/smartoled/POWER3";
   const char* SMARTOLED_STATE_TOPIC = "stat/smartoled/POWER3";
   const char* SMARTOLED_INFO_TOPIC = "stat/smartoled/INFO";
@@ -189,7 +219,7 @@ String SPOTIFY_PAUSED = "paused";
 
 String away_mode = OFF_CMD;
 String rebootState = OFF_CMD;
-String alarm = OFF_CMD;
+String alarmo = OFF_CMD;
 String ALARM_ARMED_AWAY = "armed_away";
 String ALARM_PENDING = "pending";
 String ALARM_TRIGGERED = "triggered";
@@ -232,7 +262,7 @@ unsigned long timeNowGoHomeAfterFiveMinutes = 0;
 unsigned int lastButtonPressed = 0;
 unsigned int delayTime = 20;
 
-#ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
   // PIR variables
   long unsigned int highIn;
  
@@ -616,7 +646,7 @@ void sendClimateState(String mode);
 void sendFurnanceCommandState();
 void cleanSpotifyInfo();
 void goToHomePageAndWriteToStorageAfterFiveMinutes();
-#ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
   void sendSmartostatRebootState(String onOff);
   void sendSmartostatRebootCmnd();
   void sendPirState();
@@ -636,7 +666,7 @@ void goToHomePageAndWriteToStorageAfterFiveMinutes();
   int getGasScore();
   void manageIrRecv();
 #endif
-#ifdef TARGET_SMARTOLED
+#if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
   void sendSmartoledRebootState(String onOff);
   void sendSmartoledRebootCmnd();
   bool processSmartostatFurnanceState(JsonDocument json);

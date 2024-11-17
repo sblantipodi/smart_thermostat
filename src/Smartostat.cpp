@@ -35,11 +35,13 @@
 /********************************** START SETUP *****************************************/
 void setup() {
 
-  #ifdef TARGET_SMARTOSTAT
+  neopixelWrite(LED_BUILTIN, 0,0,0);
+
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
     // IRSender Begin
     acir.begin();
     acir.calibrate();
-    Serial.begin(SERIAL_RATE, SERIAL_8N1, SERIAL_TX_ONLY);
+    Serial.begin(SERIAL_RATE);
 
     // SR501 PIR sensor
     pinMode(SR501_PIR_PIN, INPUT);
@@ -54,7 +56,9 @@ void setup() {
     // BME680 initialization
     if (!boschBME680.begin(0x76)) {
       Serial.println("Could not find a valid BME680 sensor, check wiring!");
+#if defined(ESP8266)
       ESP.wdtFeed();
+#endif
       delay(50);
       sensorOk = false;
     } else {
@@ -82,14 +86,18 @@ void setup() {
     display.setRotation(2);
 
   #else
-    Serial.begin(SERIAL_RATE, SERIAL_8N1, SERIAL_TX_ONLY);
+    Serial.begin(SERIAL_RATE);
   #endif
 
   // Wait for the serial connection to be establised.
+#if defined(ESP8266)
   while (!Serial) {
+#if defined(ESP8266)
     ESP.wdtFeed();
+#endif
     delay(50);
   }
+#endif
 
   // OLED TouchButton
   pinMode(OLED_BUTTON_PIN, INPUT);
@@ -98,13 +106,15 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-#ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
 #else
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3D)) { // Address 0x3D for 128x64
 #endif
     Serial.println(F("SSD1306 allocation failed"));
+#if defined(ESP8266)
     ESP.wdtFeed();
+#endif
     delay(50);
     for(;;); // Don't proceed, loop forever
   }
@@ -122,7 +132,7 @@ void setup() {
 void manageDisconnections() {
 
   // shut down if wifi disconnects
-  #ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
     furnance = forceFurnanceOn ? ON_CMD : OFF_CMD;
     releManagement();
     ac = forceACOn ? ON_CMD : OFF_CMD;
@@ -138,7 +148,7 @@ void manageQueueSubscription() {
   bootstrapManager.subscribe(SMARTOSTAT_SENSOR_STATE_TOPIC);
   bootstrapManager.subscribe(SMARTOSTAT_STATE_TOPIC);
   bootstrapManager.subscribe(UPS_STATE);
-  #ifdef TARGET_SMARTOLED
+#if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
     bootstrapManager.subscribe(SMARTOSTAT_FURNANCE_STATE_TOPIC);     
     bootstrapManager.subscribe(SMARTOSTAT_PIR_STATE_TOPIC);
     bootstrapManager.subscribe(SMARTOSTATAC_CMD_TOPIC);
@@ -149,9 +159,9 @@ void manageQueueSubscription() {
   #endif
   bootstrapManager.subscribe(SPOTIFY_STATE_TOPIC);
   bootstrapManager.subscribe(SMARTOLED_CMND_TOPIC);
-  bootstrapManager.subscribe(SMARTOSTAT_FURNANCE_CMND_TOPIC);     
-  #ifdef TARGET_SMARTOSTAT       
-    bootstrapManager.subscribe(SMARTOSTAT_CMND_REBOOT);    
+  bootstrapManager.subscribe(SMARTOSTAT_FURNANCE_CMND_TOPIC);
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
+    bootstrapManager.subscribe(SMARTOSTAT_CMND_REBOOT);
     bootstrapManager.subscribe(SMARTOSTATAC_CMND_IRSENDSTATE);    
     bootstrapManager.subscribe(SMARTOSTATAC_CMND_IRSEND);           
     bootstrapManager.subscribe(TOGGLE_BEEP);
@@ -167,7 +177,7 @@ void manageQueueSubscription() {
 /********************************** MANAGE HARDWARE BUTTON *****************************************/
 void manageHardwareButton() {
 
-  #ifdef TARGET_SMARTOSTAT    
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
     // Touch button management features
     if (digitalRead(OLED_BUTTON_PIN) == HIGH) {
       lastButtonPressed = OLED_BUTTON_PIN;
@@ -222,7 +232,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     processIrRecev(json);
   }
 
-  #ifdef TARGET_SMARTOLED
+#if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
     if(strcmp(topic, SMARTOSTATAC_CMD_TOPIC) == 0) {
       processSmartostatAcJson(json);
     } else if(strcmp(topic, SMARTOSTAT_FURNANCE_STATE_TOPIC) == 0) {
@@ -236,9 +246,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
     } else if(strcmp(topic, GLOWORM_FRAMERATE) == 0) {
       processSmartoledGlowWormFramerate(json);
     }
-  #endif  
-  
-  #ifdef TARGET_SMARTOSTAT
+  #endif
+
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
     if(strcmp(topic, SMARTOSTATAC_CMND_IRSENDSTATE) == 0) {
       processIrOnOffCmnd(json);
     } else if(strcmp(topic, SMARTOSTATAC_CMND_IRSEND) == 0) {
@@ -273,7 +283,7 @@ void draw() {
   }
 
   // Draw Images
-  if (alarm == ALARM_ARMED_AWAY|| alarm == ALARM_PENDING || alarm == ALARM_TRIGGERED) {
+  if (alarmo == ALARM_ARMED_AWAY || alarmo == ALARM_PENDING || alarmo == ALARM_TRIGGERED) {
     display.drawBitmap(0, 10, shieldLogo, shieldLogoW, shieldLogoH, 1);
   } else if (away_mode == OFF_CMD && currentPage != numPages) {
     display.drawBitmap(0, 10, haSmallLogo, haSmallLogoW, haSmallLogoH, 1);
@@ -521,7 +531,7 @@ void draw() {
   Serial.print(F("target_temperature: "); Serial.println(target_temperature);
   Serial.print(F("hvac_action: "); Serial.println(hvac_action);
   Serial.print(F("away_mode: "); Serial.println(away_mode);
-  Serial.print(F("alarm: "); Serial.println(alarm);*/
+  Serial.print(F("alarmo: "); Serial.println(alarmo);*/
 
 }
 
@@ -644,7 +654,7 @@ bool processUpsStateJson(JsonDocument json) {
 
   if (json["runtime"].is<JsonVariant>()) {
     float loadFloat = json["load"];
-    #ifdef TARGET_SMARTOLED
+#if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
       if (loadFloat > HIGH_WATT && loadFloatPrevious < HIGH_WATT) {
         currentPage = 7;
       }      
@@ -732,8 +742,8 @@ bool processSmartostatClimateJson(JsonDocument json) {
 
     String operationModeHeatConst = helper.getValue(json["smartostat"]["hvac_action"]);
     String operationModeCoolConst = helper.getValue(json["smartostatac"]["hvac_action"]);
-  
-    alarm = helper.getValue(json["smartostat"]["alarm"]);
+
+  alarmo = helper.getValue(json["smartostat"]["alarmo"]);
     fan = helper.getValue(json["smartostatac"]["fan"]);
    
     if (operationModeHeatConst == HEAT || operationModeHeatConst == IDLE) {
@@ -903,7 +913,7 @@ bool processFurnancedCmnd(JsonDocument json) {
     stateOn = true;
     sendPowerState();
   }
-  #ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
     sendFurnanceState();
     releManagement();
   #endif
@@ -919,7 +929,7 @@ bool processIrRecev(JsonDocument json) {
 }
 
 // IRSEND MQTT message ON OFF only for Smartostat
-#ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
   bool toggleBeep(JsonDocument json) {
 
     acir.stateReset();
@@ -927,7 +937,11 @@ bool processIrRecev(JsonDocument json) {
     acir.off();
     acir.send();
     acir.stateReset();
+#if defined(ESP8266)
     EspClass::restart();
+#else
+    ESP.restart();
+#endif
     return true;
 
   }
@@ -1035,7 +1049,7 @@ bool processIrRecev(JsonDocument json) {
   }
 #endif
 
-#ifdef TARGET_SMARTOLED
+#if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
 
   bool processSmartoledRebootCmnd(JsonDocument json) {
 
@@ -1121,7 +1135,7 @@ void sendInfoState() {
 
 
 // Send PIR state via MQTT
-#ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
   
   void sendSmartostatRebootState(String onOff) {   
 
@@ -1195,7 +1209,7 @@ void sendInfoState() {
   }
 #endif
 
-#ifdef TARGET_SMARTOLED
+#if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
 
   void sendSmartoledRebootState(String onOff) {
 
@@ -1255,16 +1269,26 @@ void delayAndSendStatus() {
     timeNowStatus = millis();
     ledTriggered = true;
     sendPowerState();
+#if defined(ESP8266)
     ESP.wdtFeed();
+#endif
     sendInfoState();
+#if defined(ESP8266)
     ESP.wdtFeed();
-#ifdef TARGET_SMARTOSTAT
+#endif
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
     sendSensorState();
+#if defined(ESP8266)
     ESP.wdtFeed();
+#endif
     sendFurnanceState();
+#if defined(ESP8266)
     ESP.wdtFeed();
+#endif
     sendACState();
+#if defined(ESP8266)
     ESP.wdtFeed();
+#endif
 #endif
   }
 }
@@ -1276,7 +1300,9 @@ void goToHomePageAndWriteToStorageAfterFiveMinutes() {
     timeNowGoHomeAfterFiveMinutes = millis();
     // Ping gateway to add presence on the routing table, 
     // command is synchrounous and adds a bit of lag to the loop
+#if defined(ESP8266)
     pingESP.ping();
+#endif
     // Write data to file system
     writeConfigToStorage();
     screenSaverTriggered = true;
@@ -1288,7 +1314,7 @@ void goToHomePageAndWriteToStorageAfterFiveMinutes() {
 }
 
 /********************************** PIR, RELE' AND IR MANAGEMENT *****************************************/
-#ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
 
   void pirManagement() {
 
@@ -1457,13 +1483,13 @@ void touchButtonManagement(int digitalReadButtonPin) {
   }
   // Long press for a second
   if (buttonState == HIGH && lastReading == HIGH) {
-    #ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
       if ((millis() - onTime) > 4000 ) { // a second hold time
         lastReading = LOW;
         veryLongPress = true;
       }
     #endif
-    #ifdef TARGET_SMARTOLED
+#if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
       if (((millis() - onTime) > 4000)) { // a second hold time
         lastReading = LOW;
         longPress = false;
@@ -1509,7 +1535,7 @@ void commandButtonRelease() {
       // stop ac on long press if wifi or mqtt is disconnected
       forceACOn = false;
     } else {
-      #ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
         acTriggered = true;
       #endif
       ac = ON_CMD;
@@ -1518,7 +1544,7 @@ void commandButtonRelease() {
     }      
     sendACCommandState();
     sendClimateState(COOL);
-    #ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
       acManagement();
     #endif
     lastButtonPressed = OLED_BUTTON_PIN;
@@ -1528,7 +1554,7 @@ void commandButtonRelease() {
       // stop furnance on long press if wifi or mqtt is disconnected
       forceFurnanceOn = false;
     } else {
-      #ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
         furnanceTriggered = true;
       #endif
       furnance = ON_CMD;
@@ -1537,7 +1563,7 @@ void commandButtonRelease() {
     }      
     sendFurnanceCommandState();
     sendClimateState(HEAT);
-    #ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
       releManagement();
     #endif
     lastButtonPressed = OLED_BUTTON_PIN;
@@ -1549,7 +1575,7 @@ void quickPressRelease() {
   
   // turn on the furnance
   if (lastButtonPressed == SMARTOSTAT_BUTTON_PIN) {
-    #ifdef TARGET_SMARTOSTAT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
       commandButtonRelease();
     #endif
   } else {
@@ -1619,7 +1645,7 @@ void loop() {
   
   if (irReceiveActive) {
     if (!printIrReceiving) {
-      #ifdef TARGET_SMARTOSTAT    
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
         // Ignore messages with less than minimum on or off pulses. NOTE: Set this value very high to effectively turn off UNKNOWN detection.
         irrecv.setUnknownThreshold(12);
         irrecv.enableIRIn();  // Start the receiver
@@ -1627,15 +1653,16 @@ void loop() {
       drawCenterScreenLogo(showHaSplashScreen, IR_RECV_LOGO, IR_RECV_LOGO_W, IR_RECV_LOGO_H, 0);
       printIrReceiving = true;
     }
-    #ifdef TARGET_SMARTOSTAT    
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
       manageIrRecv();
     #endif
   } else {
     printIrReceiving = false;
+#if defined(ESP8266)
     ESP.wdtFeed();
-
+#endif
     // PIR and RELAY MANAGEMENT 
-    #ifdef TARGET_SMARTOSTAT    
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
       manageHardwareButton();
       pirManagement();
     #else
@@ -1656,14 +1683,16 @@ void loop() {
       display.clearDisplay();
       display.display();
     }
+#if defined(ESP8266)
     ESP.wdtFeed();
-
+#endif
     // Go To Home Page timer after 5 minutes of inactivity and write data to File System (SPIFFS)
     goToHomePageAndWriteToStorageAfterFiveMinutes();
 
     bootstrapManager.nonBlokingBlink();
+#if defined(ESP8266)
     ESP.wdtFeed();
-
+#endif
   }
   
 }
