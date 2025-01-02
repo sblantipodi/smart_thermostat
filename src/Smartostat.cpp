@@ -41,9 +41,9 @@ void setup() {
     // IRSender Begin
     acir.begin();
     acir.calibrate();
-//    Serial.begin(SERIAL_RATE);
-//    Serial.setTimeout(0);
-//    Serial.setTxTimeoutMs(0);
+    Serial.begin(SERIAL_RATE);
+    Serial.setTimeout(0);
+    Serial.setTxTimeoutMs(0);
 
     // SR501 PIR sensor
     pinMode(SR501_PIR_PIN, INPUT);
@@ -88,9 +88,9 @@ void setup() {
     display.setRotation(2);
 
   #else
-//    Serial.begin(SERIAL_RATE);
-//    Serial.setTimeout(0);
-//    Serial.setTxTimeoutMs(0);
+    Serial.begin(SERIAL_RATE);
+    Serial.setTimeout(0);
+    Serial.setTxTimeoutMs(0);
   #endif
 
   // Wait for the serial connection to be establised.
