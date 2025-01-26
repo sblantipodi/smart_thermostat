@@ -35,7 +35,9 @@
 /********************************** START SETUP *****************************************/
 void setup() {
 
+#if defined(ARDUINO_ARCH_ESP32)
   neopixelWrite(LED_BUILTIN, 0,0,0);
+#endif
 
 #if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
     // IRSender Begin
@@ -43,7 +45,9 @@ void setup() {
     acir.calibrate();
     Serial.begin(SERIAL_RATE);
     Serial.setTimeout(0);
+#if defined(ARDUINO_ARCH_ESP32)
     Serial.setTxTimeoutMs(0);
+#endif
 
     // SR501 PIR sensor
     pinMode(SR501_PIR_PIN, INPUT);
@@ -90,7 +94,9 @@ void setup() {
   #else
     Serial.begin(SERIAL_RATE);
     Serial.setTimeout(0);
+#if defined(ARDUINO_ARCH_ESP32)
     Serial.setTxTimeoutMs(0);
+#endif
   #endif
 
   // Wait for the serial connection to be establised.
