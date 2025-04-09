@@ -171,8 +171,8 @@ float tempSensorOffset = 0;
 
 // Total Number of pages
 const int numPages = 9;
-const float LOW_WATT = 250;
-const float HIGH_WATT = 350;
+const float LOW_WATT = 350;
+const float HIGH_WATT = 450;
 String loadwatt = OFF_CMD;
 String producing = OFF_CMD;
 String consuming = OFF_CMD;
