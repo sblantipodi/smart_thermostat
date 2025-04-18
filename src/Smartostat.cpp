@@ -1687,7 +1687,11 @@ void loop() {
     delayAndSendStatus();
 
     // DRAW THE SCREEN
+#if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
+    if (stateOn || (loadFloat > HIGH_WATT)) {
+#elif defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
     if (stateOn) {
+#endif
       draw();
     } else {
       display.clearDisplay();
