@@ -32,14 +32,14 @@ jobs:
     - name: Run PlatformIO (smartostat)
       run: platformio run -e smartostat
     - name: Creating smartostat artifact from BIN file 
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: firmware_build_artifact_smartostat.bin
         path: .pio/build/smartostat/firmware.bin
     - name: Run PlatformIO (smartoled)
       run: platformio run -e smartoled
     - name: Creating smartoled artifact from BIN file
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: firmware_build_artifact_smartoled.bin
         path: .pio/build/smartoled/firmware.bin
