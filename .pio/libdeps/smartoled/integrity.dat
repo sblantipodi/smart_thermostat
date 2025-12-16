@@ -1,8 +1,0 @@
-adafruit/Adafruit Unified Sensor
-adafruit/Adafruit GFX Library
-knolleary/PubSubClient
-adafruit/Adafruit SSD1306
-adafruit/Adafruit BME680 Library
-bblanchon/ArduinoJson
-adafruit/Adafruit BusIO
-IRremoteESP8266=https://github.com/crankyoldgit/IRremoteESP8266.git#master
