@@ -113,6 +113,8 @@ boolean sensorOk = false;
 // // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins) // Address 0x3C for 128x64pixel
 // // D2 pin SDA, D1 pin SCL, 5V power
 // Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+bool lastState = HIGH;
+bool lastStateSmartostat = HIGH;
 
 /**************************** MQTT TOPICS ****************************/
 const char *SMARTOSTAT_SENSOR_STATE_TOPIC = "tele/smartostat/SENSOR";
@@ -140,6 +142,7 @@ const char *GLOWORM_FRAMERATE = "lights/glowwormluciferin";
 #if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
 const char *SMARTOLED_CMND_TOPIC = "cmnd/smartostat/POWER3";
 const char *SMARTOLED_STATE_TOPIC = "stat/smartostat/POWER3";
+const char *SMARTOSTAT_HELLO_TOPIC = "stat/smartostat/hello";
 const char *SMARTOLED_INFO_TOPIC = "stat/smartostat/INFO";
 const char *SMARTOSTAT_STAT_REBOOT = "stat/smartostat/reboot";
 const char *SMARTOSTAT_CMND_REBOOT = "cmnd/smartostat/reboot";
@@ -151,6 +154,7 @@ const char *SMARTOLED_STATE_TOPIC = "stat/smartoled/POWER3";
 const char *SMARTOLED_INFO_TOPIC = "stat/smartoled/INFO";
 const char *SMARTOLED_STAT_REBOOT = "stat/smartoled/reboot";
 const char *SMARTOLED_CMND_REBOOT = "cmnd/smartoled/reboot";
+const char *SMARTOLED_HELLO_TOPIC = "stat/smartoled/hello";
 #endif
 
 // HEAT COOL THRESHOLD, USED to MANAGE SITUATIONS WHEN THERE IS NO INFO FROM THE MQTT SERVER (used by smartoled for capacitive button too)
@@ -184,21 +188,22 @@ float loadFloatPrevious = 0;
 String runtime = OFF_CMD;
 String inputVoltage = OFF_CMD;
 String outputVoltage = OFF_CMD;
-String temperature = OFF_CMD;
+float temperature = -100.0f;
 float minTemperature = 99;
 float maxTemperature = 0.0;
-String humidity = OFF_CMD;
+float humidity = -100.0f;
 float minHumidity = 99;
 float maxHumidity = 0.0;
-String pressure = OFF_CMD;
+float pressure = -100.0f;
 float minPressure = 2000;
 float maxPressure = 0.0;
-String gasResistance = OFF_CMD;
+float gasResistance = -100.0f;
 float minGasResistance = 2000;
 float maxGasResistance = 0.0;
-String IAQ = OFF_CMD; // indoor air quality
+float IAQ = -100.0f; // indoor air quality
 float minIAQ = 2000;
 float maxIAQ = 0.0;
+float offlineTargetTemp = 20;
 String furnance = OFF_CMD;
 String ac = OFF_CMD;
 String pir = OFF_CMD;
@@ -263,6 +268,7 @@ const int fiveMinutesPeriod = 300000;
 unsigned long timeNowGoHomeAfterFiveMinutes = 0;
 unsigned int lastButtonPressed = 0;
 unsigned int delayTime = 20;
+unsigned long lastMillisForWatchdog = millis();
 
 #if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
 // PIR variables
@@ -272,7 +278,7 @@ unsigned int readOnceEveryNTimess = 0;
 String lastPirState = OFF_CMD;
 float hum_weighting = 0.25; // so hum effect is 25% of the total air quality score
 float gas_weighting = 0.75; // so gas effect is 75% of the total air quality score
-int humidity_score, gas_score;
+float humidity_score, gas_score;
 float gas_reference = 2500;
 float hum_reference = 40;
 int getgasreference_count = 0;
@@ -280,13 +286,35 @@ int gas_lower_limit = 10000; // Bad air quality limit
 int gas_upper_limit = 300000; // Good air quality limit
 #endif
 // only button can force furnance state to ON even when wifi/mqtt is disconnected, the force state is resetted to OFF even by MQTT topic
-boolean forceFurnanceOn = false;
-boolean forceACOn = false;
+bool offlineMode = false;
 bool printIrReceiving = false;
 bool irReceiveActive = false;
 
-int SWITCHFOOTEREVERYNDRAW = 200;
+int SWITCHFOOTEREVERYNDRAW = 600;
 int switchFooter = 0;
+
+struct CenterLogoState {
+	bool active = false;
+	bool* trigger = nullptr;
+	const unsigned char* logo = nullptr;
+	int w = 0;
+	int h = 0;
+	unsigned long startMs = 0;
+	unsigned long duration = 0;
+};
+
+static CenterLogoState centerLogo;
+static bool readGas = false;
+
+struct PublishStep {
+	uint8_t step;
+	bool waitNextLoop;
+};
+
+static PublishStep publishStep = { 0 };
+static unsigned long lastPublishTime = 0;
+static bool publishing = false;
+const unsigned long STEP_DELAY = 500;
 
 // 'heat', 33x29px
 static const unsigned char tempLogo[] PROGMEM = {
@@ -723,11 +751,13 @@ bool toggleBeep(JsonDocument json);
 
 void getGasReference();
 
-String calculateIAQ(int score);
+void getGasReferenceBlocking();
 
-int getHumidityScore();
+float calculateIAQ(float score);
 
-int getGasScore();
+float getHumidityScore();
+
+float getGasScore();
 
 void manageIrRecv();
 #endif
@@ -738,3 +768,6 @@ bool processSmartostatFurnanceState(JsonDocument json);
 bool processACState(JsonDocument json);
 bool processSmartoledRebootCmnd(JsonDocument json);
 #endif
+bool isButtonHeldAtBoot();
+void handleUpButton();
+void handleDownButton();

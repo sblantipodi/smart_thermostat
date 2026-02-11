@@ -76,7 +76,7 @@ void setup() {
     boschBME680.setGasHeater(320, 150); // 320*C for 150 ms
     // Now run the sensor to normalise the readings, then use combination of relative humidity and gas resistance to estimate indoor air quality as a percentage.
     // The sensor takes ~30-mins to fully stabilise
-    getGasReference();
+    getGasReferenceBlocking();
     delay(30);
   }
 
@@ -135,54 +135,93 @@ void setup() {
   rgbLedWrite(LED_BUILTIN, 0, 0, 255);
 #endif
   // Bootsrap setup() with Wifi and MQTT functions
-  bootstrapManager.bootstrapSetup(manageDisconnections, manageHardwareButton, callback);
+  blockingMqtt = false;
 
-  readConfigFromStorage();
+  offlineMode = !isButtonHeldAtBoot();
+
+  if (!offlineMode) {
+    bootstrapManager.bootstrapSetup(manageDisconnections, manageHardwareButton, callback);
+    readConfigFromStorage();
+  }
 #if defined(ARDUINO_ARCH_ESP32)
   rgbLedWrite(LED_BUILTIN, 0, 0, 0);
 #endif
+}
+
+bool isButtonHeldAtBoot() {
+  // Se non è premuto subito, esci
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.println("WAITING FOR");
+  display.println("");
+  display.println("BUTTON PRESS");
+  display.println("");
+  display.println("TO ENTER");
+  display.println("");
+  display.println("OFFLINE MODE");
+  display.display();
+  if (digitalRead(OLED_BUTTON_PIN) != LOW) {
+    return false;
+  }
+  unsigned long startTime = millis();
+  while (millis() - startTime < 10000) {
+    if (digitalRead(OLED_BUTTON_PIN) != LOW) {
+      return false;
+    }
+    delay(10);
+  }
+  return true;
 }
 
 /********************************** MANAGE WIFI AND MQTT DISCONNECTION *****************************************/
 void manageDisconnections() {
   // shut down if wifi disconnects
 #if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
-  furnance = forceFurnanceOn ? ON_CMD : OFF_CMD;
+  furnance = OFF_CMD;
   releManagement();
-  ac = forceACOn ? ON_CMD : OFF_CMD;
+  ac = OFF_CMD;
   acManagement();
 #endif
 }
 
 /********************************** MQTT SUBSCRIPTIONS *****************************************/
 void manageQueueSubscription() {
-  bootstrapManager.subscribe(SMARTOSTAT_CLIMATE_STATE_TOPIC);
-  bootstrapManager.subscribe(SMARTOSTAT_SENSOR_STATE_TOPIC);
-  bootstrapManager.subscribe(SMARTOSTAT_STATE_TOPIC);
-  bootstrapManager.subscribe(UPS_STATE);
+  BootstrapManager::subscribe(SMARTOSTAT_CLIMATE_STATE_TOPIC);
+  BootstrapManager::subscribe(UPS_STATE);
+  BootstrapManager::subscribe(GLOWORM_FRAMERATE);
+  BootstrapManager::subscribe(LUCIFERIN_FRAMERATE);
 #if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
-  bootstrapManager.subscribe(SMARTOSTAT_FURNANCE_STATE_TOPIC);
-  bootstrapManager.subscribe(SMARTOSTAT_PIR_STATE_TOPIC);
-  bootstrapManager.subscribe(SMARTOSTATAC_CMD_TOPIC);
-  bootstrapManager.subscribe(SMARTOSTATAC_STAT_IRSEND);
-  bootstrapManager.subscribe(SMARTOLED_CMND_REBOOT);
-  bootstrapManager.subscribe(LUCIFERIN_FRAMERATE);
-  bootstrapManager.subscribe(GLOWORM_FRAMERATE);
+  BootstrapManager::subscribe(SMARTOSTAT_SENSOR_STATE_TOPIC);
+  BootstrapManager::subscribe(SMARTOSTAT_STATE_TOPIC);
+  BootstrapManager::subscribe(SMARTOSTAT_FURNANCE_STATE_TOPIC);
+  BootstrapManager::subscribe(SMARTOSTAT_PIR_STATE_TOPIC);
+  BootstrapManager::subscribe(SMARTOSTATAC_CMD_TOPIC);
+  BootstrapManager::subscribe(SMARTOSTATAC_STAT_IRSEND);
+  BootstrapManager::subscribe(SMARTOLED_CMND_REBOOT);
+  BootstrapManager::subscribe(SPOTIFY_STATE_TOPIC);
 #endif
-  bootstrapManager.subscribe(SPOTIFY_STATE_TOPIC);
-  bootstrapManager.subscribe(SMARTOLED_CMND_TOPIC);
-  bootstrapManager.subscribe(SMARTOSTAT_FURNANCE_CMND_TOPIC);
+  BootstrapManager::subscribe(SMARTOLED_CMND_TOPIC);
+  BootstrapManager::subscribe(SMARTOSTAT_FURNANCE_CMND_TOPIC);
 #if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
-  bootstrapManager.subscribe(SMARTOSTAT_CMND_REBOOT);
-  bootstrapManager.subscribe(SMARTOSTATAC_CMND_IRSENDSTATE);
-  bootstrapManager.subscribe(SMARTOSTATAC_CMND_IRSEND);
-  bootstrapManager.subscribe(TOGGLE_BEEP);
+  BootstrapManager::subscribe(SMARTOSTAT_CMND_REBOOT);
+  BootstrapManager::subscribe(SMARTOSTATAC_CMND_IRSENDSTATE);
+  BootstrapManager::subscribe(SMARTOSTATAC_CMND_IRSEND);
+  BootstrapManager::subscribe(TOGGLE_BEEP);
 #endif
-  bootstrapManager.subscribe(SOLAR_STATION_POWER_STATE);
-  bootstrapManager.subscribe(SOLAR_STATION_PUMP_POWER);
-  bootstrapManager.subscribe(SOLAR_STATION_STATE);
-  bootstrapManager.subscribe(SOLAR_STATION_REMAINING_SECONDS);
-  bootstrapManager.subscribe(CMND_IR_RECEV);
+  BootstrapManager::subscribe(SOLAR_STATION_POWER_STATE);
+  BootstrapManager::subscribe(SOLAR_STATION_PUMP_POWER);
+  BootstrapManager::subscribe(SOLAR_STATION_STATE);
+  BootstrapManager::subscribe(SOLAR_STATION_REMAINING_SECONDS);
+  BootstrapManager::subscribe(CMND_IR_RECEV);
+
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
+  BootstrapManager::publish(SMARTOSTAT_HELLO_TOPIC, "HELLO", true);
+#endif
+#if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
+  BootstrapManager::publish(SMARTOLED_HELLO_TOPIC, "HELLO", true);
+#endif
+
 }
 
 /********************************** MANAGE HARDWARE BUTTON *****************************************/
@@ -198,13 +237,6 @@ void manageHardwareButton() {
   } else {
     touchButtonManagement(LOW);
   }
-  // useful when no Wifi or MQTT answer
-  if (lastButtonPressed == SMARTOSTAT_BUTTON_PIN && forceACOn) {
-    acManagement();
-  }
-  if (lastButtonPressed == SMARTOSTAT_BUTTON_PIN && forceFurnanceOn) {
-    releManagement();
-  }
 #endif
 }
 
@@ -214,15 +246,13 @@ void callback(char *topic, byte *payload, unsigned int length) {
 
   if (strcmp(topic, SMARTOSTAT_SENSOR_STATE_TOPIC) == 0) {
     processSmartostatSensorJson(json);
-  } else if (strcmp(topic, SMARTOSTAT_CLIMATE_STATE_TOPIC) == 0) {
-    processSmartostatClimateJson(json);
   } else if (strcmp(topic, SMARTOSTAT_STATE_TOPIC) == 0) {
     processSmartostatSensorJson(json);
+  } else if (strcmp(topic, SMARTOSTAT_CLIMATE_STATE_TOPIC) == 0) {
+    processSmartostatClimateJson(json);
   } else if (strcmp(topic, UPS_STATE) == 0) {
     processUpsStateJson(json);
-  } else if (strcmp(topic, SPOTIFY_STATE_TOPIC) == 0) {
-    processSpotifyStateJson(json);
-  } else if (strcmp(topic, SMARTOSTAT_PIR_STATE_TOPIC) == 0) {
+  }  else if (strcmp(topic, SMARTOSTAT_PIR_STATE_TOPIC) == 0) {
     processSmartostatPirState(json);
   } else if (strcmp(topic, SMARTOLED_CMND_TOPIC) == 0) {
     processSmartoledCmnd(json);
@@ -238,6 +268,10 @@ void callback(char *topic, byte *payload, unsigned int length) {
     processSolarStationRemainingSeconds(json);
   } else if (strcmp(topic, CMND_IR_RECEV) == 0) {
     processIrRecev(json);
+  } else if (strcmp(topic, GLOWORM_FRAMERATE) == 0) {
+    processSmartoledGlowWormFramerate(json);
+  } else if (strcmp(topic, LUCIFERIN_FRAMERATE) == 0) {
+    processSmartoledFramerate(json);
   }
 
 #if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
@@ -249,10 +283,8 @@ void callback(char *topic, byte *payload, unsigned int length) {
     processACState(json);
   } else if (strcmp(topic, SMARTOLED_CMND_REBOOT) == 0) {
     processSmartoledRebootCmnd(json);
-  } else if (strcmp(topic, LUCIFERIN_FRAMERATE) == 0) {
-    processSmartoledFramerate(json);
-  } else if (strcmp(topic, GLOWORM_FRAMERATE) == 0) {
-    processSmartoledGlowWormFramerate(json);
+  } else if (strcmp(topic, SPOTIFY_STATE_TOPIC) == 0) {
+    processSpotifyStateJson(json);
   }
 #endif
 
@@ -269,300 +301,315 @@ void callback(char *topic, byte *payload, unsigned int length) {
 #endif
 }
 
+inline bool isCenterLogoActive() {
+  return centerLogo.active;
+}
+
 void draw() {
   // pagina 0,1,2,3,4,5,6 sono fisse e sono temp, humidita, pressione, min-maximum, ups, spotify
   // lastPage contiene le info su smartoled
-  display.clearDisplay();
-  // currentPage = 7;
+  yield();
 
-  if (currentPage == 8) {
-    if (spotifyActivity != SPOTIFY_PLAYING) {
+  if (WiFi.status() == WL_CONNECTED || ethConnected) {
+    if (furnanceTriggered) {
       display.clearDisplay();
-      currentPage = numPages;
-      bootstrapManager.drawInfoPage(VERSION, AUTHOR);
+      drawCenterScreenLogo(furnanceTriggered, fireLogo, fireLogoW, fireLogoH, DELAY_4000);
       return;
     }
-  }
 
-  if (currentPage != numPages && currentPage != 8) {
-    drawHeader();
-  }
-
-  // Draw Images
-  if (alarmo == ALARM_ARMED_AWAY || alarmo == ALARM_PENDING || alarmo == ALARM_TRIGGERED) {
-    display.drawBitmap(0, 10, shieldLogo, shieldLogoW, shieldLogoH, 1);
-  } else if (away_mode == OFF_CMD && currentPage != numPages) {
-    display.drawBitmap(0, 10, haSmallLogo, haSmallLogoW, haSmallLogoH, 1);
-  }
-
-  if (humidity != OFF_CMD && humidity.toFloat() >= humidityThreshold) {
-    currentPage = 0;
-    display.drawBitmap(14, 18, humidityLogo, humidityLogoW, humidityLogoH, 1);
-  } else if (furnance == ON_CMD && currentPage == 0) {
-    drawRoundRect();
-    display.drawBitmap(14, 18, fireLogo, fireLogoW, fireLogoH, 1);
-  } else if (ac == ON_CMD && currentPage == 0) {
-    drawRoundRect();
-    display.drawBitmap(16, 19, snowLogo, snowLogoW, snowLogoH, 1);
-    display.setCursor(3, 30);
-    if (fan == FAN_LOW) {
-      display.print(F("L"));
-    } else if (fan == FAN_HIGH) {
-      display.print(F("H"));
-    } else if (fan == FAN_AUTO) {
-      display.print(F("A"));
-    } else if (fan == FAN_POWER) {
-      display.print(F("P"));
-    } else if (fan == FAN_QUIET) {
-      display.print(F("Q"));
-    } else if (fan == FAN_WARM) {
-      display.print(F("W"));
-    }
-    display.drawCircle(5, 33, 5, WHITE);
-  } else if (hvac_action == HEAT && currentPage == 0) {
-    display.drawBitmap(9, 18, tempLogo, tempLogoW, tempLogoH, 1);
-  } else if (hvac_action == COOL && currentPage == 0) {
-    display.drawBitmap(9, 18, coolLogo, coolLogoW, coolLogoH, 1);
-  } else if (currentPage == 1) {
-    display.drawBitmap(15, 18, humidityBigLogo, humidityBigLogoW, humidityBigLogoH, 1);
-  } else if (currentPage == 2) {
-    display.drawBitmap(5, 18, tachimeterLogo, tachimeterLogoW, tachimeterLogoH, 1);
-  } else if (currentPage == 3) {
-    display.drawBitmap(5, 18, omegaLogo, omegaLogoW, omegaLogoH, 1);
-  } else if (currentPage == 4) {
-    if (IAQ.toInt() >= 301) display.drawBitmap(5, 18, biohazardLogo, biohazardLogoW, biohazardLogoH, 1);
-    else if (IAQ.toInt() >= 201 && IAQ.toInt() <= 300) display.drawBitmap(5, 18, skullLogo, skullLogoW, skullLogoH, 1);
-    else if (IAQ.toInt() >= 151 && IAQ.toInt() <= 200) display.drawBitmap(5, 18, smogLogo, smogLogoW, smogLogoH, 1);
-    else if (IAQ.toInt() >= 51 && IAQ.toInt() <= 150) display.drawBitmap(5, 18, leafLogo, leafLogoW, leafLogoH, 1);
-    else if (IAQ.toInt() >= 00 && IAQ.toInt() <= 50)
-      display.drawBitmap(5, 18, butterflyLogo, butterflyLogoW,
-                         butterflyLogoH, 1);
-  } else if (currentPage == 5) {
-    if (hvac_action == HEAT) {
-      display.drawBitmap(((display.width() / 3) / 2) - (tempLogoW / 2), 15, tempLogo, tempLogoW, tempLogoH, 1);
-    } else if (hvac_action == COOL) {
-      display.drawBitmap(((display.width() / 3) / 2) - (coolLogoW / 2), 15, coolLogo, coolLogoW, coolLogoH, 1);
-    } else {
-      display.drawBitmap(((display.width() / 3) / 2) - (offLogoW / 2), 15, offLogo, offLogoW, offLogoH, 1);
-    }
-    display.drawBitmap((display.width() / 2) - (humidityBigLogoW / 2), 15, humidityBigLogo, humidityBigLogoW,
-                       humidityBigLogoH, 1);
-    display.drawBitmap(display.width() - ((display.width() / 3) / 2) - (tachimeterLogoW / 2), 15, tachimeterLogo,
-                       tachimeterLogoW, tachimeterLogoH, 1);
-  } else if (currentPage == 6) {
-    int dispDivide = display.width() / 5;
-    display.drawBitmap((dispDivide), 15, omegaLogo, omegaLogoW, omegaLogoH, 1);
-    if (IAQ.toInt() >= 301) display.drawBitmap((dispDivide * 3), 15, biohazardLogo, biohazardLogoW, biohazardLogoH, 1);
-    else if (IAQ.toInt() >= 201 && IAQ.toInt() <= 300)
-      display.drawBitmap(
-        (dispDivide * 3), 15, skullLogo, skullLogoW, skullLogoH, 1);
-    else if (IAQ.toInt() >= 151 && IAQ.toInt() <= 200)
-      display.drawBitmap(
-        (dispDivide * 3), 15, smogLogo, smogLogoW, smogLogoH, 1);
-    else if (IAQ.toInt() >= 51 && IAQ.toInt() <= 150)
-      display.drawBitmap(
-        (dispDivide * 3), 15, leafLogo, leafLogoW, leafLogoH, 1);
-    else if (IAQ.toInt() >= 00 && IAQ.toInt() <= 50)
-      display.drawBitmap((dispDivide * 3), 15, butterflyLogo,
-                         butterflyLogoW, butterflyLogoH, 1);
-  } else if (currentPage == 7) {
-    display.drawBitmap(8, 15, upsLogo, upsLogoW, upsLogoH, 1);
-    drawUpsFooter();
-  } else if (currentPage == 8) {
-    // do nothing here image is shown in the text area
-  } else if (currentPage == numPages) {
-    // display.drawBitmap((display.width()-habigLogoW)-1, 0, habigLogo, habigLogoW, habigLogoH, 1);
-  } else {
-    currentPage = 0;
-    display.drawBitmap(10, 18, offLogo, offLogoW, offLogoH, 1);
-  }
-
-  if (currentPage != 5 && currentPage != 6 && currentPage != 7 && currentPage != 8 && currentPage != numPages) {
-    manageFooter();
-  }
-
-
-  // Draw Text
-  display.setTextSize(2);
-
-  if (humidity != OFF_CMD && humidity.toFloat() >= humidityThreshold) {
-    currentPage = 0;
-    display.setCursor(55, 14);
-    display.print(humidity);
-    display.println(F("%"));
-    display.setCursor(55, 35);
-    display.print(temperature);
-    display.print(F("C"));
-  } else if (currentPage == 0) {
-    display.setCursor(55, 25);
-    display.print(temperature);
-    display.print(F("C"));
-  } else if (currentPage == 1) {
-    display.setCursor(55, 25);
-    display.print(humidity);
-    display.print(F("%"));
-  } else if (currentPage == 2) {
-    display.setCursor(35, 25);
-    display.print(pressure);
-    display.setTextSize(1);
-    display.print(F("hPa"));
-  } else if (currentPage == 3) {
-    display.setCursor(35, 25);
-    display.print(gasResistance);
-    display.setTextSize(1);
-    display.print(F("KOhms"));
-  } else if (currentPage == 4) {
-    display.setCursor(40, 25);
-    display.print(IAQ);
-    display.setTextSize(1);
-    display.print(F("IAQ"));
-  } else if (currentPage == 5) {
-    display.setTextSize(1);
-
-    display.setCursor(8, 47);
-    display.print(minTemperature, 1);
-    display.println(F("C"));
-    display.setCursor(8, 57);
-    display.print(maxTemperature, 1);
-    display.println(F("C"));
-
-    display.setCursor(50, 47);
-    display.print(minHumidity, 1);
-    display.println(F("%"));
-    display.setCursor(50, 57);
-    display.print(maxHumidity, 1);
-    display.println(F("%"));
-
-    display.setCursor(90, 47);
-    display.print(minPressure, 1);
-    display.setCursor(90, 57);
-    display.print(maxPressure, 1);
-  } else if (currentPage == 6) {
-    display.setTextSize(1);
-
-    display.setCursor(10, 47);
-    display.print(minGasResistance, 1);
-    display.println(F("KOhms"));
-    display.setCursor(10, 57);
-    display.print(maxGasResistance, 1);
-    display.println(F("KOhms"));
-
-    display.setCursor(75, 47);
-    display.print(minIAQ, 1);
-    display.println(F("IAQ"));
-    display.setCursor(75, 57);
-    display.print(maxIAQ, 1);
-    display.println(F("IAQ"));
-  } else if (currentPage == 7) {
-    display.setCursor(55, 25);
-    display.print(loadwatt);
-    display.print(F("W"));
-  } else if (currentPage == 8) {
-    if (spotifyActivity == SPOTIFY_PLAYING) {
+    if (acTriggered) {
       display.clearDisplay();
-      // display.fillTriangle(2, 8, 7, 3, 12, 8, WHITE);
-      display.fillTriangle(0, 0, 4, 4, 0, 8, WHITE);
-      if (appName == BT_AUDIO) {
-        display.drawBitmap((display.width() / 2) - (youtubeLogoW / 2), 0, youtubeLogo, youtubeLogoW, youtubeLogoH, 1);
-      } else {
-        display.drawBitmap((display.width() / 2) - (spotifyLogoW / 2), 0, spotifyLogo, spotifyLogoW, spotifyLogoH, 1);
-      }
-      display.setTextSize(2);
-      display.setTextWrap(false);
-
-      // 12 is the text width
-      int titleLen = mediaTitle.length() * 12;
-      if (-titleLen > offset) {
-        offset = 160;
-      } else {
-        offset -= 2;
-      }
-      display.setCursor(offset,spotifyLogoW + 5);
-
-      display.println(mediaTitle);
-
-      // 6 is the text width
-      int authorLen = mediaArtist.length() * 6;
-      if (authorLen > 128) {
-        if (-authorLen > offsetAuthor) {
-          offsetAuthor = 130;
-        } else {
-          offsetAuthor -= 1;
-        }
-      } else {
-        offsetAuthor = 0;
-      }
-      display.setTextSize(1);
-      display.setCursor(offsetAuthor, 47);
-      display.println(mediaArtist);
-
-      // float roundedVolumeLevel = volumeLevel.toFloat();
-      // int volume = (roundedVolumeLevel > 0.99) ? display.width() : ((roundedVolumeLevel*100)*1.28);
-      // draw position bar
-      float currentMediaDuration = mediaDuration.toFloat();
-      float currentMediaPosition = mediaPosition.toFloat();
-      int position = (((currentMediaPosition * 100) / currentMediaDuration) * 1.28);
-      display.drawRect(0, (display.height() - 4), display.width(), 4, WHITE);
-      display.fillRect(0, (display.height() - 4), position, 4, WHITE);
+      drawCenterScreenLogo(acTriggered, snowLogo, snowLogoW, snowLogoH, DELAY_4000);
+      return;
     }
-  } else if (currentPage == numPages) {
-    bootstrapManager.drawInfoPage(VERSION, AUTHOR);
-  }
-  display.setTextWrap(true);
 
-  if (pir == ON_CMD && currentPage != numPages) {
-    // display.fillCircle(124, 13, 2, WHITE);
+    display.clearDisplay();
+
+    if (showHaSplashScreen) {
+      display.clearDisplay();
+      drawCenterScreenLogo(showHaSplashScreen, HABIGLOGO, HABIGLOGOW, HABIGLOGOH, DELAY_4000);
+      return;
+    }
+
     if (currentPage == 8) {
-      display.drawBitmap(117, 0, runLogo, runLogoW, runLogoH, 1);
+      if (spotifyActivity != SPOTIFY_PLAYING) {
+        display.clearDisplay();
+        currentPage = numPages;
+        bootstrapManager.drawInfoPage(VERSION, AUTHOR);
+        return;
+      }
+    }
+
+    if (currentPage != numPages && currentPage != 8) {
+      drawHeader();
+    }
+
+    // Draw Images
+    if (alarmo == ALARM_ARMED_AWAY || alarmo == ALARM_PENDING || alarmo == ALARM_TRIGGERED) {
+      display.drawBitmap(0, 10, shieldLogo, shieldLogoW, shieldLogoH, 1);
+    } else if (away_mode == OFF_CMD && currentPage != numPages) {
+      display.drawBitmap(0, 10, haSmallLogo, haSmallLogoW, haSmallLogoH, 1);
+    }
+
+    if (humidity != -100.f && humidity >= humidityThreshold) {
+      currentPage = 0;
+      display.drawBitmap(14, 18, humidityLogo, humidityLogoW, humidityLogoH, 1);
+    } else if (furnance == ON_CMD && currentPage == 0) {
+      drawRoundRect();
+      display.drawBitmap(14, 18, fireLogo, fireLogoW, fireLogoH, 1);
+    } else if (ac == ON_CMD && currentPage == 0) {
+      drawRoundRect();
+      display.drawBitmap(16, 19, snowLogo, snowLogoW, snowLogoH, 1);
+      display.setCursor(3, 30);
+      if (fan == FAN_LOW) {
+        display.print(F("L"));
+      } else if (fan == FAN_HIGH) {
+        display.print(F("H"));
+      } else if (fan == FAN_AUTO) {
+        display.print(F("A"));
+      } else if (fan == FAN_POWER) {
+        display.print(F("P"));
+      } else if (fan == FAN_QUIET) {
+        display.print(F("Q"));
+      } else if (fan == FAN_WARM) {
+        display.print(F("W"));
+      }
+      display.drawCircle(5, 33, 5, WHITE);
+    } else if (hvac_action == HEAT && currentPage == 0) {
+      display.drawBitmap(9, 18, tempLogo, tempLogoW, tempLogoH, 1);
+    } else if (hvac_action == COOL && currentPage == 0) {
+      display.drawBitmap(9, 18, coolLogo, coolLogoW, coolLogoH, 1);
+    } else if (currentPage == 1) {
+      display.drawBitmap(15, 18, humidityBigLogo, humidityBigLogoW, humidityBigLogoH, 1);
+    } else if (currentPage == 2) {
+      display.drawBitmap(5, 18, tachimeterLogo, tachimeterLogoW, tachimeterLogoH, 1);
+    } else if (currentPage == 3) {
+      display.drawBitmap(5, 18, omegaLogo, omegaLogoW, omegaLogoH, 1);
+    } else if (currentPage == 4) {
+      if (IAQ >= 301) display.drawBitmap(5, 18, biohazardLogo, biohazardLogoW, biohazardLogoH, 1);
+      else if (IAQ >= 201 && IAQ <= 300) display.drawBitmap(5, 18, skullLogo, skullLogoW, skullLogoH, 1);
+      else if (IAQ >= 151 && IAQ <= 200) display.drawBitmap(5, 18, smogLogo, smogLogoW, smogLogoH, 1);
+      else if (IAQ >= 51 && IAQ <= 150) display.drawBitmap(5, 18, leafLogo, leafLogoW, leafLogoH, 1);
+      else if (IAQ >= 00 && IAQ <= 50)
+        display.drawBitmap(5, 18, butterflyLogo, butterflyLogoW,
+                           butterflyLogoH, 1);
+    } else if (currentPage == 5) {
+      if (hvac_action == HEAT) {
+        display.drawBitmap(((display.width() / 3) / 2) - (tempLogoW / 2), 15, tempLogo, tempLogoW, tempLogoH, 1);
+      } else if (hvac_action == COOL) {
+        display.drawBitmap(((display.width() / 3) / 2) - (coolLogoW / 2), 15, coolLogo, coolLogoW, coolLogoH, 1);
+      } else {
+        display.drawBitmap(((display.width() / 3) / 2) - (offLogoW / 2), 15, offLogo, offLogoW, offLogoH, 1);
+      }
+      display.drawBitmap((display.width() / 2) - (humidityBigLogoW / 2), 15, humidityBigLogo, humidityBigLogoW,
+                         humidityBigLogoH, 1);
+      display.drawBitmap(display.width() - ((display.width() / 3) / 2) - (tachimeterLogoW / 2), 15, tachimeterLogo,
+                         tachimeterLogoW, tachimeterLogoH, 1);
+    } else if (currentPage == 6) {
+      int dispDivide = display.width() / 5;
+      display.drawBitmap((dispDivide), 15, omegaLogo, omegaLogoW, omegaLogoH, 1);
+      if (IAQ >= 301) display.drawBitmap((dispDivide * 3), 15, biohazardLogo, biohazardLogoW, biohazardLogoH, 1);
+      else if (IAQ >= 201 && IAQ <= 300)
+        display.drawBitmap(
+          (dispDivide * 3), 15, skullLogo, skullLogoW, skullLogoH, 1);
+      else if (IAQ >= 151 && IAQ <= 200)
+        display.drawBitmap(
+          (dispDivide * 3), 15, smogLogo, smogLogoW, smogLogoH, 1);
+      else if (IAQ >= 51 && IAQ <= 150)
+        display.drawBitmap(
+          (dispDivide * 3), 15, leafLogo, leafLogoW, leafLogoH, 1);
+      else if (IAQ >= 00 && IAQ <= 50)
+        display.drawBitmap((dispDivide * 3), 15, butterflyLogo,
+                           butterflyLogoW, butterflyLogoH, 1);
+    } else if (currentPage == 7) {
+      display.drawBitmap(8, 15, upsLogo, upsLogoW, upsLogoH, 1);
+      drawUpsFooter();
+    } else if (currentPage == 8) {
+      // do nothing here image is shown in the text area
+    } else if (currentPage == numPages) {
+      // display.drawBitmap((display.width()-habigLogoW)-1, 0, habigLogo, habigLogoW, habigLogoH, 1);
     } else {
-      display.drawBitmap(117, 12, runLogo, runLogoW, runLogoH, 1);
+      currentPage = 0;
+      display.drawBitmap(10, 18, offLogo, offLogoW, offLogoH, 1);
     }
-  }
 
-  bootstrapManager.drawScreenSaver("DPsoftware domotics");
-
-  yield();
-
-  if (furnanceTriggered) {
-    drawCenterScreenLogo(furnanceTriggered, fireLogo, fireLogoW, fireLogoH, DELAY_4000);
-  }
-
-  if (acTriggered) {
-    drawCenterScreenLogo(acTriggered, snowLogo, snowLogoW, snowLogoH, DELAY_4000);
-  }
-
-  if (showHaSplashScreen) {
-    drawCenterScreenLogo(showHaSplashScreen, HABIGLOGO, HABIGLOGOW, HABIGLOGOH, DELAY_4000);
-  }
-  yield();
-
-  if ((ssTriggered || (ssTriggerCycle > 0)) && !wpTriggered) {
-    drawSolarStationTrigger(SOLAR_STATION_LOGO, SOLAR_STATION_LOGO_W, SOLAR_STATION_LOGO_H);
-  }
-
-  if (wpTriggered) {
-    if (solarStationRemainingSeconds == "0") {
-      wpTriggered = false;
+    if (currentPage != 5 && currentPage != 6 && currentPage != 7 && currentPage != 8 && currentPage != numPages) {
+      manageFooter();
     }
-    drawWPRemainingSeconds(WATER_PUMP_LOGO, WATER_PUMP_LOGO_W, WATER_PUMP_LOGO_H);
+
+
+    // Draw Text
+    display.setTextSize(2);
+
+    if (humidity != -100.f && humidity >= humidityThreshold) {
+      currentPage = 0;
+      display.setCursor(55, 14);
+      display.print(humidity);
+      display.println(F("%"));
+      display.setCursor(55, 35);
+      display.print(temperature, 1);
+      display.print(F("C"));
+    } else if (currentPage == 0) {
+      display.setCursor(55, 25);
+      display.print(temperature, 1);
+      display.print(F("C"));
+    } else if (currentPage == 1) {
+      display.setCursor(55, 25);
+      display.print(humidity, 1);
+      display.print(F("%"));
+    } else if (currentPage == 2) {
+      display.setCursor(35, 25);
+      display.print(pressure, 0);
+      display.setTextSize(1);
+      display.print(F("hPa"));
+    } else if (currentPage == 3) {
+      display.setCursor(35, 25);
+      display.print(gasResistance, 0);
+      display.setTextSize(1);
+      display.print(F("KOhms"));
+    } else if (currentPage == 4) {
+      display.setCursor(40, 25);
+      display.print(IAQ, 1);
+      display.setTextSize(1);
+      display.print(F("IAQ"));
+    } else if (currentPage == 5) {
+      display.setTextSize(1);
+
+      display.setCursor(8, 47);
+      display.print(minTemperature, 1);
+      display.println(F("C"));
+      display.setCursor(8, 57);
+      display.print(maxTemperature, 1);
+      display.println(F("C"));
+
+      display.setCursor(50, 47);
+      display.print(minHumidity, 1);
+      display.println(F("%"));
+      display.setCursor(50, 57);
+      display.print(maxHumidity, 1);
+      display.println(F("%"));
+
+      display.setCursor(90, 47);
+      display.print(minPressure, 1);
+      display.setCursor(90, 57);
+      display.print(maxPressure, 1);
+    } else if (currentPage == 6) {
+      display.setTextSize(1);
+
+      display.setCursor(10, 47);
+      display.print(minGasResistance, 0);
+      display.println(F("KOhms"));
+      display.setCursor(10, 57);
+      display.print(maxGasResistance, 0);
+      display.println(F("KOhms"));
+
+      display.setCursor(75, 47);
+      display.print(minIAQ, 0);
+      display.println(F("IAQ"));
+      display.setCursor(75, 57);
+      display.print(maxIAQ, 0);
+      display.println(F("IAQ"));
+    } else if (currentPage == 7) {
+      display.setCursor(55, 25);
+      display.print(loadwatt);
+      display.print(F("W"));
+    } else if (currentPage == 8) {
+      if (spotifyActivity == SPOTIFY_PLAYING) {
+        display.clearDisplay();
+        // display.fillTriangle(2, 8, 7, 3, 12, 8, WHITE);
+        display.fillTriangle(0, 0, 4, 4, 0, 8, WHITE);
+        if (appName == BT_AUDIO) {
+          display.drawBitmap((display.width() / 2) - (youtubeLogoW / 2), 0, youtubeLogo, youtubeLogoW, youtubeLogoH, 1);
+        } else {
+          display.drawBitmap((display.width() / 2) - (spotifyLogoW / 2), 0, spotifyLogo, spotifyLogoW, spotifyLogoH, 1);
+        }
+        display.setTextSize(2);
+        display.setTextWrap(false);
+
+        // 12 is the text width
+        int titleLen = mediaTitle.length() * 12;
+        if (-titleLen > offset) {
+          offset = 160;
+        } else {
+          offset -= 2;
+        }
+        display.setCursor(offset,spotifyLogoW + 5);
+
+        display.println(mediaTitle);
+
+        // 6 is the text width
+        int authorLen = mediaArtist.length() * 6;
+        if (authorLen > 128) {
+          if (-authorLen > offsetAuthor) {
+            offsetAuthor = 130;
+          } else {
+            offsetAuthor -= 1;
+          }
+        } else {
+          offsetAuthor = 0;
+        }
+        display.setTextSize(1);
+        display.setCursor(offsetAuthor, 47);
+        display.println(mediaArtist);
+
+        // float roundedVolumeLevel = volumeLevel.toFloat();
+        // int volume = (roundedVolumeLevel > 0.99) ? display.width() : ((roundedVolumeLevel*100)*1.28);
+        // draw position bar
+        float currentMediaDuration = mediaDuration.toFloat();
+        float currentMediaPosition = mediaPosition.toFloat();
+        int position = 0;
+        if (currentMediaDuration > 0.01f) {
+          position = ((currentMediaPosition * 100.0f) / currentMediaDuration) * 1.28f;
+        }
+        display.drawRect(0, (display.height() - 4), display.width(), 4, WHITE);
+        display.fillRect(0, (display.height() - 4), position, 4, WHITE);
+      }
+    } else if (currentPage == numPages) {
+      bootstrapManager.drawInfoPage(VERSION, AUTHOR);
+    }
+    display.setTextWrap(true);
+
+    if (pir == ON_CMD && currentPage != numPages) {
+      // display.fillCircle(124, 13, 2, WHITE);
+      if (currentPage == 8) {
+        display.drawBitmap(117, 0, runLogo, runLogoW, runLogoH, 1);
+      } else {
+        display.drawBitmap(117, 12, runLogo, runLogoW, runLogoH, 1);
+      }
+    }
+
+    bootstrapManager.drawScreenSaver("DPsoftware domotics");
+
+    yield();
+
+    if ((ssTriggered || (ssTriggerCycle > 0)) && !wpTriggered) {
+      drawSolarStationTrigger(SOLAR_STATION_LOGO, SOLAR_STATION_LOGO_W, SOLAR_STATION_LOGO_H);
+    }
+
+    if (wpTriggered) {
+      if (solarStationRemainingSeconds == "0") {
+        wpTriggered = false;
+      }
+      drawWPRemainingSeconds(WATER_PUMP_LOGO, WATER_PUMP_LOGO_W, WATER_PUMP_LOGO_H);
+    }
+
+    if (temperature != -100.f) {
+      display.display();
+    }
+
+    /*Serial.print(F("Temp: "); Serial.print(temperature); Serial.println(F("°C");
+    Serial.print(F("Humidity: "); Serial.print(humidity); Serial.println(F("%");
+    Serial.print(F("Pressure: "); Serial.print(pressure); Serial.println(F("hPa");
+
+    Serial.print(F("Caldaia: "); Serial.println(furnance);
+    Serial.print(F("ac: "); Serial.println(ac);
+    Serial.print(F("PIR: "); Serial.println(pir);
+
+    Serial.print(F("target_temperature: "); Serial.println(target_temperature);
+    Serial.print(F("hvac_action: "); Serial.println(hvac_action);
+    Serial.print(F("away_mode: "); Serial.println(away_mode);
+    Serial.print(F("alarmo: "); Serial.println(alarmo);*/
   }
-
-  if (temperature != OFF_CMD) {
-    display.display();
-  }
-
-  /*Serial.print(F("Temp: "); Serial.print(temperature); Serial.println(F("°C");
-  Serial.print(F("Humidity: "); Serial.print(humidity); Serial.println(F("%");
-  Serial.print(F("Pressure: "); Serial.print(pressure); Serial.println(F("hPa");
-
-  Serial.print(F("Caldaia: "); Serial.println(furnance);
-  Serial.print(F("ac: "); Serial.println(ac);
-  Serial.print(F("PIR: "); Serial.println(pir);
-
-  Serial.print(F("target_temperature: "); Serial.println(target_temperature);
-  Serial.print(F("hvac_action: "); Serial.println(hvac_action);
-  Serial.print(F("away_mode: "); Serial.println(away_mode);
-  Serial.print(F("alarmo: "); Serial.println(alarmo);*/
 }
 
 void drawHeader() {
@@ -597,10 +644,10 @@ void drawFooterThermostat() {
   display.print(target_temperature);
   (target_temperature != OFF_CMD) ? display.print(F("C")) : display.print(F(""));
   display.print(F(" "));
-  display.print(humidity);
+  display.print(humidity, 1);
   display.print(F("%"));
   display.print(F(" "));
-  display.print(pressure);
+  display.print(pressure, 0);
   display.print(F("hPa"));
 }
 
@@ -624,19 +671,33 @@ void drawUpsFooter() {
   display.print(F("FPS"));
 }
 
-void drawCenterScreenLogo(bool &triggerBool, const unsigned char *logo, const int logoW, const int logoH,
+void drawCenterScreenLogo(bool &triggerBool,
+                          const unsigned char *logo,
+                          const int logoW,
+                          const int logoH,
                           const int delayInt) {
-#if defined(ESP8266)
-  ESP.wdtFeed();
-#else
-  esp_task_wdt_reset();
-#endif
+  if (!triggerBool || centerLogo.active) return;
   drawCenterScreenLogo(logo, logoW, logoH);
-  if (delayInt > 0) {
-    delay(delayInt);
-  }
-  triggerBool = false;
+  centerLogo.active   = true;
+  centerLogo.trigger  = &triggerBool;
+  centerLogo.logo     = logo;
+  centerLogo.w        = logoW;
+  centerLogo.h        = logoH;
+  centerLogo.startMs  = millis();
+  centerLogo.duration = delayInt;
 }
+
+void updateCenterScreenLogo() {
+  if (!centerLogo.active) return;
+  drawCenterScreenLogo(centerLogo.logo,
+                       centerLogo.w,
+                       centerLogo.h);
+  if (millis() - centerLogo.startMs >= centerLogo.duration) {
+    *centerLogo.trigger = false;
+    centerLogo.active = false;
+  }
+}
+
 
 void drawCenterScreenLogo(const unsigned char *logo, const int logoW, const int logoH) {
   display.clearDisplay();
@@ -704,27 +765,26 @@ bool processUpsStateJson(JsonDocument json) {
 bool processSmartostatSensorJson(JsonDocument json) {
   if (json["BME680"].is<JsonVariant>()) {
     float temperatureFloat = json["BME680"]["Temperature"];
-    temperature = serialized(String(temperatureFloat, 1));
+    temperature = temperatureFloat;
     minTemperature = (temperatureFloat < minTemperature) ? temperatureFloat : minTemperature;
     maxTemperature = (temperatureFloat > maxTemperature) ? temperatureFloat : maxTemperature;
     float humidityFloat = json["BME680"]["Humidity"];
-    humidity = serialized(String(humidityFloat, 1));
+    humidity = humidityFloat;
     minHumidity = (humidityFloat < minHumidity) ? humidityFloat : minHumidity;
     maxHumidity = (humidityFloat > maxHumidity) ? humidityFloat : maxHumidity;
     float pressureFloat = json["BME680"]["Pressure"];
-    pressure = serialized(String(pressureFloat, 1));
+    pressure = pressureFloat;
     minPressure = (pressureFloat < minPressure) ? pressureFloat : minPressure;
     maxPressure = (pressureFloat > maxPressure) ? pressureFloat : maxPressure;
     float gasResistanceFloat = json["BME680"]["GasResistance"];
-    gasResistance = serialized(String(gasResistanceFloat, 1));
+    gasResistance = gasResistanceFloat;
     minGasResistance = (gasResistanceFloat < minGasResistance) ? gasResistanceFloat : minGasResistance;
     maxGasResistance = (gasResistanceFloat > maxGasResistance) ? gasResistanceFloat : maxGasResistance;
     float IAQFloat = json["BME680"]["IAQ"];
-    IAQ = serialized(String(IAQFloat, 1));
+    IAQ = IAQFloat;
     minIAQ = (IAQFloat < minIAQ) ? IAQFloat : minIAQ;
     maxIAQ = (IAQFloat > maxIAQ) ? IAQFloat : maxIAQ;
   }
-
   return true;
 }
 
@@ -781,7 +841,7 @@ bool processSmartostatClimateJson(JsonDocument json) {
     const char *awayModeConst = json["smartostatac"]["preset_mode"];
     away_mode = (strcmp(awayModeConst, "away") == 0) ? ON_CMD : OFF_CMD;
   } else {
-    if (temperature.toFloat() > HEAT_COOL_THRESHOLD) {
+    if (temperature > HEAT_COOL_THRESHOLD) {
       float target_temperatureFloat = json["smartostatac"]["temperature"];
       target_temperature = serialized(String(target_temperatureFloat, 1));
     } else {
@@ -868,8 +928,8 @@ bool processSolarStationWaterPump(JsonDocument json) {
 
 bool processSolarStationState(JsonDocument json) {
   solarStationBattery = json["battery"];
-  float voltage = ((solarStationBattery * 4.14) / 1024);
-  solarStationBatteryVoltage = (serialized(String(voltage, 2)));
+  float voltage = solarStationBattery;
+  solarStationBatteryVoltage = String(voltage / 1000, 2);
   solarStationWifi = helper.getValue(json["wifi"]);
   return true;
 }
@@ -913,9 +973,11 @@ bool processFurnancedCmnd(JsonDocument json) {
     furnanceTriggered = true;
     stateOn = true;
     sendPowerState();
+    delay(DELAY_200);
   }
 #if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
   sendFurnanceState();
+  delay(DELAY_200);
   releManagement();
 #endif
   return true;
@@ -929,11 +991,6 @@ bool processIrRecev(JsonDocument json) {
 // IRSEND MQTT message ON OFF only for Smartostat
 #if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
 bool toggleBeep(JsonDocument json) {
-#if defined(ESP8266)
-  ESP.wdtFeed();
-#else
-  esp_task_wdt_reset();
-#endif
   acir.stateReset();
   acir.setBeep(true);
   acir.off();
@@ -952,13 +1009,11 @@ bool processSmartostatRebootCmnd(JsonDocument json) {
   String rebootState = msg;
   sendSmartostatRebootState(OFF_CMD);
   if (rebootState == OFF_CMD) {
-    forceFurnanceOn = false;
     furnance = OFF_CMD;
     sendFurnanceState();
-    forceACOn = false;
     ac = OFF_CMD;
     sendACState();
-    bootstrapManager.publish(SMARTOSTAT_PIR_STATE_TOPIC, helper.string2char(OFF_CMD), true);
+    BootstrapManager::publish(SMARTOSTAT_PIR_STATE_TOPIC, OFF_CMD.c_str(), true);
     releManagement();
     acManagement();
     sendSmartostatRebootCmnd();
@@ -974,11 +1029,6 @@ bool processIrOnOffCmnd(JsonDocument json) {
   if (acState == ON_CMD && ac == OFF_CMD) {
     acTriggered = true;
     ac = ON_CMD;
-#if defined(ESP8266)
-    ESP.wdtFeed();
-#else
-    esp_task_wdt_reset();
-#endif
     acir.on();
     acir.setFan(kSamsungAcFanLow);
     acir.setMode(kSamsungAcCool);
@@ -988,11 +1038,6 @@ bool processIrOnOffCmnd(JsonDocument json) {
     sendACState();
   } else if (acState == OFF_CMD) {
     // set power mode before shutdown, if you don't do this sometimes the off command does not work
-#if defined(ESP8266)
-    ESP.wdtFeed();
-#else
-    esp_task_wdt_reset();
-#endif
     if (stateOn) {
       // ac = ON_CMD;
       // acir.on();
@@ -1068,6 +1113,18 @@ bool processSmartoledRebootCmnd(JsonDocument json) {
   return true;
 }
 
+bool processSmartostatFurnanceState(JsonDocument json) {
+  furnance = helper.isOnOff(json);
+  return true;
+}
+
+bool processACState(JsonDocument json) {
+  ac = helper.isOnOff(json);
+  return true;
+}
+
+#endif
+
 bool processSmartoledFramerate(JsonDocument json) {
   if (json["producing"].is<JsonVariant>()) {
     float producingFloat = json["producing"];
@@ -1089,18 +1146,6 @@ bool processSmartoledGlowWormFramerate(JsonDocument json) {
   return true;
 }
 
-bool processSmartostatFurnanceState(JsonDocument json) {
-  furnance = helper.isOnOff(json);
-  return true;
-}
-
-bool processACState(JsonDocument json) {
-  ac = helper.isOnOff(json);
-  return true;
-}
-
-#endif
-
 void resetMinMaxValues() {
   minTemperature = 99;
   maxTemperature = 0.0;
@@ -1116,22 +1161,25 @@ void resetMinMaxValues() {
 
 /********************************** SEND STATE *****************************************/
 void sendPowerState() {
-  bootstrapManager.publish(SMARTOLED_STATE_TOPIC, (stateOn) ? helper.string2char(ON_CMD) : helper.string2char(OFF_CMD),
+  BootstrapManager::publish(SMARTOLED_STATE_TOPIC, (stateOn) ? ON_CMD.c_str() : OFF_CMD.c_str(),
                            true);
 }
 
 void sendInfoState() {
   JsonObject root = bootstrapManager.getJsonObject();
   root["State"] = (stateOn) ? ON_CMD : OFF_CMD;
-  bootstrapManager.sendState(SMARTOLED_INFO_TOPIC, root, VERSION);
+  BootstrapManager::sendState(SMARTOLED_INFO_TOPIC, root, VERSION);
 }
 
+inline float round1(float v) {
+  return v > 0 ? roundf(v * 10.0f) / 10.0f : 0;
+}
 
 // Send PIR state via MQTT
 #if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
 
 void sendSmartostatRebootState(String onOff) {
-  bootstrapManager.publish(SMARTOSTAT_STAT_REBOOT, helper.string2char(onOff), true);
+  BootstrapManager::publish(SMARTOSTAT_STAT_REBOOT, onOff.c_str(), true);
 }
 
 void sendSmartostatRebootCmnd() {
@@ -1140,8 +1188,8 @@ void sendSmartostatRebootCmnd() {
 }
 
 void sendPirState() {
-  bootstrapManager.publish(SMARTOSTAT_PIR_STATE_TOPIC,
-                           (pir == ON_CMD) ? helper.string2char(ON_CMD) : helper.string2char(OFF_CMD), true);
+  BootstrapManager::publish(SMARTOSTAT_PIR_STATE_TOPIC,
+                           (pir == ON_CMD) ? ON_CMD.c_str() : OFF_CMD.c_str(), true);
 }
 
 void sendSensorState() {
@@ -1153,51 +1201,62 @@ void sendSensorState() {
   root["POWER2"] = pir;
 
   JsonObject BME680 = root["BME680"].to<JsonObject>();
-  if (readOnceEveryNTimess == 0 && sensorOk) {
+  if (readOnceEveryNTimess == 1 && sensorOk) {
+    yield();
     if (!boschBME680.performReading()) {
       Serial.println("Failed to perform reading :(");
       delay(500);
       return;
     }
-    BME680["Temperature"] = serialized(String(boschBME680.temperature + tempSensorOffset, 1));
-    BME680["Humidity"] = serialized(String(boschBME680.humidity, 1));
-    BME680["Pressure"] = boschBME680.pressure / 100;
-    BME680["GasResistance"] = serialized(String(gas_reference / 1000, 1));
+    temperature = round1(boschBME680.temperature + tempSensorOffset);
+    humidity = round1(boschBME680.humidity);
+    pressure = boschBME680.pressure / 100;
     humidity_score = getHumidityScore();
+    if ((getgasreference_count++) % 5 == 0) {
+      readGas = true;
+    }
+    gasResistance = round1(gas_reference / 1000);
     gas_score = getGasScore();
     //Combine results for the final IAQ index value (0-100% where 100% is good quality air)
     float air_quality_score = humidity_score + gas_score;
-    if ((getgasreference_count++) % 5 == 0) getGasReference();
-    BME680["IAQ"] = calculateIAQ(air_quality_score);
-  } else {
-    BME680["Temperature"] = temperature;
-    BME680["Humidity"] = humidity;
-    BME680["Pressure"] = pressure;
-    BME680["GasResistance"] = gasResistance; //gasResistance;
-    BME680["IAQ"] = IAQ; //gasResistance;
+    IAQ = round1(calculateIAQ(air_quality_score));
+    minTemperature = (temperature < minTemperature) ? temperature : minTemperature;
+    maxTemperature = (temperature > maxTemperature) ? temperature : maxTemperature;
+    minHumidity = (humidity < minHumidity) ? humidity : minHumidity;
+    maxHumidity = (humidity > maxHumidity) ? humidity : maxHumidity;
+    minPressure = (pressure < minPressure) ? pressure : minPressure;
+    maxPressure = (pressure > maxPressure) ? pressure : maxPressure;
+    minGasResistance = (gasResistance < minGasResistance) ? gasResistance : minGasResistance;
+    maxGasResistance = (gasResistance > maxGasResistance) ? gasResistance : maxGasResistance;
+    minIAQ = (IAQ < minIAQ) ? IAQ : minIAQ;
+    maxIAQ = (IAQ > maxIAQ) ? IAQ : maxIAQ;
   }
+  BME680["Temperature"] = temperature;
+  BME680["Humidity"] = humidity;
+  BME680["Pressure"] = pressure;
+  BME680["GasResistance"] = gasResistance;
+  BME680["IAQ"] = IAQ;
   readOnceEveryNTimess++;
   // BME680 is in forced mode, it sleeps until it read to avoid self heating
   if (readOnceEveryNTimess == 5) {
     readOnceEveryNTimess = 0;
   }
-
-  bootstrapManager.publish(SMARTOSTAT_SENSOR_STATE_TOPIC, root, true);
+  if (temperature != 0 && humidity != 0 && pressure != 0 && gasResistance != 0
+      && temperature != -100.0f && humidity != -100.0f && pressure != -100.0f && gasResistance != -100.0f) {
+    BootstrapManager::publish(SMARTOSTAT_SENSOR_STATE_TOPIC, root, true);
+  }
 }
 
 void sendFurnanceState() {
-  if (furnance == OFF_CMD) {
-    forceFurnanceOn = false;
-  }
-  bootstrapManager.publish(SMARTOSTAT_FURNANCE_STATE_TOPIC,
-                           (furnance == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
+  BootstrapManager::publish(SMARTOSTAT_FURNANCE_STATE_TOPIC,
+                           (furnance == OFF_CMD) ? OFF_CMD.c_str() : ON_CMD.c_str(), true);
 }
 #endif
 
 #if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
 
 void sendSmartoledRebootState(String onOff) {
-  bootstrapManager.publish(SMARTOLED_STAT_REBOOT, helper.string2char(onOff), true);
+  BootstrapManager::publish(SMARTOLED_STAT_REBOOT, onOff.c_str(), true);
 }
 
 void sendSmartoledRebootCmnd() {
@@ -1208,68 +1267,79 @@ void sendSmartoledRebootCmnd() {
 #endif
 
 void sendACCommandState() {
-  if (ac == OFF_CMD) {
-    forceACOn = false;
-  }
-  bootstrapManager.publish(SMARTOSTATAC_CMND_IRSENDSTATE,
-                           (ac == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
+  BootstrapManager::publish(SMARTOSTATAC_CMND_IRSENDSTATE,
+                           (ac == OFF_CMD) ? OFF_CMD.c_str() : ON_CMD.c_str(), true);
 }
 
 void sendClimateState(String mode) {
   if (mode == COOL) {
-    bootstrapManager.publish(SMARTOSTAT_CMND_CLIMATE_COOL_STATE,
-                             (ac == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
+    BootstrapManager::publish(SMARTOSTAT_CMND_CLIMATE_COOL_STATE,
+                             (ac == OFF_CMD) ? OFF_CMD.c_str() : ON_CMD.c_str(), true);
   } else {
-    bootstrapManager.publish(SMARTOSTAT_CMND_CLIMATE_HEAT_STATE,
-                             (furnance == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
+    BootstrapManager::publish(SMARTOSTAT_CMND_CLIMATE_HEAT_STATE,
+                             (furnance == OFF_CMD) ? OFF_CMD.c_str() : ON_CMD.c_str(), true);
   }
 }
 
 void sendFurnanceCommandState() {
-  if (furnance == OFF_CMD) {
-    forceFurnanceOn = false;
-  }
-  bootstrapManager.publish(SMARTOSTAT_FURNANCE_CMND_TOPIC,
-                           (furnance == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
+  BootstrapManager::publish(SMARTOSTAT_FURNANCE_CMND_TOPIC,
+                           (furnance == OFF_CMD) ? OFF_CMD.c_str() : ON_CMD.c_str(), true);
 }
 
 void sendACState() {
-  if (ac == OFF_CMD) {
-    forceACOn = false;
-  }
-  bootstrapManager.publish(SMARTOSTATAC_STAT_IRSEND,
-                           (ac == OFF_CMD) ? helper.string2char(OFF_CMD) : helper.string2char(ON_CMD), true);
+  BootstrapManager::publish(SMARTOSTATAC_STAT_IRSEND,
+                           (ac == OFF_CMD) ? OFF_CMD.c_str() : ON_CMD.c_str(), true);
 }
 
 // Send status to MQTT broker every ten seconds
 void delayAndSendStatus() {
+  if (publishStep.waitNextLoop) {
+    publishStep.waitNextLoop = false;
+    return;
+  }
   if (millis() > timeNowStatus + tenSecondsPeriod) {
     timeNowStatus = millis();
     ledTriggered = true;
-    sendPowerState();
-#if defined(ESP8266)
-    ESP.wdtFeed();
-#endif
-    sendInfoState();
-#if defined(ESP8266)
-    ESP.wdtFeed();
-#endif
+    publishing = true;
+    publishStep.step = 0;
+    lastPublishTime = millis();
+  }
+  if (!publishing) return;
+  if (millis() - lastPublishTime < STEP_DELAY) return;
+
+  switch (publishStep.step) {
+  case 0: sendPowerState(); break;
+  case 1: sendInfoState(); break;
 #if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
-    sendSensorState();
-#if defined(ESP8266)
-    ESP.wdtFeed();
-#endif
-    sendFurnanceState();
-#if defined(ESP8266)
-    ESP.wdtFeed();
-#endif
-    sendACState();
-#if defined(ESP8266)
-    ESP.wdtFeed();
-#endif
+  case 2: sendSensorState(); break;
+  case 3: sendFurnanceState(); break;
+  case 4: sendACState(); break;
 #endif
   }
+  publishStep.step++;
+  lastPublishTime = millis();
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
+  if (publishStep.step > 4) publishing = false;
+#else
+  if (publishStep.step > 1) publishing = false;
+#endif
 }
+
+
+// // Send status to MQTT broker every ten seconds
+// void delayAndSendStatus() {
+//   if (millis() > timeNowStatus + tenSecondsPeriod) {
+//     timeNowStatus = millis();
+//     ledTriggered = true;
+//     sendPowerState();
+//     sendInfoState();
+// #if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
+//     sendSensorState();
+//     sendFurnanceState();
+//     sendACState();
+// #endif
+//   }
+// }
 
 // Go to home page after five minutes of inactivity and write SPIFFS
 void goToHomePageAndWriteToStorageAfterFiveMinutes() {
@@ -1283,7 +1353,7 @@ void goToHomePageAndWriteToStorageAfterFiveMinutes() {
     // Write data to file system
     writeConfigToStorage();
     screenSaverTriggered = true;
-    if ((humidity != OFF_CMD && humidity.toFloat() < humidityThreshold) && (loadFloatPrevious < HIGH_WATT) && (
+    if ((humidity != -100.f && humidity < humidityThreshold) && (loadFloatPrevious < HIGH_WATT) && (
           (spotifyActivity == SPOTIFY_PLAYING && currentPage != 8) || spotifyActivity != SPOTIFY_PLAYING)) {
       currentPage = 0;
     }
@@ -1305,6 +1375,7 @@ void pirManagement() {
         if (lastPirState != ON_CMD) {
           lastPirState = ON_CMD;
           sendPirState();
+          publishStep.waitNextLoop = true;
         }
         highIn = millis();
       }
@@ -1317,13 +1388,14 @@ void pirManagement() {
       if (lastPirState != OFF_CMD) {
         lastPirState = OFF_CMD;
         sendPirState();
+        publishStep.waitNextLoop = true;
       }
     }
   }
 }
 
 void releManagement() {
-  if (furnance == ON_CMD || forceFurnanceOn) {
+  if (furnance == ON_CMD) {
     digitalWrite(RELE_PIN, HIGH);
   } else {
     digitalWrite(RELE_PIN, LOW);
@@ -1331,7 +1403,7 @@ void releManagement() {
 }
 
 void acManagement() {
-  if (ac == ON_CMD || forceACOn) {
+  if (ac == ON_CMD) {
     acir.on();
     acir.setFan(kSamsungAcFanLow);
     acir.setMode(kSamsungAcCool);
@@ -1344,17 +1416,12 @@ void acManagement() {
   }
 }
 
-void getGasReference() {
+void getGasReferenceBlocking() {
   // Now run the sensor for a burn-in period, then use combination of relative humidity and gas resistance to estimate indoor air quality as a percentage.
   //Serial.println("Getting a new gas reference value");
   int readings = 10;
   for (int i = 1; i <= readings; i++) {
     yield();
-#if defined(ESP8266)
-    ESP.wdtFeed();
-#else
-    esp_task_wdt_reset();
-#endif
     // read gas for 10 x 0.150mS = 1.5secs
     gas_reference += boschBME680.readGas();
   }
@@ -1363,7 +1430,24 @@ void getGasReference() {
   getgasreference_count = 0;
 }
 
-String calculateIAQ(int score) {
+void getGasReference() {
+  static uint8_t samples = 0;
+  static uint32_t lastRead = 0;
+  static float gasSum = 0.0f;
+  const uint8_t readings = 10;
+  if (samples >= readings) {
+    gas_reference = gasSum / readings;
+    gasSum = 0.0f;
+    samples = 0;
+    getgasreference_count = 0;
+    readGas = false;
+    return;
+  }
+  gasSum += boschBME680.readGas();
+  samples++;
+}
+
+float calculateIAQ(float score) {
   score = (100 - score) * 5;
   // if      (score >= 301)                  IAQ_text += "Hazardous";
   // else if (score >= 201 && score <= 300 ) IAQ_text += "Very Unhealthy";
@@ -1372,10 +1456,10 @@ String calculateIAQ(int score) {
   // else if (score >=  51 && score <= 150 ) IAQ_text += "Moderate";
   // else if (score >=  00 && score <=  50 ) IAQ_text += "Good";
   // Serial.print("IAQ Score = " + String(score) + ", ");
-  return String(score);
+  return score;
 }
 
-int getHumidityScore() {
+float getHumidityScore() {
   //Calculate humidity contribution to IAQ index
   float current_humidity = boschBME680.humidity;
   if (current_humidity >= 38 && current_humidity <= 42) // Humidity +/-5% around optimum
@@ -1391,7 +1475,7 @@ int getHumidityScore() {
   return humidity_score;
 }
 
-int getGasScore() {
+float getGasScore() {
   //Calculate gas contribution to IAQ index
   gas_score = (0.75 / (gas_upper_limit - gas_lower_limit) * gas_reference - (
                  gas_lower_limit * (0.75 / (gas_upper_limit - gas_lower_limit)))) * 100.00;
@@ -1405,14 +1489,14 @@ void manageIrRecv() {
   if (irrecv.decode(&results)) {
     // Check if we got an IR message that was to big for our capture buffer.
     if (results.overflow) {
-      bootstrapManager.publish(IR_RECV_TOPIC, "MSG TOO BIG FOR THE BUFFER", false);
+      BootstrapManager::publish(IR_RECV_TOPIC, "MSG TOO BIG FOR THE BUFFER", false);
     }
     // Display the basic output of what we found.
-    bootstrapManager.publish(IR_RECV_TOPIC, helper.string2char(resultToHumanReadableBasic(&results)), false);
+    BootstrapManager::publish(IR_RECV_TOPIC, Helpers::string2char(resultToHumanReadableBasic(&results)), false);
     // Display any extra A/C info if we have it.
     String description = IRAcUtils::resultAcToString(&results);
     if (description.length()) {
-      bootstrapManager.publish(IR_RECV_TOPIC, helper.string2char(D_STR_MESGDESC ": " + description), false);
+      BootstrapManager::publish(IR_RECV_TOPIC, Helpers::string2char(D_STR_MESGDESC ": " + description), false);
     }
     yield(); // Feed the WDT as the text output can take a while to print.
     // Output the results as source code
@@ -1420,9 +1504,9 @@ void manageIrRecv() {
     int chunkSize = 900;
     for (unsigned i = 0; i < srcCode.length(); i += chunkSize) {
       if (i + chunkSize < srcCode.length()) {
-        bootstrapManager.publish(IR_RECV_TOPIC, helper.string2char(srcCode.substring(i, i + chunkSize)), false);
+        BootstrapManager::publish(IR_RECV_TOPIC, Helpers::string2char(srcCode.substring(i, i + chunkSize)), false);
       } else {
-        bootstrapManager.publish(IR_RECV_TOPIC, helper.string2char(srcCode.substring(i, srcCode.length())), false);
+        BootstrapManager::publish(IR_RECV_TOPIC, Helpers::string2char(srcCode.substring(i, srcCode.length())), false);
       }
       delay(DELAY_500);
     }
@@ -1499,18 +1583,14 @@ void quickPress() {
 }
 
 void commandButtonRelease() {
-  if (temperature.toFloat() > HEAT_COOL_THRESHOLD) {
+  if (temperature > HEAT_COOL_THRESHOLD) {
     if (ac == ON_CMD) {
       ac = OFF_CMD;
-      // stop ac on long press if wifi or mqtt is disconnected
-      forceACOn = false;
     } else {
 #if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
       acTriggered = true;
 #endif
       ac = ON_CMD;
-      // start ac on long press if wifi or mqtt is disconnected
-      forceACOn = true;
     }
     sendACCommandState();
     sendClimateState(COOL);
@@ -1521,15 +1601,11 @@ void commandButtonRelease() {
   } else {
     if (furnance == ON_CMD) {
       furnance = OFF_CMD;
-      // stop furnance on long press if wifi or mqtt is disconnected
-      forceFurnanceOn = false;
     } else {
 #if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
       furnanceTriggered = true;
 #endif
       furnance = ON_CMD;
-      // start furnance on long press if wifi or mqtt is disconnected
-      forceFurnanceOn = true;
     }
     sendFurnanceCommandState();
     sendClimateState(HEAT);
@@ -1602,62 +1678,122 @@ void writeConfigToStorage() {
 
 /********************************** START MAIN LOOP *****************************************/
 void loop() {
-  // Bootsrap loop() with Wifi, MQTT and OTA functions
-  bootstrapManager.bootstrapLoop(manageDisconnections, manageQueueSubscription, manageHardwareButton);
+  if (!offlineMode) {
+    // Bootsrap loop() with Wifi, MQTT and OTA functions
+    bootstrapManager.bootstrapLoop(manageDisconnections, manageQueueSubscription, manageHardwareButton);
 
-  if (irReceiveActive) {
-    if (!printIrReceiving) {
+    if (irReceiveActive) {
+      if (!printIrReceiving) {
 #if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
-      // Ignore messages with less than minimum on or off pulses. NOTE: Set this value very high to effectively turn off UNKNOWN detection.
-      irrecv.setUnknownThreshold(12);
-      irrecv.enableIRIn(); // Start the receiver
+        // Ignore messages with less than minimum on or off pulses. NOTE: Set this value very high to effectively turn off UNKNOWN detection.
+        irrecv.setUnknownThreshold(12);
+        irrecv.enableIRIn(); // Start the receiver
 #endif
-      drawCenterScreenLogo(showHaSplashScreen, IR_RECV_LOGO, IR_RECV_LOGO_W, IR_RECV_LOGO_H, 0);
-      printIrReceiving = true;
-    }
+        drawCenterScreenLogo(showHaSplashScreen, IR_RECV_LOGO, IR_RECV_LOGO_W, IR_RECV_LOGO_H, 0);
+        printIrReceiving = true;
+      }
 #if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
-    manageIrRecv();
+      manageIrRecv();
 #endif
-  } else {
-    printIrReceiving = false;
-#if defined(ESP8266)
-    ESP.wdtFeed();
-#endif
-    // PIR and RELAY MANAGEMENT
-#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
-    manageHardwareButton();
-    pirManagement();
-#else
-    lastButtonPressed = OLED_BUTTON_PIN;
-    touchButtonManagement(digitalRead(OLED_BUTTON_PIN));
-#endif
-
-    // Draw Speed, it influences how long the button should be pressed before switching to the next currentPage
-    delay(delayTime);
-
-    // Send status on MQTT Broker every n seconds
-    delayAndSendStatus();
-
-    // DRAW THE SCREEN
-#if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
-    if (stateOn || (loadFloat > HIGH_WATT)) {
-#elif defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
-    if (stateOn) {
-#endif
-      draw();
     } else {
-      display.clearDisplay();
-      display.display();
-    }
+      printIrReceiving = false;
 #if defined(ESP8266)
-    ESP.wdtFeed();
+      ESP.wdtFeed();
 #endif
-    // Go To Home Page timer after 5 minutes of inactivity and write data to File System (SPIFFS)
-    goToHomePageAndWriteToStorageAfterFiveMinutes();
+      // PIR and RELAY MANAGEMENT
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
+      // TODO
+      manageHardwareButton();
+      pirManagement();
+#else
+      lastButtonPressed = OLED_BUTTON_PIN;
+      touchButtonManagement(digitalRead(OLED_BUTTON_PIN));
+#endif
 
-    // bootstrapManager.nonBlokingBlink();
-#if defined(ESP8266)
-    ESP.wdtFeed();
+      // Send status on MQTT Broker every n seconds
+      delayAndSendStatus();
+
+      // DRAW THE SCREEN
+#if defined(TARGET_SMARTOLED) || defined(TARGET_SMARTOLED_ESP32)
+      if (stateOn || (loadFloat > HIGH_WATT)) {
+#elif defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
+      if (stateOn) {
 #endif
+        draw();
+      } else {
+        if (!isCenterLogoActive()) {
+          display.clearDisplay();
+        }
+        display.display();
+      }
+#if defined(ESP8266)
+      ESP.wdtFeed();
+#endif
+      // Go To Home Page timer after 5 minutes of inactivity and write data to File System (SPIFFS)
+      goToHomePageAndWriteToStorageAfterFiveMinutes();
+
+      // bootstrapManager.nonBlokingBlink();
+#if defined(ESP8266)
+      ESP.wdtFeed();
+#endif
+      updateCenterScreenLogo();
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
+      if (readGas) getGasReference();
+#endif
+#if defined(TARGET_SMARTOSTAT_ESP32) || defined(TARGET_SMARTOLED_ESP32)
+      if (millis() - lastMillisForWatchdog >= 500) {
+        lastMillisForWatchdog = millis();
+        esp_task_wdt_reset();
+      }
+#endif
+    }
+  } else {
+    // OFFLINE MODE
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setCursor(0, 0);
+    display.println("OFFLINE MODE");
+    display.println("");
+    display.println("Target temp: ");
+    display.print(offlineTargetTemp);
+    display.println("C");
+    display.println("");
+    display.println("Current temp: ");
+    display.print(temperature);
+    display.println("C");
+    bool currentState = digitalRead(OLED_BUTTON_PIN);
+    if (lastState == HIGH && currentState == LOW) {
+      offlineTargetTemp += 0.5;
+    }
+    lastState = currentState;
+    bool currentStateSmartostatPin = digitalRead(SMARTOSTAT_BUTTON_PIN);
+    if (lastStateSmartostat == HIGH && currentStateSmartostatPin == LOW) {
+      offlineTargetTemp -= 0.5;
+    }
+    lastStateSmartostat = currentStateSmartostatPin;
+#if defined(TARGET_SMARTOSTAT) || defined(TARGET_SMARTOSTAT_ESP32)
+    if (millis() > timeNowStatus + tenSecondsPeriod) {
+      timeNowStatus = millis();
+      boschBME680.performReading();
+      temperature = round1(boschBME680.temperature - 1);
+    }
+    if (temperature != -100) {
+      if (temperature <= offlineTargetTemp - 0.4) {
+        furnance = ON_CMD;
+        releManagement();
+      }
+      if (temperature >= offlineTargetTemp + 0.4) {
+        furnance = OFF_CMD;
+        releManagement();
+      }
+    }
+    if (furnance == ON_CMD) {
+      display.drawBitmap(95, 18, fireLogo, fireLogoW, fireLogoH, 1);
+    }
+#endif
+
+    display.display();
   }
+
 }
+
